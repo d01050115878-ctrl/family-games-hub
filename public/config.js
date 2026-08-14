@@ -30,4 +30,13 @@ window.GAMES_CONFIG = [
     url: 'https://family-omok.onrender.com/',
     accent: '#c98a2b',
   },
+  {
+    id: 'baseball',
+    emoji: '⚾',
+    title: '숫자야구',
+    subtitle: '우리 가족 숫자야구',
+    desc: '서로 다른 숫자로 만든 비밀번호를 스트라이크·볼로 먼저 맞히면 승리! 두뇌 추리 게임.',
+    url: 'https://family-baseball.onrender.com/',
+    accent: '#2f9e56',
+  },
 ];
