@@ -1,0 +1,16 @@
+{
+  "name": "family-games-hub",
+  "version": "1.0.0",
+  "description": "우리 가족 보드게임 모음 - 체스, 장기, 오목을 한 곳에서",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

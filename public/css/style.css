@@ -1,0 +1,90 @@
+/* =========================================================
+   우리 가족 보드게임 모음 - 허브 스타일
+   ========================================================= */
+:root {
+  --bg: #131a29;
+  --bg2: #1b2333;
+  --card: #222c40;
+  --card2: #2a364e;
+  --line: #36435e;
+  --text: #eef2fa;
+  --muted: #96a3bd;
+  --gold: #ffc447;
+  --radius: 20px;
+  --shadow: 0 12px 32px rgba(0, 0, 0, .4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+body {
+  background: radial-gradient(1200px 700px at 20% -10%, #2b3a5c 0%, var(--bg) 60%) fixed;
+  color: var(--text);
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
+  min-height: 100%;
+}
+
+.wrap { max-width: 1000px; margin: 0 auto; padding: 48px 20px 60px; }
+
+.hero { text-align: center; margin-bottom: 40px; }
+.hero-emoji { font-size: 54px; filter: drop-shadow(0 8px 18px rgba(255, 196, 71, .35)); }
+.hero h1 { font-size: 32px; font-weight: 900; letter-spacing: -.5px; margin: 10px 0 8px; }
+.hero p { color: var(--muted); font-size: 15px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card {
+  --accent: #d9a441;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  background: linear-gradient(165deg, var(--card) 0%, var(--bg2) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 22px 24px;
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(240px 120px at 90% -20%, color-mix(in srgb, var(--accent) 35%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.card:hover {
+  transform: translateY(-6px);
+  border-color: var(--accent);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .5);
+}
+
+.card-emoji {
+  font-size: 46px;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .4));
+  margin-bottom: 4px;
+}
+.card h2 { font-size: 22px; font-weight: 900; }
+.card-sub { font-size: 13px; color: var(--accent); font-weight: 700; }
+.card-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-top: 4px; min-height: 44px; }
+
+.card-cta {
+  margin-top: 14px;
+  font-size: 13px; font-weight: 800; color: var(--accent);
+  padding: 8px 14px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.foot { text-align: center; margin-top: 48px; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 820px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 26px; }
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1b2233">
+<meta name="description" content="우리 가족 보드게임 모음 - 체스, 장기, 오목을 한 곳에서 골라 즐겨요.">
+<title>우리 가족 보드게임 모음 🎲</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.85em' font-size='90'>🎲</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-emoji">🎲</div>
+    <h1>우리 가족 보드게임 모음</h1>
+    <p>체스, 장기, 오목 — 하고 싶은 게임을 골라서 바로 시작해요!</p>
+  </header>
+
+  <main class="grid" id="gameGrid"></main>
+
+  <footer class="foot">
+    <p>가족과 함께, 어디서든 💛</p>
+  </footer>
+</div>
+
+<script src="config.js"></script>
+<script>
+  const grid = document.getElementById('gameGrid');
+  (window.GAMES_CONFIG || []).forEach((g) => {
+    const card = document.createElement('a');
+    card.className = 'card';
+    card.href = g.url;
+    card.style.setProperty('--accent', g.accent || '#d9a441');
+    card.innerHTML = `
+      <div class="card-emoji">${g.emoji}</div>
+      <h2>${g.title}</h2>
+      <p class="card-sub">${g.subtitle}</p>
+      <p class="card-desc">${g.desc}</p>
+      <span class="card-cta">시작하기 →</span>
+    `;
+    grid.appendChild(card);
+  });
+</script>
+</body>
+</html>
