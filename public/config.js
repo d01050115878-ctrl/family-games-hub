@@ -57,4 +57,13 @@ window.GAMES_CONFIG = [
     url: 'https://family-block-blast-d01050115878-ctrls-projects.vercel.app/',
     accent: '#22d3ee',
   },
+  {
+    id: 'coloring',
+    emoji: '🎨',
+    title: '포켓몬 색칠놀이',
+    subtitle: '레전드 포켓몬 색칠 도안 78종',
+    desc: '전설의 포켓몬 도안을 128가지 색과 브러시·페인트통·도형 도구로 예쁘게 색칠해보세요.',
+    url: 'https://pokemon-coloring-app.vercel.app/',
+    accent: '#ff8fa3',
+  },
 ];
