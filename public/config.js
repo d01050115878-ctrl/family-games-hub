@@ -48,4 +48,13 @@ window.GAMES_CONFIG = [
     url: 'https://bug-arena.vercel.app/',
     accent: '#e07a3f',
   },
+  {
+    id: 'blockblast',
+    emoji: '🧩',
+    title: '블록 블래스트',
+    subtitle: '우리 가족 블록 퍼즐',
+    desc: '조각을 드래그해서 가로·세로 한 줄을 가득 채우면 펑! 콤보를 이어서 최고 점수에 도전해보세요.',
+    url: 'https://family-block-blast-d01050115878-ctrls-projects.vercel.app/',
+    accent: '#22d3ee',
+  },
 ];
