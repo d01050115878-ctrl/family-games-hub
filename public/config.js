@@ -39,4 +39,13 @@ window.GAMES_CONFIG = [
     url: 'https://family-baseball.onrender.com/',
     accent: '#2f9e56',
   },
+  {
+    id: 'bugarena',
+    emoji: '🦂',
+    title: '최강곤충왕',
+    subtitle: 'BUG ARENA',
+    desc: '곤충·절지동물·파충류 1:1 대전! 장소·시간·속성 상성으로 승부를 겨루는 토너먼트.',
+    url: 'https://bug-arena.vercel.app/',
+    accent: '#e07a3f',
+  },
 ];
