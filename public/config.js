@@ -31,6 +31,15 @@ window.GAMES_CONFIG = [
     accent: '#c98a2b',
   },
   {
+    id: 'rummikub',
+    emoji: '🀄',
+    title: '루미큐브',
+    subtitle: '가족과 함께하는 루미큐브',
+    desc: '컴퓨터 대결, 둘이서~넷이서 대결, 온라인 대결까지! 숫자 타일로 조합을 만드는 두뇌 게임.',
+    url: 'https://family-rummicube.onrender.com/',
+    accent: '#b76ee0',
+  },
+  {
     id: 'baseball',
     emoji: '⚾',
     title: '숫자야구',
