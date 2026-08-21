@@ -93,4 +93,13 @@ window.GAMES_CONFIG = [
     url: 'https://family-hidden-picture.vercel.app/',
     accent: '#2ec4b6',
   },
+  {
+    id: 'spotdiff',
+    emoji: '🔍',
+    title: '틀린그림찾기',
+    subtitle: '두 그림 속 다른 곳 찾기',
+    desc: '팥빙수, 해변, 소방서, 피자 가게 등 6가지 그림에서 진짜로 다른 부분을 찾아 탭하세요! 힌트와 점수, 별점까지 있어요.',
+    url: 'https://d01050115878-ctrl.github.io/family-spot-the-difference/',
+    accent: '#5b8def',
+  },
 ];
