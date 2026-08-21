@@ -75,4 +75,13 @@ window.GAMES_CONFIG = [
     url: 'https://pokemon-coloring-app.vercel.app/',
     accent: '#ff8fa3',
   },
+  {
+    id: 'shisen',
+    emoji: '🍉',
+    title: '사천성마작',
+    subtitle: '과일 동물 사천성',
+    desc: '같은 과일·동물 타일 두 개를 선 2번 이하로 이어서 짝을 맞춰요! 아이들도 쉽게 즐기는 마작 짝맞추기.',
+    url: 'https://fruit-animal-shisen.vercel.app/',
+    accent: '#ff6f91',
+  },
 ];
