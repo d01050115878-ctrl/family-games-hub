@@ -84,4 +84,13 @@ window.GAMES_CONFIG = [
     url: 'https://fruit-animal-shisen.vercel.app/',
     accent: '#ff6f91',
   },
+  {
+    id: 'hiddenpicture',
+    emoji: '🔎',
+    title: '숨은그림찾기',
+    subtitle: '동화책 속 숨은 물건 찾기',
+    desc: '동화책 느낌의 그림 속에 숨어있는 물건들을 찾아보세요. 스테이지가 오를수록 찾을 그림 수가 늘어나요.',
+    url: 'https://family-hidden-picture.vercel.app/',
+    accent: '#2ec4b6',
+  },
 ];
