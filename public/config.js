@@ -49,6 +49,15 @@ window.GAMES_CONFIG = [
     accent: '#2f9e56',
   },
   {
+    id: 'bingo',
+    emoji: '🎱',
+    title: '빙고',
+    subtitle: '숫자·동물&곤충·과일 빙고',
+    desc: '혼자서 컴퓨터와 연습하거나 온라인 최대 6명이 함께! 원하는 난이도로 5줄 빙고를 먼저 완성해보세요.',
+    url: 'https://family-bingo-xx8o.onrender.com/',
+    accent: '#7c4fe0',
+  },
+  {
     id: 'bugarena',
     emoji: '🦂',
     title: '최강곤충왕',
