@@ -111,4 +111,13 @@ window.GAMES_CONFIG = [
     url: 'https://d01050115878-ctrl.github.io/family-spot-the-difference/',
     accent: '#5b8def',
   },
+  {
+    id: 'magicsquare',
+    emoji: '🔢',
+    title: '마방진',
+    subtitle: '초보 3×3 · 중수 4×4 · 고수 5×5',
+    desc: '가로·세로·대각선 합이 모두 같도록! 컴퓨터 대결, 둘이서 대결, 온라인 대결로 누가 더 빨리 완성하는지 겨뤄보세요.',
+    url: 'https://family-magic-square.onrender.com/',
+    accent: '#d62828',
+  },
 ];
