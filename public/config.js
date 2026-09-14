@@ -129,4 +129,13 @@ window.GAMES_CONFIG = [
     url: 'https://rainbow-brick-breaker.vercel.app/',
     accent: '#ff5f6d',
   },
+  {
+    id: 'puzzlebubble',
+    emoji: '🫧',
+    title: '퍼즐 버블',
+    subtitle: '레인보우 퍼즐 버블',
+    desc: '귀여운 강아지 발사대로 같은 색 방울 3개를 맞춰 터뜨려요! 물방울 이펙트와 경쾌한 배경음악, 실시간 대전까지 전체 50라운드.',
+    url: 'https://rainbow-puzzle-bubble.vercel.app/',
+    accent: '#7c6bff',
+  },
 ];
