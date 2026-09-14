@@ -126,7 +126,7 @@ window.GAMES_CONFIG = [
     title: '벽돌깨기',
     subtitle: '레인보우 벽돌깨기',
     desc: '무지개 패들로 공을 튕겨 벽돌을 깨보세요! 폭탄공·무쇠공·멀티볼 아이템과 콤보, 전체 50라운드가 기다립니다.',
-    url: 'https://rainbow-brick-breaker.vercel.app/',
+    url: 'https://rainbow-brick-breaker-eta.vercel.app/',
     accent: '#ff5f6d',
   },
   {
