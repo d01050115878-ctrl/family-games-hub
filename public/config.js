@@ -144,7 +144,7 @@ window.GAMES_CONFIG = [
     title: '타이어 대시',
     subtitle: '타이어 리듬 점프 런',
     desc: '한 버튼으로 점프! 스파이크를 피하고 비행·중력 반전 포털을 지나 달려보세요. 전체 30라운드.',
-    url: 'https://tire-dash-stranger119.vercel.app/',
+    url: 'https://d01050115878-ctrl.github.io/family-tire-dash/',
     accent: '#ffb02e',
   },
 ];
