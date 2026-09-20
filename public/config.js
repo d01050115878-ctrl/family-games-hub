@@ -138,4 +138,13 @@ window.GAMES_CONFIG = [
     url: 'https://rainbow-puzzle-bubble-ten.vercel.app/',
     accent: '#7c6bff',
   },
+  {
+    id: 'tiredash',
+    emoji: '🛞',
+    title: '타이어 대시',
+    subtitle: '타이어 리듬 점프 런',
+    desc: '한 버튼으로 점프! 스파이크를 피하고 비행·중력 반전 포털을 지나 달려보세요. 전체 30라운드.',
+    url: 'https://tire-dash-stranger119.vercel.app/',
+    accent: '#ffb02e',
+  },
 ];
