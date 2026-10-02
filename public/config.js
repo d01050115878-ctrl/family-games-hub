@@ -6,9 +6,9 @@ window.GAMES_CONFIG = [
   {
     id: 'tiredash',
     emoji: '🎲',
-    title: 'Dice Dash',
-    subtitle: '주사위 점프 런',
-    desc: '한 버튼으로 점프! 스파이크를 피하고 비행·중력 반전 포털을 지나 달려보세요. 전체 50라운드.',
+    title: 'Cube Dash',
+    subtitle: '금색 큐브 점프 런',
+    desc: '한 버튼으로 점프! 박자에 맞춰 스파이크·톱니·계단을 넘고 점프 링과 비행·중력 반전 포털을 지나 달려보세요. 전체 50라운드.',
     url: 'https://d01050115878-ctrl.github.io/family-tire-dash/',
     accent: '#ffb02e',
   },
