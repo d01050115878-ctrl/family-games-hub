@@ -4,6 +4,15 @@
    ========================================================= */
 window.GAMES_CONFIG = [
   {
+    id: 'worm',
+    emoji: '🪱',
+    title: '지렁이 키우기',
+    subtitle: '먹고 자라서 황금 용왕까지!',
+    desc: '먹이를 먹고 레벨업! 나보다 작은 지렁이는 냠냠 잡아먹고, 큰 지렁이는 피해요. 레벨이 오르면 애벌레·뱀·용으로 진화해요.',
+    url: 'https://d01050115878-ctrl.github.io/family-worm-game/',
+    accent: '#ff8fa3',
+  },
+  {
     id: 'tiredash',
     emoji: '🎲',
     title: 'Cube Dash',
