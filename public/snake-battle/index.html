@@ -639,10 +639,7 @@
 
   // 캐릭터 레벨: 등급이 높을수록 보너스가 크다
   const skinLv = (id) => save.skinLv[id] || 1;
-  function skinBonus(id) {
-    const t = skinOf(id).rare || 1, lv = skinLv(id);
-    return { start: t * 2 + Math.floor(lv * t * 0.8), food: t * 4 + Math.round(lv * t * 0.5) };
-  }
+  const skinBonus = (id) => E.skinBonus(id, skinLv(id));
   const SKIN_COST_MUL = { 1: 1, 2: 1.6, 3: 2.5, 4: 4 };
   const skinCost = (id) => Math.round(40 * SKIN_COST_MUL[skinOf(id).rare || 1] * Math.pow(1.17, skinLv(id) - 1) / 10) * 10;
   const startLevel = () => 1 + save.up.start * 3 + skinBonus(save.skin).start;
@@ -2428,7 +2425,7 @@
     if (!r) return;
     $('roomCode').textContent = r.code;
     $('plist').innerHTML = r.players.map((p) =>
-      `<div>${p.id === r.host ? '👑 ' : '🐍 '}${esc(p.name)}${p.id === net.cid ? ' (나)' : ''}</div>`).join('');
+      `<div>${p.id === r.host ? '👑 ' : '🐍 '}${esc(p.name)}${p.id === net.cid ? ' (나)' : ''}<span style="float:right;color:var(--muted);font-size:13px">${esc(skinOf(p.skin).name)} Lv.${p.skinLv || 1}</span></div>`).join('');
     const isHost = r.host === net.cid;
     $('startBtn').classList.toggle('hidden', !isHost);
     $('roomHint').textContent = isHost ? '모두 들어오면 시작하기를 눌러주세요. 빈 자리는 컴퓨터 뱀이 채워요.' : '방장이 시작하기를 누르면 게임이 시작돼요.';
@@ -2451,7 +2448,8 @@
     $('respawnBox').classList.add('hidden');
     $('pauseBtn').classList.add('hidden');
     renderItemBtns();
-    banner('온라인 대전!', '가장 레벨이 높은 뱀이 우승!', 1800);
+    const ob = skinBonus(save.skin);
+    banner('온라인 대전!', `${skinOf(save.skin).name} Lv.${skinLv(save.skin)} 출전! (시작 +${ob.start} · 먹이 +${ob.food}%)`, 2200);
   }
 
   function pushSnap(st, sn) {
@@ -2685,7 +2683,7 @@
     connect();
   });
   $('nameIn').addEventListener('change', () => { save.name = $('nameIn').value.trim().slice(0, 8); persist(); });
-  function hello() { save.name = myName(); persist(); netSend({ t: 'hello', name: myName(), skin: save.skin }); }
+  function hello() { save.name = myName(); persist(); netSend({ t: 'hello', name: myName(), skin: save.skin, skinLv: skinLv(save.skin) }); }
   $('quickBtn').addEventListener('click', () => { hello(); netSend({ t: 'quick' }); setStatus('상대를 찾는 중…'); });
   $('createBtn').addEventListener('click', () => { hello(); netSend({ t: 'create' }); });
   $('joinBtn').addEventListener('click', () => {

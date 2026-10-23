@@ -34,6 +34,13 @@
     4: ['gold', 'crystal', 'lava', 'nebula', 'shadow', 'megalodon', 'firedragon', 'icedragon', 'thunderdragon', 'blackdragon',
       'golddragon', 'jadedragon'],
   };
+  // 캐릭터 레벨 보너스 (등급이 높을수록 크다) - 스테이지와 온라인 대전에서 같이 사용
+  const SKIN_MAX_LV = { 1: 20, 2: 30, 3: 40, 4: 50 };
+  function skinBonus(id, lv) {
+    const t = SKIN_TIER[id] || 1;
+    lv = Math.max(1, Math.min(SKIN_MAX_LV[t], Math.floor(lv) || 1));
+    return { start: t * 2 + Math.floor(lv * t * 0.8), food: t * 4 + Math.round(lv * t * 0.5) };
+  }
   const SKIN_TIER = {};
   for (const t in SKIN_TIERS) for (const id of SKIN_TIERS[t]) SKIN_TIER[id] = +t;
 
@@ -479,5 +486,5 @@
     return r;
   };
 
-  return { World, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE, SKIN_TIERS, SKIN_TIER };
+  return { World, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE, SKIN_TIERS, SKIN_TIER, SKIN_MAX_LV, skinBonus };
 });

@@ -56,7 +56,7 @@ class Room {
   info() {
     return {
       t: 'room', code: this.code, priv: this.priv, state: this.state, host: this.host ? this.host.cid : 0,
-      players: [...this.clients].map((c) => ({ id: c.cid, name: c.name, skin: c.skin })),
+      players: [...this.clients].map((c) => ({ id: c.cid, name: c.name, skin: c.skin, skinLv: c.skinLv || 1 })),
     };
   }
 
@@ -110,12 +110,16 @@ class Room {
 
   spawn(c, late, level) {
     const p = this.world.spawnPoint(500);
+    // 내가 키운 캐릭터의 보너스: 시작 레벨 + 먹이 효율
+    const bonus = Engine.skinBonus(c.skin, c.skinLv || 1);
+    const startLv = START_LEVEL + bonus.start;
     const s = this.world.addSnake({
-      name: c.name, skin: c.skin, level: level || START_LEVEL, isHuman: true, x: p.x, y: p.y, speed: 261,
+      name: c.name, skin: c.skin, level: level || startLv, isHuman: true, x: p.x, y: p.y, speed: 261,
+      foodMul: 1 + bonus.food / 100,
     });
     c.sid = s.id;
-    c.best = Math.max(c.best || 0, level || START_LEVEL);
-    c.lastLevel = level || START_LEVEL;
+    c.best = Math.max(c.best || 0, level || startLv);
+    c.lastLevel = level || startLv;
     if (level) s.fx[4] = 3;
     if (late) this.sendStart(c);
   }
@@ -222,6 +226,8 @@ module.exports = function attachSnakeServer(server) {
         case 'hello':
           c.name = String(m.name || '플레이어').trim().slice(0, 8) || '플레이어';
           if (typeof m.skin === 'string' && SKIN_IDS.includes(m.skin)) c.skin = m.skin;
+          // 캐릭터 레벨 (등급별 최대 레벨까지)
+          c.skinLv = Math.max(1, Math.min(Engine.SKIN_MAX_LV[Engine.SKIN_TIER[c.skin]] || 20, Math.floor(Number(m.skinLv)) || 1));
           break;
         case 'quick':
           if (r) r.remove(c);
