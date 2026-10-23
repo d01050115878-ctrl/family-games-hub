@@ -11,11 +11,11 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
 <style>
   :root {
-    --bg: #173b2a;
-    --panel: rgba(16, 36, 28, 0.86);
-    --line: rgba(255, 255, 255, 0.16);
+    --bg: #070a1f;
+    --panel: rgba(14, 16, 44, 0.84);
+    --line: rgba(160, 180, 255, 0.22);
     --text: #ffffff;
-    --muted: #b9d6c4;
+    --muted: #b8c0ee;
     --gold: #ffd43b;
     --green: #69db7c;
     --red: #ff6b6b;
@@ -57,7 +57,9 @@
 
   /* ---------- Overlays ---------- */
   .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;
-    background: radial-gradient(circle at 50% 30%, rgba(105, 219, 124, 0.3), rgba(10, 26, 18, 0.92)); overflow-y: auto; }
+    background: radial-gradient(circle at 50% 25%, rgba(132, 94, 247, 0.35), rgba(5, 6, 22, 0.9)); overflow-y: auto; }
+  #fxBar { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 6px; }
+  #fxBar span { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; font-size: 15px; white-space: nowrap; }
   .card { width: 100%; max-width: 440px; background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 20px 16px;
     text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); margin: auto; }
   h1 { margin: 6px 0 2px; font-size: 32px; letter-spacing: 1px; }
@@ -129,6 +131,7 @@
   <div class="goal" id="hGoal"></div>
   <div id="board"></div>
   <canvas id="mini" width="240" height="240"></canvas>
+  <div id="fxBar"></div>
   <div id="respawnBox" class="hidden">
     <p>꿀꺽! 먹혀버렸어요 😵</p>
     <button class="btn" id="respawnBtn">다시 참가하기</button>
@@ -155,15 +158,20 @@
       <button class="ghost" id="skinBtn">🎨 뱀 고르기</button>
       <button class="ghost" id="howBtn">❓ 게임 방법</button>
     </div>
-    <button class="ghost" id="soundBtn">🔊 소리 켜짐</button>
+    <div class="row">
+      <button class="ghost" id="musicBtn">🎵 음악 켜짐</button>
+      <button class="ghost" id="soundBtn">🔊 효과음 켜짐</button>
+    </div>
     <ul class="how hidden" id="how">
       <li>화면을 <b>드래그</b>(PC는 마우스/방향키)해서 뱀을 움직여요.</li>
       <li>노란 먹이를 먹으면 <b>레벨</b>이 오르고 뱀이 커져요.</li>
       <li>나보다 <b>레벨이 낮은 뱀의 머리</b>를 물면 통째로 <b>꿀꺽</b>!</li>
       <li>레벨이 같거나 높으면 상대 <b>몸통을 물어서</b> 레벨을 빼앗아요. 레벨이 낮으면 튕겨나가요.</li>
       <li>나보다 큰 뱀의 머리에 부딪히면 먹혀요. 큰 뱀에게 몸통을 물리지 않게 조심!</li>
-      <li>100초 동안 성장한 뒤 <b>👑 보스와 1:1 대결</b>! 보스보다 레벨이 높아야 이길 수 있어요.</li>
+      <li>90초 동안 성장한 뒤 <b>👑 보스와 1:1 대결</b>! 보스보다 레벨이 높아야 이길 수 있어요.</li>
       <li>경기장의 <b>🎁 선물상자</b>를 먹으면 새로운 뱀이 열려요.</li>
+      <li>아이템: <b>🧲 자석</b>(먹이 끌어오기) · <b>⚡ 번개</b>(빨라짐) · <b>🛡️ 방패</b>(안 먹힘) · <b>✨x2 두배</b>(먹이 2배) ·
+        <b>💣 먹이폭탄</b> · <b>⭐ 별</b>(레벨 쑥) · <b>❄️ 얼음</b>(주변 뱀 느리게)</li>
       <li>🪙 코인으로 시작 레벨·속도·먹이 효율을 강화하세요.</li>
     </ul>
     <a class="back-hub" href="/">← 가족 게임 모음으로</a>
@@ -293,15 +301,104 @@
 
   function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
   function mixRgb(a, b, t) { return `rgb(${Math.round(lerp(a[0], b[0], t))},${Math.round(lerp(a[1], b[1], t))},${Math.round(lerp(a[2], b[2], t))})`; }
-  SKINS.concat([BOSS_SKIN]).forEach((s) => { if (s.grad) s.gradRgb = s.grad.map(hexRgb); });
+  // 그라데이션 스킨은 24단계 색으로 미리 나눠 둔다 (구슬 스프라이트 캐시용)
+  const GRAD_STEPS = 24;
+  function preparePal(s) {
+    if (s.pal) return;
+    if (s.grad) {
+      const g = s.grad.map(hexRgb);
+      s.pal = [];
+      for (let k = 0; k < GRAD_STEPS; k++) {
+        const t = k / (GRAD_STEPS - 1);
+        const seg = Math.min(g.length - 2, Math.floor(t * (g.length - 1)));
+        s.pal.push(mixRgb(g[seg], g[seg + 1], t * (g.length - 1) - seg));
+      }
+    } else s.pal = s.colors;
+  }
+  SKINS.concat([BOSS_SKIN]).forEach(preparePal);
 
   function skinColor(s, i, n) {
-    if (s.grad) {
-      const g = s.gradRgb, t = n > 1 ? i / (n - 1) : 0;
-      const seg = Math.min(g.length - 2, Math.floor(t * (g.length - 1)));
-      return mixRgb(g[seg], g[seg + 1], t * (g.length - 1) - seg);
-    }
-    return s.colors[Math.floor(i / (s.band || 2)) % s.colors.length];
+    preparePal(s);
+    if (s.grad) return s.pal[Math.round((n > 1 ? i / (n - 1) : 0) * (GRAD_STEPS - 1))];
+    return s.pal[Math.floor(i / (s.band || 2)) % s.pal.length];
+  }
+
+  function toRgb(c) {
+    if (c[0] === '#') return hexRgb(c);
+    const m = c.match(/\d+/g);
+    return [+m[0], +m[1], +m[2]];
+  }
+  function shadeRgb(rgb, p) {
+    const f = (v) => Math.round(p < 0 ? v * (1 + p) : v + (255 - v) * p);
+    return `rgb(${f(rgb[0])},${f(rgb[1])},${f(rgb[2])})`;
+  }
+  // 입체 구슬 모양 몸통 조각 (색깔별로 한 번만 그려서 재사용)
+  const sphereCache = new Map();
+  function sphere(color) {
+    let cvs = sphereCache.get(color);
+    if (cvs) return cvs;
+    cvs = document.createElement('canvas');
+    cvs.width = cvs.height = 64;
+    const c = cvs.getContext('2d'), rgb = toRgb(color);
+    const g = c.createRadialGradient(24, 20, 3, 32, 32, 32);
+    g.addColorStop(0, shadeRgb(rgb, 0.6));
+    g.addColorStop(0.3, color);
+    g.addColorStop(0.82, shadeRgb(rgb, -0.22));
+    g.addColorStop(1, shadeRgb(rgb, -0.45));
+    c.fillStyle = g;
+    c.beginPath(); c.arc(32, 32, 32, 0, TAU); c.fill();
+    sphereCache.set(color, cvs);
+    return cvs;
+  }
+  // 빛나는 먹이
+  const glowCache = new Map();
+  function glow(color) {
+    let cvs = glowCache.get(color);
+    if (cvs) return cvs;
+    cvs = document.createElement('canvas');
+    cvs.width = cvs.height = 64;
+    const c = cvs.getContext('2d');
+    const g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.22, color);
+    g.addColorStop(0.45, color.replace('rgb', 'rgba').replace(')', ',0.35)'));
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, 64, 64);
+    glowCache.set(color, cvs);
+    return cvs;
+  }
+  const ITEM_INFO = {
+    2: { ico: '🧲', nm: '자석', col: '#ff6b6b' },
+    3: { ico: '⚡', nm: '번개', col: '#ffd43b' },
+    4: { ico: '🛡️', nm: '방패', col: '#4dabf7' },
+    5: { ico: '✨x2', nm: '두배', col: '#da77f2' },
+    6: { ico: '💣', nm: '먹이폭탄', col: '#ff922b' },
+    7: { ico: '⭐', nm: '별', col: '#fcc419' },
+    8: { ico: '❄️', nm: '얼음', col: '#99e9f2' },
+  };
+  const itemCache = new Map();
+  function itemSprite(k) {
+    let cvs = itemCache.get(k);
+    if (cvs) return cvs;
+    const info = ITEM_INFO[k];
+    cvs = document.createElement('canvas');
+    cvs.width = cvs.height = 96;
+    const c = cvs.getContext('2d'), rgb = hexRgb(info.col);
+    const g = c.createRadialGradient(48, 48, 10, 48, 48, 48);
+    g.addColorStop(0, `rgba(${rgb},0.55)`); g.addColorStop(1, `rgba(${rgb},0)`);
+    c.fillStyle = g; c.fillRect(0, 0, 96, 96);
+    const b = c.createRadialGradient(40, 36, 4, 48, 48, 28);
+    b.addColorStop(0, 'rgba(255,255,255,0.95)'); b.addColorStop(0.4, shadeRgb(rgb, 0.35)); b.addColorStop(1, shadeRgb(rgb, -0.35));
+    c.fillStyle = b; c.beginPath(); c.arc(48, 48, 28, 0, TAU); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 3; c.stroke();
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    if (k === 5) {
+      c.font = 'bold 28px Jua, sans-serif'; c.lineWidth = 5; c.strokeStyle = '#5f1f7a';
+      c.strokeText('x2', 48, 50); c.fillStyle = '#fff'; c.fillText('x2', 48, 50);
+    } else { c.font = '30px sans-serif'; c.fillText(info.ico, 48, 50); }
+    itemCache.set(k, cvs);
+    return cvs;
   }
 
   /* =========================================================
@@ -318,7 +415,7 @@
     try { s = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { s = null; }
     s = s || {};
     return {
-      coins: s.coins || 0, stage: s.stage || 1, sound: s.sound !== false,
+      coins: s.coins || 0, stage: s.stage || 1, sound: s.sound !== false, music: s.music !== false,
       up: Object.assign({ start: 0, speed: 0, food: 0 }, s.up || {}),
       skins: Array.isArray(s.skins) && s.skins.length ? s.skins : ['basic', 'sunny'],
       skin: s.skin || 'basic',
@@ -343,13 +440,20 @@
      소리
      ========================================================= */
   let AC = null, lastBeep = 0;
+  function audio() {
+    if (!AC) {
+      try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; }
+    }
+    if (AC && AC.state === 'suspended') AC.resume();
+    return AC;
+  }
   function beep(freq, dur = 0.08, type = 'sine', vol = 0.07) {
     if (!save.sound) return;
     const now = performance.now();
     if (now - lastBeep < 30) return;
     lastBeep = now;
     try {
-      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      if (!audio()) return;
       const o = AC.createOscillator(), g = AC.createGain();
       o.type = type; o.frequency.value = freq;
       g.gain.setValueAtTime(vol, AC.currentTime);
@@ -358,6 +462,119 @@
       o.start(); o.stop(AC.currentTime + dur);
     } catch (e) { /* 오디오 미지원 */ }
   }
+
+  /* ---------- 배경음악: 직접 만든 펑키 루프 (Em7 ↔ A9, 112 BPM) ---------- */
+  const Music = (() => {
+    const BPM = 112, STEP = 60 / BPM / 4;
+    const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    // 마디별 근음 (E, E, A, A)
+    const ROOTS = [40, 40, 45, 45];
+    const CHORDS = [[64, 67, 71, 74], [64, 67, 71, 74], [61, 64, 67, 71], [61, 64, 67, 71]];
+    // [스텝, 근음에서 반음 거리, 길이(스텝)]
+    const BASS = [[0, 0, 2], [3, 12, 1], [4, 0, 1], [6, 10, 1], [7, 0, 1], [8, -2, 1], [10, 7, 2], [12, 12, 1], [14, 3, 1], [15, 5, 1]];
+    const KICK = [0, 6, 8, 11];
+    const SNARE = { 4: 1, 12: 1, 7: 0.25, 9: 0.2, 15: 0.3 };
+    const STABS = [2, 5, 10, 13];
+    const HOOK = {
+      0: [[0, 76], [2, 79], [3, 81], [6, 79], [8, 76], [10, 74], [11, 76]],
+      2: [[0, 73], [2, 76], [4, 79], [6, 76], [8, 73], [11, 71]],
+    };
+    let master = null, noise = null, timer = null, step = 0, next = 0, loopN = 0;
+
+    function setup(ac) {
+      if (master) return;
+      master = ac.createGain();
+      master.gain.value = 0.16;
+      master.connect(ac.destination);
+      noise = ac.createBuffer(1, ac.sampleRate * 0.5, ac.sampleRate);
+      const d = noise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    function env(ac, t, peak, dur) {
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      g.connect(master);
+      return g;
+    }
+    function kick(ac, t) {
+      const o = ac.createOscillator();
+      o.frequency.setValueAtTime(150, t);
+      o.frequency.exponentialRampToValueAtTime(42, t + 0.13);
+      o.connect(env(ac, t, 0.9, 0.28)); o.start(t); o.stop(t + 0.3);
+    }
+    function hit(ac, t, vol, dur, type, freq) {
+      const s = ac.createBufferSource();
+      s.buffer = noise;
+      const f = ac.createBiquadFilter();
+      f.type = type; f.frequency.value = freq;
+      s.connect(f); f.connect(env(ac, t, vol, dur));
+      s.start(t); s.stop(t + dur + 0.02);
+    }
+    function bass(ac, t, note, len) {
+      const o = ac.createOscillator(), f = ac.createBiquadFilter();
+      o.type = 'sawtooth'; o.frequency.value = midi(note);
+      f.type = 'lowpass'; f.Q.value = 9;
+      f.frequency.setValueAtTime(1900, t);
+      f.frequency.exponentialRampToValueAtTime(260, t + 0.14);
+      o.connect(f); f.connect(env(ac, t, 0.5, STEP * len * 0.95));
+      o.start(t); o.stop(t + STEP * len + 0.05);
+    }
+    function stab(ac, t, notes) {
+      const f = ac.createBiquadFilter();
+      f.type = 'bandpass'; f.Q.value = 2;
+      f.frequency.setValueAtTime(2600, t);
+      f.frequency.exponentialRampToValueAtTime(900, t + 0.1);
+      f.connect(env(ac, t, 0.16, 0.12));
+      for (const n of notes) {
+        const o = ac.createOscillator();
+        o.type = 'square'; o.frequency.value = midi(n);
+        o.connect(f); o.start(t); o.stop(t + 0.14);
+      }
+    }
+    function lead(ac, t, note) {
+      const o = ac.createOscillator(), f = ac.createBiquadFilter();
+      o.type = 'square'; o.frequency.value = midi(note);
+      f.type = 'lowpass'; f.frequency.value = 2400;
+      o.connect(f); f.connect(env(ac, t, 0.09, STEP * 1.8));
+      o.start(t); o.stop(t + STEP * 2);
+    }
+    function play(ac, s, t) {
+      const bar = Math.floor(s / 16), st = s % 16, root = ROOTS[bar];
+      if (KICK.includes(st)) kick(ac, t);
+      if (SNARE[st] !== undefined) { hit(ac, t, 0.5 * SNARE[st], 0.16, 'bandpass', 1800); }
+      hit(ac, t, st % 4 === 2 ? 0.16 : 0.07, st === 14 ? 0.2 : 0.04, 'highpass', 7500);
+      for (const [bs, off, len] of BASS) if (bs === st) bass(ac, t, root + off, len);
+      if (bar === 3 && st >= 14) bass(ac, t, 38 + (st - 14) * 2, 1);
+      if (STABS.includes(st)) stab(ac, t, CHORDS[bar]);
+      if (loopN % 2 === 1 && HOOK[bar]) for (const [hs, n] of HOOK[bar]) if (hs === st) lead(ac, t, n);
+    }
+    function tick() {
+      const ac = AC;
+      while (next < ac.currentTime + 0.15) {
+        play(ac, step, next);
+        next += STEP;
+        step = (step + 1) % 64;
+        if (step === 0) loopN++;
+      }
+    }
+    return {
+      start() {
+        if (timer || !save.music) return;
+        const ac = audio();
+        if (!ac) return;
+        setup(ac);
+        next = ac.currentTime + 0.1;
+        timer = setInterval(tick, 30);
+      },
+      stop() { clearInterval(timer); timer = null; },
+    };
+  })();
+  // 브라우저는 사용자가 한 번 눌러야 소리를 낼 수 있다
+  const kickoffAudio = () => { if (save.music) Music.start(); };
+  window.addEventListener('pointerdown', kickoffAudio);
+  window.addEventListener('keydown', kickoffAudio);
 
   /* =========================================================
      그리기
@@ -384,59 +601,113 @@
   function drawSnake(c, pts, w, skin, dir, o) {
     const n = pts.length;
     if (!n) return;
+    o = o || {};
     const r = w / 2;
-    c.fillStyle = 'rgba(0,40,10,0.16)';
+    // 꼬리로 갈수록 가늘어지는 두께
+    const rad = new Array(n);
+    const tail = Math.max(3, Math.floor(n * 0.35));
+    for (let i = 0; i < n; i++) {
+      const k = n - 1 - i;
+      rad[i] = k < tail ? r * (0.35 + 0.65 * k / tail) : r;
+    }
+    // 효과 오라 (속도·두배·얼음)
+    const aura = o.speed ? 'rgba(255,214,90,0.28)' : o.dbl ? 'rgba(218,119,242,0.3)' : o.slow ? 'rgba(130,210,255,0.35)' : null;
+    if (aura) {
+      const pul = 6 + Math.sin(T * 10) * 2;
+      c.fillStyle = aura;
+      c.beginPath();
+      for (let i = 0; i < n; i += 2) { const p = pts[i]; c.moveTo(p.x + rad[i] + pul, p.y); c.arc(p.x, p.y, rad[i] + pul, 0, TAU); }
+      c.fill();
+    }
+    c.fillStyle = 'rgba(0,0,10,0.35)';
     c.beginPath();
-    for (let i = 0; i < n; i += 2) { const p = pts[i]; c.moveTo(p.x + 4 + r, p.y + 7); c.arc(p.x + 4, p.y + 7, r, 0, TAU); }
+    for (let i = 0; i < n; i += 2) { const p = pts[i]; c.moveTo(p.x + 5 + rad[i], p.y + 9); c.arc(p.x + 5, p.y + 9, rad[i], 0, TAU); }
     c.fill();
     c.fillStyle = skin.out;
     c.beginPath();
-    for (let i = 0; i < n; i++) { const p = pts[i]; c.moveTo(p.x + r + 2.5, p.y); c.arc(p.x, p.y, r + 2.5, 0, TAU); }
+    for (let i = 0; i < n; i++) { const p = pts[i]; c.moveTo(p.x + rad[i] + 2.5, p.y); c.arc(p.x, p.y, rad[i] + 2.5, 0, TAU); }
     c.fill();
     for (let i = n - 1; i >= 1; i--) {
-      const p = pts[i];
-      c.fillStyle = skinColor(skin, i, n);
-      c.beginPath(); c.arc(p.x, p.y, r, 0, TAU); c.fill();
+      const p = pts[i], rr = rad[i];
+      c.drawImage(sphere(skinColor(skin, i, n)), p.x - rr, p.y - rr, rr * 2, rr * 2);
     }
-    // 무늬
+    // 등줄기 비늘 무늬
+    c.strokeStyle = 'rgba(255,255,255,0.16)';
+    c.lineWidth = r * 0.22; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.beginPath();
+    for (let i = 1; i < n - 1; i++) { const p = pts[i]; if (i === 1) c.moveTo(p.x, p.y - r * 0.2); else c.lineTo(p.x, p.y - r * 0.2); }
+    c.stroke();
     if (skin.dots) {
       c.fillStyle = skin.dots;
-      for (let i = 3; i < n; i += 3) {
+      for (let i = 3; i < n - 2; i += 3) {
         const p = pts[i], q = pts[i - 1];
         const a = Math.atan2(p.y - q.y, p.x - q.x) + ((i / 3) % 2 ? 1.57 : -1.57);
-        c.beginPath(); c.arc(p.x + Math.cos(a) * r * 0.42, p.y + Math.sin(a) * r * 0.42, r * 0.2, 0, TAU); c.fill();
+        c.beginPath(); c.arc(p.x + Math.cos(a) * rad[i] * 0.42, p.y + Math.sin(a) * rad[i] * 0.42, rad[i] * 0.2, 0, TAU); c.fill();
       }
     }
     if (skin.stars) {
-      c.fillStyle = 'rgba(255,255,255,0.9)';
       for (let i = 2; i < n; i += 2) {
         const p = pts[i], k = (i * 7919) % 13;
-        c.beginPath(); c.arc(p.x + (k / 13 - 0.5) * r, p.y + (((k * 5) % 13) / 13 - 0.5) * r, Math.max(1.2, r * 0.09), 0, TAU); c.fill();
+        c.fillStyle = `rgba(255,255,255,${0.55 + 0.45 * Math.sin(T * 5 + i)})`;
+        c.beginPath(); c.arc(p.x + (k / 13 - 0.5) * rad[i], p.y + (((k * 5) % 13) / 13 - 0.5) * rad[i], Math.max(1.2, r * 0.09), 0, TAU); c.fill();
       }
     }
-    c.fillStyle = 'rgba(255,255,255,0.2)';
-    c.beginPath();
-    for (let i = 1; i < n; i += 2) { const p = pts[i]; c.moveTo(p.x - r * 0.2 + r * 0.4, p.y - r * 0.3); c.arc(p.x - r * 0.2, p.y - r * 0.3, r * 0.4, 0, TAU); }
-    c.fill();
 
-    // 머리
-    const h = pts[0], hr = r * 1.2;
+    // 머리: 앞뒤로 긴 타원 + 혀 + 콧구멍 + 큰 눈
+    const h = pts[0], hr = r * 1.22;
     const cx = Math.cos(dir), cy = Math.sin(dir), px = -cy, py = cx;
+    if ((T * 0.9 + (o.seed || 0)) % 2.2 < 0.35 || o.latch) {
+      const tl = hr * (o.latch ? 0.9 : 1.35);
+      const bx = h.x + cx * hr * 1.15, by = h.y + cy * hr * 1.15;
+      const ex = bx + cx * tl, ey = by + cy * tl;
+      c.strokeStyle = '#ff3b5c'; c.lineWidth = Math.max(2, hr * 0.13); c.lineCap = 'round';
+      c.beginPath(); c.moveTo(bx, by); c.lineTo(ex, ey);
+      c.moveTo(ex, ey); c.lineTo(ex + (cx * 0.6 + px * 0.5) * hr * 0.35, ey + (cy * 0.6 + py * 0.5) * hr * 0.35);
+      c.moveTo(ex, ey); c.lineTo(ex + (cx * 0.6 - px * 0.5) * hr * 0.35, ey + (cy * 0.6 - py * 0.5) * hr * 0.35);
+      c.stroke();
+    }
     drawAccessory(c, skin.acc, h, hr, cx, cy, px, py, true);
-    c.fillStyle = skin.out; c.beginPath(); c.arc(h.x, h.y, hr + 2.5, 0, TAU); c.fill();
-    c.fillStyle = skinColor(skin, 0, n); c.beginPath(); c.arc(h.x, h.y, hr, 0, TAU); c.fill();
-    c.fillStyle = 'rgba(255,255,255,0.25)'; c.beginPath(); c.arc(h.x - hr * 0.25, h.y - hr * 0.35, hr * 0.45, 0, TAU); c.fill();
-    if (o && o.latch) {
-      c.fillStyle = '#c92a2a';
-      c.beginPath(); c.ellipse(h.x + cx * hr * 0.72, h.y + cy * hr * 0.72, hr * 0.32, hr * 0.22, dir, 0, TAU); c.fill();
+    c.save();
+    c.translate(h.x, h.y); c.rotate(dir);
+    c.fillStyle = skin.out;
+    c.beginPath(); c.ellipse(hr * 0.12, 0, hr * 1.25 + 2.5, hr + 2.5, 0, 0, TAU); c.fill();
+    c.scale(1.25, 1);
+    c.drawImage(sphere(skinColor(skin, 0, n)), -hr + hr * 0.1, -hr, hr * 2, hr * 2);
+    c.restore();
+    for (const side of [-1, 1]) {
+      c.fillStyle = 'rgba(0,0,0,0.45)';
+      c.beginPath(); c.arc(h.x + cx * hr * 1.08 + px * hr * 0.22 * side, h.y + cy * hr * 1.08 + py * hr * 0.22 * side, hr * 0.07, 0, TAU); c.fill();
     }
     for (const side of [-1, 1]) {
-      const ex = h.x + cx * hr * 0.3 + px * hr * 0.45 * side, ey = h.y + cy * hr * 0.3 + py * hr * 0.45 * side;
-      c.fillStyle = '#fff'; c.beginPath(); c.arc(ex, ey, hr * 0.33, 0, TAU); c.fill();
-      c.fillStyle = '#1a1a2e'; c.beginPath(); c.arc(ex + cx * hr * 0.12, ey + cy * hr * 0.12, hr * 0.17, 0, TAU); c.fill();
-      c.fillStyle = '#fff'; c.beginPath(); c.arc(ex + cx * hr * 0.06 - hr * 0.05, ey + cy * hr * 0.06 - hr * 0.07, hr * 0.06, 0, TAU); c.fill();
+      const ex = h.x + cx * hr * 0.35 + px * hr * 0.5 * side, ey = h.y + cy * hr * 0.35 + py * hr * 0.5 * side;
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(ex, ey, hr * 0.36, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 1.5; c.stroke();
+      c.fillStyle = '#16123a'; c.beginPath(); c.arc(ex + cx * hr * 0.13, ey + cy * hr * 0.13, hr * 0.2, 0, TAU); c.fill();
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(ex + cx * hr * 0.06 - hr * 0.06, ey + cy * hr * 0.06 - hr * 0.08, hr * 0.075, 0, TAU); c.fill();
+      if (o.boss) {
+        c.strokeStyle = '#12062e'; c.lineWidth = Math.max(2, hr * 0.12);
+        c.beginPath();
+        c.moveTo(ex - cx * hr * 0.1 + px * hr * 0.3 * side, ey - cy * hr * 0.1 + py * hr * 0.3 * side);
+        c.lineTo(ex + cx * hr * 0.25 - px * hr * 0.15 * side, ey + cy * hr * 0.25 - py * hr * 0.15 * side);
+        c.stroke();
+      }
     }
     drawAccessory(c, skin.acc, h, hr, cx, cy, px, py, false);
+    // 자석 고리 · 방패 거품
+    if (o.magnet) {
+      const mr = r + E.MAGNET_RANGE;
+      c.strokeStyle = 'rgba(255,107,107,0.35)'; c.lineWidth = 3;
+      c.setLineDash([14, 12]); c.lineDashOffset = -T * 60;
+      c.beginPath(); c.arc(h.x, h.y, mr, 0, TAU); c.stroke();
+      c.setLineDash([]);
+    }
+    if (o.shield) {
+      const sr = hr * 2 + Math.sin(T * 8) * 3;
+      const g = c.createRadialGradient(h.x, h.y, sr * 0.5, h.x, h.y, sr);
+      g.addColorStop(0, 'rgba(77,171,247,0.05)'); g.addColorStop(1, 'rgba(116,192,252,0.45)');
+      c.fillStyle = g; c.beginPath(); c.arc(h.x, h.y, sr, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(165,216,255,0.9)'; c.lineWidth = 2.5; c.stroke();
+    }
   }
 
   function drawAccessory(c, acc, h, hr, cx, cy, px, py, behind) {
@@ -479,11 +750,19 @@
     }
   }
 
-  function drawFood(c, f, t, fv) {
+  const ORB_COLORS = ['rgb(255,224,102)', 'rgb(102,217,232)', 'rgb(255,135,190)', 'rgb(140,233,154)', 'rgb(177,151,252)'];
+  function foodPos(f, now) {
+    if (f.ox === undefined) return f;
+    const p = clamp((now - f.born) / 0.45, 0, 1);
+    if (p >= 1) return f;
+    const e = 1 - Math.pow(1 - p, 3);
+    return { id: f.id, v: f.v, k: f.k, x: lerp(f.ox, f.x, e), y: lerp(f.oy, f.y, e) - Math.sin(p * Math.PI) * 60, pop: p };
+  }
+  function drawFood(c, f0, t, fv, now) {
+    const f = foodPos(f0, now);
     if (f.k === 1) {
       const bob = Math.sin(t * 4 + f.id) * 4;
-      c.fillStyle = 'rgba(255,212,59,0.35)';
-      c.beginPath(); c.arc(f.x, f.y + bob, 30 + Math.sin(t * 6) * 4, 0, TAU); c.fill();
+      c.drawImage(glow('rgb(255,107,157)'), f.x - 38, f.y - 38 + bob, 76, 76);
       c.fillStyle = '#ff6b9d'; c.fillRect(f.x - 17, f.y - 12 + bob, 34, 28);
       c.fillStyle = '#ffd43b'; c.fillRect(f.x - 4, f.y - 12 + bob, 8, 28);
       c.fillStyle = '#ff8fb8'; c.fillRect(f.x - 20, f.y - 20 + bob, 40, 10);
@@ -491,12 +770,15 @@
       c.beginPath(); c.ellipse(f.x - 8, f.y - 24 + bob, 8, 5, -0.5, 0, TAU); c.ellipse(f.x + 8, f.y - 24 + bob, 8, 5, 0.5, 0, TAU); c.fill();
       return;
     }
+    if (f.k >= 2) {
+      const s = 62 + Math.sin(t * 5 + f.id) * 5;
+      c.drawImage(itemSprite(f.k), f.x - s / 2, f.y - s / 2, s, s);
+      return;
+    }
     const m = f.v / fv;
-    const r = m >= 8 ? 15 : m >= 3 ? 10.5 : 7;
-    c.fillStyle = m >= 8 ? '#ff922b' : m >= 3 ? '#fab005' : '#ffd43b';
-    c.beginPath(); c.arc(f.x, f.y, r, 0, TAU); c.fill();
-    c.fillStyle = 'rgba(255,255,255,0.7)';
-    c.beginPath(); c.arc(f.x - r * 0.3, f.y - r * 0.3, r * 0.35, 0, TAU); c.fill();
+    const r = (m >= 8 ? 30 : m >= 3 ? 22 : 15) * (0.9 + 0.12 * Math.sin(t * 3 + f.id));
+    const col = m >= 8 ? 'rgb(255,146,43)' : ORB_COLORS[f.id % ORB_COLORS.length];
+    c.drawImage(glow(col), f.x - r, f.y - r, r * 2, r * 2);
   }
 
   /* =========================================================
@@ -553,7 +835,16 @@
   let game = null;   // { mode: 'stage' | 'online', ... }
   let paused = false;
   const cam = { x: 0, y: 0, z: 1 };
-  let parts = [], floats = [], shake = 0, T = 0;
+  let parts = [], floats = [], rings = [], shake = 0, T = 0;
+  const CONFETTI = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b', '#ffffff'];
+  function pang(x, y, size) {
+    rings.push({ x, y, r: 10, max: 120 + size * 2, life: 0.5 });
+    rings.push({ x, y, r: 4, max: 70 + size, life: 0.35 });
+    for (let i = 0; i < 26; i++) {
+      const a = rand(0, TAU), sp = rand(150, 420);
+      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.5, 0.9), max: 0.9, color: CONFETTI[i % CONFETTI.length], s: rand(6, 11) });
+    }
+  }
 
   function burst(x, y, color, n) {
     for (let i = 0; i < n; i++) {
@@ -566,10 +857,12 @@
   function handleEvents(evs, myId, nameOf, posOf) {
     for (const ev of evs) {
       if (ev.e === 'eat') {
-        burst(ev.x, ev.y, '#ffd43b', 18);
+        pang(ev.x, ev.y, Math.min(60, Math.sqrt(ev.lv) * 4));
+        floatText(ev.x, ev.y - 50, '팡!', '#ff8787');
         if (ev.a === myId) {
           floatText(ev.x, ev.y, `꿀꺽! ${nameOf(ev.b)}`, '#ffd43b');
-          beep(520, 0.2, 'triangle', 0.09);
+          beep(520, 0.2, 'triangle', 0.09); setTimeout(() => beep(780, 0.18, 'square', 0.06), 70);
+          shake = Math.max(shake, 0.18);
           if (game.mode === 'stage') game.coins += 2 + Math.floor(Math.log2(ev.lv + 1));
           else game.kills++;
         } else if (ev.b === myId) {
@@ -581,6 +874,19 @@
         burst(ev.x, ev.y, '#ff8787', 3);
         if (ev.a === myId) beep(380, 0.05, 'square', 0.04);
         if (ev.b === myId) { shake = Math.max(shake, 0.15); beep(180, 0.06, 'sawtooth', 0.05); }
+      } else if (ev.e === 'item') {
+        const info = ITEM_INFO[ev.k];
+        burst(ev.x, ev.y, info.col, 14);
+        if (ev.id === myId) {
+          floatText(ev.x, ev.y - 30, `${info.ico} ${info.nm}!`, info.col);
+          beep(880, 0.12, 'triangle', 0.08); setTimeout(() => beep(1320, 0.12, 'triangle', 0.07), 90);
+        }
+      } else if (ev.e === 'mg') {
+        const p = posOf(ev.a);
+        if (p) {
+          const d = Math.hypot(p.x - ev.x, p.y - ev.y) || 1;
+          parts.push({ x: ev.x, y: ev.y, vx: (p.x - ev.x) / d * 900, vy: (p.y - ev.y) / d * 900, life: Math.min(0.3, d / 900), max: 0.3, color: '#ffe066', s: 12 });
+        }
       } else if (ev.e === 'bump' && ev.a === myId) {
         shake = Math.max(shake, 0.12); beep(200, 0.06, 'square', 0.04);
       } else if (ev.e === 'skin' && ev.id === myId) {
@@ -594,10 +900,12 @@
   }
 
   function updateFx(dt) {
-    for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.92; p.vy *= 0.92; p.life -= dt; }
+    for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; if (p.s < 12) { p.vx *= 0.92; p.vy *= 0.92; } p.life -= dt; }
     parts = parts.filter((p) => p.life > 0);
     for (const f of floats) { f.y -= 50 * dt; f.life -= dt; }
     floats = floats.filter((f) => f.life > 0);
+    for (const r of rings) { r.life -= dt; r.r += (r.max - r.r) * Math.min(1, dt * 9); }
+    rings = rings.filter((r) => r.life > 0);
     if (shake > 0) shake -= dt;
   }
 
@@ -615,40 +923,110 @@
      렌더링 (스테이지·온라인 공용)
      view = { R, snakes:[{id,x,y,dir,level,body(flat),spacing,skin,name,me,boss,latch,dying}], foods, fv }
      ========================================================= */
+  /* ---------- 우주 배경 ---------- */
+  // 별 타일 (반복해서 깔고 시차 스크롤)
+  function makeStarTile(size, count, maxR, seed) {
+    const cvs = document.createElement('canvas');
+    cvs.width = cvs.height = size;
+    const c = cvs.getContext('2d');
+    let x = seed;
+    const rnd = () => { x = (x * 16807) % 2147483647; return x / 2147483647; };
+    for (let i = 0; i < count; i++) {
+      const r = 0.4 + rnd() * maxR, a = 0.35 + rnd() * 0.65;
+      const hue = rnd();
+      c.fillStyle = hue < 0.15 ? `rgba(160,200,255,${a})` : hue < 0.25 ? `rgba(255,210,170,${a})` : `rgba(255,255,255,${a})`;
+      c.beginPath(); c.arc(rnd() * size, rnd() * size, r, 0, TAU); c.fill();
+    }
+    return cvs;
+  }
+  const STAR_LAYERS = [
+    { tile: makeStarTile(512, 220, 0.9, 7), k: 0.15 },
+    { tile: makeStarTile(640, 90, 1.5, 99), k: 0.35 },
+    { tile: makeStarTile(900, 40, 2.2, 1234), k: 0.6 },
+  ];
+  const NEBULAE = [
+    { x: -1600, y: -900, r: 1500, c: 'rgba(132,94,247,0.28)' },
+    { x: 1500, y: 700, r: 1700, c: 'rgba(240,101,149,0.2)' },
+    { x: 300, y: -1900, r: 1300, c: 'rgba(34,184,207,0.2)' },
+    { x: -900, y: 1700, r: 1200, c: 'rgba(92,124,250,0.22)' },
+  ];
+  const PLANETS = [
+    { x: -2600, y: -1500, r: 260, c1: '#ffa94d', c2: '#c2410c', ring: true, k: 0.3 },
+    { x: 2500, y: -2200, r: 150, c1: '#74c0fc', c2: '#1c3d8a', k: 0.25 },
+    { x: 2300, y: 2100, r: 200, c1: '#e599f7', c2: '#6b2fa0', ring: true, k: 0.35 },
+    { x: -2400, y: 2300, r: 110, c1: '#8ce99a', c2: '#1b6b3a', k: 0.2 },
+  ];
+
+  function drawSpace(z) {
+    ctx.fillStyle = '#050717';
+    ctx.fillRect(0, 0, VW, VH);
+    for (const nb of NEBULAE) {
+      const x = (nb.x - cam.x * 0.2) * z * 0.6 + VW / 2, y = (nb.y - cam.y * 0.2) * z * 0.6 + VH / 2, r = nb.r * z * 0.6;
+      if (x + r < 0 || x - r > VW || y + r < 0 || y - r > VH) continue;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, nb.c); g.addColorStop(1, 'rgba(5,7,23,0)');
+      ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    for (const L of STAR_LAYERS) {
+      const S = L.tile.width;
+      const ox = ((-cam.x * L.k * z) % S + S) % S, oy = ((-cam.y * L.k * z) % S + S) % S;
+      for (let x = ox - S; x < VW; x += S) for (let y = oy - S; y < VH; y += S) ctx.drawImage(L.tile, x, y);
+    }
+    for (const p of PLANETS) {
+      const x = (p.x - cam.x * p.k) * z * 0.5 + VW / 2, y = (p.y - cam.y * p.k) * z * 0.5 + VH / 2, r = p.r * z * 0.5;
+      if (x + r * 2 < 0 || x - r * 2 > VW || y + r * 2 < 0 || y - r * 2 > VH) continue;
+      if (p.ring) {
+        ctx.strokeStyle = 'rgba(255,236,200,0.45)'; ctx.lineWidth = r * 0.16;
+        ctx.beginPath(); ctx.ellipse(x, y, r * 1.8, r * 0.45, -0.35, Math.PI, TAU); ctx.stroke();
+      }
+      const g = ctx.createRadialGradient(x - r * 0.4, y - r * 0.4, r * 0.1, x, y, r);
+      g.addColorStop(0, p.c1); g.addColorStop(1, p.c2);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+      if (p.ring) {
+        ctx.beginPath(); ctx.ellipse(x, y, r * 1.8, r * 0.45, -0.35, 0, Math.PI); ctx.stroke();
+      }
+    }
+  }
+
+  function drawArena(R, vx0, vx1, vy0, vy1) {
+    // 반투명한 우주 경기장 + 격자
+    ctx.fillStyle = 'rgba(20,24,70,0.55)';
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.clip();
+    const TILE = 140;
+    ctx.strokeStyle = 'rgba(140,160,255,0.12)'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = Math.floor(vx0 / TILE) * TILE; x < vx1; x += TILE) { ctx.moveTo(x, vy0); ctx.lineTo(x, vy1); }
+    for (let y = Math.floor(vy0 / TILE) * TILE; y < vy1; y += TILE) { ctx.moveTo(vx0, y); ctx.lineTo(vx1, y); }
+    ctx.stroke();
+    ctx.restore();
+    // 네온 테두리
+    const pulse = 0.5 + 0.5 * Math.sin(T * 2);
+    ctx.strokeStyle = `rgba(190,75,219,${0.18 + 0.1 * pulse})`; ctx.lineWidth = 46;
+    ctx.beginPath(); ctx.arc(0, 0, R + 20, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = 'rgba(102,217,232,0.45)'; ctx.lineWidth = 18;
+    ctx.beginPath(); ctx.arc(0, 0, R + 6, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = '#e3fafc'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(0, 0, R + 2, 0, TAU); ctx.stroke();
+  }
+
   function render(view) {
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    ctx.fillStyle = '#173b2a';
-    ctx.fillRect(0, 0, VW, VH);
-    if (!view) return;
     const z = cam.z;
+    drawSpace(z);
+    if (!view) return;
     let sx = 0, sy = 0;
     if (shake > 0) { sx = rand(-6, 6); sy = rand(-6, 6); }
     ctx.setTransform(DPR * z, 0, 0, DPR * z, DPR * (VW / 2 - cam.x * z + sx), DPR * (VH / 2 - cam.y * z + sy));
     const vx0 = cam.x - VW / 2 / z - 100, vx1 = cam.x + VW / 2 / z + 100;
     const vy0 = cam.y - VH / 2 / z - 100, vy1 = cam.y + VH / 2 / z + 100;
 
-    // 경기장
-    const R = view.R;
-    ctx.fillStyle = '#2b8a3e';
-    ctx.beginPath(); ctx.arc(0, 0, R + 26, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#c3fae8';
-    ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
-    ctx.save();
-    ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.clip();
-    const TILE = 110;
-    ctx.fillStyle = '#b2f2dd';
-    for (let x = Math.floor(vx0 / TILE) * TILE; x < vx1; x += TILE) {
-      for (let y = Math.floor(vy0 / TILE) * TILE; y < vy1; y += TILE) {
-        if ((Math.round(x / TILE) + Math.round(y / TILE)) % 2 === 0) ctx.fillRect(x, y, TILE, TILE);
-      }
-    }
-    ctx.restore();
-    ctx.strokeStyle = '#8ce99a'; ctx.lineWidth = 8;
-    ctx.beginPath(); ctx.arc(0, 0, R + 4, 0, TAU); ctx.stroke();
+    drawArena(view.R, vx0, vx1, vy0, vy1);
 
     for (const f of view.foods) {
       if (f.x < vx0 || f.x > vx1 || f.y < vy0 || f.y > vy1) continue;
-      drawFood(ctx, f, T, view.fv);
+      drawFood(ctx, f, T, view.fv, view.now);
     }
 
     const order = view.snakes.slice().sort((a, b) => (a.me ? 1 : 0) - (b.me ? 1 : 0) || a.level - b.level);
@@ -662,10 +1040,17 @@
       }
       if (!vis) continue;
       ctx.globalAlpha = s.dying ? 0.85 : 1;
-      drawSnake(ctx, pts, w, skinOf(s.skin), s.dir, { latch: s.latch });
+      drawSnake(ctx, pts, w, skinOf(s.skin), s.dir, {
+        latch: s.latch, boss: s.boss, seed: s.id, magnet: s.fx & 4, speed: s.fx & 8, shield: s.fx & 16, dbl: s.fx & 32, slow: s.fx & 64,
+      });
       ctx.globalAlpha = 1;
     }
 
+    for (const r of rings) {
+      ctx.globalAlpha = clamp(r.life * 2.2, 0, 1);
+      ctx.strokeStyle = '#fff3bf'; ctx.lineWidth = 10 * r.life + 2;
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, TAU); ctx.stroke();
+    }
     for (const p of parts) {
       ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
       ctx.fillStyle = p.color;
@@ -758,27 +1143,27 @@
      ========================================================= */
   const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
     '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부', '구름이', '번개'];
-  const GROW_TIME = 100, DUEL_TIME = 30;
-  const stagePower = (n) => 20 * Math.pow(1.2, n - 1);
-  const bossLevel = (n) => Math.round(stagePower(n) * 3.5);
+  const GROW_TIME = 90, DUEL_TIME = 30, STAGE_BOTS = 20;
+  const stagePower = (n) => 20 * Math.pow(1.3, n - 1);
+  const bossLevel = (n) => Math.round(stagePower(n) * 4);
 
   function startStage() {
     const stage = save.stage;
     const P = stagePower(stage);
     const fv = Math.max(1, Math.round(P / 60));
-    const world = new E.World({ radius: 1400, foodTarget: 200, foodValue: fv, skinEvery: 35 });
+    const world = new E.World({ radius: 1700, foodTarget: 300, foodValue: fv, skinEvery: 35, itemTarget: 12 });
     const player = world.addSnake({
       name: '나', skin: save.skin, level: startLevel(), isHuman: true, x: 0, y: 0,
-      speed: 215 * (1 + 0.04 * save.up.speed), foodMul: 1 + 0.1 * save.up.food,
+      speed: 290 * (1 + 0.04 * save.up.speed), foodMul: 1 + 0.1 * save.up.food,
     });
     game = {
       mode: 'stage', stage, P, fv, world, player, phase: 'grow', time: GROW_TIME, elapsed: 0,
       coins: 0, botT: 0, boss: null, ending: 0, endInfo: null, myId: player.id, killer: 0,
     };
-    for (let i = 0; i < 12; i++) spawnStageBot();
+    for (let i = 0; i < STAGE_BOTS; i++) spawnStageBot();
     world.takeDelta();
     cam.x = 0; cam.y = 0; cam.z = 1;
-    parts = []; floats = [];
+    parts = []; floats = []; rings = [];
     showHud(true);
     $('respawnBox').classList.add('hidden');
     $('pauseBtn').classList.remove('hidden');
@@ -794,7 +1179,7 @@
     const names = BOT_NAMES.filter((n) => !used.has(n));
     w.addSnake({
       name: names[randInt(0, names.length - 1)] || '뱀', skin: SKINS[randInt(0, SKINS.length - 1)].id,
-      isBot: true, x: p.x, y: p.y, level, speed: rand(190, 205),
+      isBot: true, x: p.x, y: p.y, level, speed: rand(255, 278),
       aggro: clamp(0.3 + g.stage * 0.03, 0.3, 0.85), humanBias: 60, foodMul: 0.7,
     });
   }
@@ -805,14 +1190,15 @@
     w.snakes = [g.player];
     w.R = 900;
     w.clearFoods();
-    w.foodTarget = 30;
+    w.foodTarget = 40;
     w.skinEvery = 0;
+    w.itemTarget = 3;
     const p = g.player;
     p.x = -420; p.y = 0; p.dir = 0; p.want = 0; p.latch = 0; p.bounceT = 0;
     w.resetTrail(p);
     g.boss = w.addSnake({
       name: '보스', skin: 'boss', isBot: true, isBoss: true, x: 420, y: 0, dir: Math.PI,
-      level: bossLevel(g.stage), speed: 205, aggro: 0.95, chase: 1400, humanBias: 300,
+      level: bossLevel(g.stage), speed: 272, aggro: 0.95, chase: 1400, humanBias: 300,
     });
     w.takeDelta();
     g.phase = 'duel';
@@ -825,10 +1211,10 @@
   function stageView() {
     const g = game, w = g.world;
     return {
-      R: w.R, fv: g.fv, foods: Array.from(w.foods.values()),
+      R: w.R, fv: g.fv, now: w.time, foods: Array.from(w.foods.values()),
       snakes: w.snakes.map((s) => ({
         id: s.id, x: s.x, y: s.y, dir: s.dir, level: s.level, body: s.body, skin: s.skin,
-        name: s.name, me: s === g.player, boss: s.isBoss, latch: !!s.latch, dying: !!s.dying,
+        name: s.name, me: s === g.player, boss: s.isBoss, latch: !!s.latch, dying: !!s.dying, fx: w.flags(s),
       })),
     };
   }
@@ -862,8 +1248,8 @@
     if (g.phase === 'grow') {
       g.botT -= dt;
       if (g.botT <= 0) {
-        g.botT = 2;
-        if (w.snakes.filter((s) => s.isBot && !s.dying).length < 12) spawnStageBot();
+        g.botT = 1.2;
+        if (w.snakes.filter((s) => s.isBot && !s.dying).length < STAGE_BOTS) spawnStageBot();
       }
       if (g.time <= 0) startDuel();
     } else {
@@ -1001,7 +1387,12 @@
     if (!game || game.mode !== 'online') return;
     const g = game;
     for (const x of m.m) g.metas.set(x[0], { name: x[1], skin: x[2], flags: x[3] });
-    for (const f of m.fa) g.foods.set(f[0], { id: f[0], x: f[1], y: f[2], v: f[3], k: f[4] });
+    const now = performance.now() / 1000;
+    for (const f of m.fa) {
+      const o = { id: f[0], x: f[1], y: f[2], v: f[3], k: f[4], born: now };
+      if (f.length > 5) { o.ox = f[5]; o.oy = f[6]; }
+      g.foods.set(f[0], o);
+    }
     for (const id of m.fr) g.foods.delete(id);
     g.tm = m.tm / 10;
     pushSnap(m.st, m.sn);
@@ -1012,7 +1403,7 @@
   function unpack(a) {
     const body = [a[1], a[2]];
     for (let i = 6; i < a.length; i++) body.push(a[i]);
-    return { id: a[0], x: a[1], y: a[2], dir: a[3] / 100, level: a[4] / 10, dying: !!(a[5] & 1), latch: !!(a[5] & 2), body };
+    return { id: a[0], x: a[1], y: a[2], dir: a[3] / 100, level: a[4] / 10, dying: !!(a[5] & 1), latch: !!(a[5] & 2), fx: a[5], body };
   }
 
   function onlineView() {
@@ -1039,7 +1430,7 @@
       s.name = meta.name; s.skin = meta.skin; s.boss = false; s.me = id === g.myId; s.spacing = true;
       snakes.push(s);
     }
-    return { R: g.R, fv: 1, foods: Array.from(g.foods.values()), snakes };
+    return { R: g.R, fv: 1, now: performance.now() / 1000, foods: Array.from(g.foods.values()), snakes };
   }
 
   function updateOnline(dt) {
@@ -1126,7 +1517,8 @@
     $('mStage').textContent = `STAGE ${save.stage}`;
     $('mCoin').textContent = `🪙 ${save.coins}`;
     $('mStart').textContent = `시작 Lv ${startLevel()}`;
-    $('soundBtn').textContent = save.sound ? '🔊 소리 켜짐' : '🔇 소리 꺼짐';
+    $('soundBtn').textContent = save.sound ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
+    $('musicBtn').textContent = save.music ? '🎵 음악 켜짐' : '🔇 음악 꺼짐';
     $('ups').innerHTML = UPGRADES.map((u) => {
       const lv = save.up[u.id], isMax = lv >= u.max, cost = upCost(u);
       const cls = isMax ? 'max' : save.coins < cost ? 'cant' : '';
@@ -1209,6 +1601,10 @@
   $('resumeBtn').addEventListener('click', togglePause);
   $('quitBtn').addEventListener('click', () => { save.coins += game ? game.coins : 0; persist(); showMenu(); });
   $('soundBtn').addEventListener('click', () => { save.sound = !save.sound; persist(); renderMenu(); });
+  $('musicBtn').addEventListener('click', () => {
+    save.music = !save.music; persist(); renderMenu();
+    if (save.music) Music.start(); else Music.stop();
+  });
   $('howBtn').addEventListener('click', () => $('how').classList.toggle('hidden'));
   document.addEventListener('visibilitychange', () => { if (document.hidden && game && game.mode === 'stage' && !paused) togglePause(); });
 
@@ -1237,6 +1633,18 @@
       $('hGoal').innerHTML = me ? `나 <b class="me">Lv.${Math.floor(me.level)}</b> · 꿀꺽 <b>${g.kills}</b>` : '관전 중… 👀';
     }
     updateBoard(view, g.myId);
+    const me = view.snakes.find((s) => s.id === g.myId && !s.dying);
+    const fx = me ? me.fx : 0;
+    let html = '';
+    if (g.mode === 'stage' && me) {
+      const f = g.player.fx;
+      for (const k of [2, 3, 4, 5]) if (f[k] > 0) html += `<span>${ITEM_INFO[k].ico} ${Math.ceil(f[k])}초</span>`;
+      if (f.slow > 0) html += '<span>❄️ 느려짐</span>';
+    } else {
+      [[4, 2], [8, 3], [16, 4], [32, 5]].forEach(([bit, k]) => { if (fx & bit) html += `<span>${ITEM_INFO[k].ico} ${ITEM_INFO[k].nm}</span>`; });
+      if (fx & 64) html += '<span>❄️ 느려짐</span>';
+    }
+    $('fxBar').innerHTML = html;
   }
 
   /* =========================================================
@@ -1245,8 +1653,8 @@
   let last = performance.now();
   let demo = null;
   function makeDemo() {
-    const w = new E.World({ radius: 900, foodTarget: 120 });
-    for (let i = 0; i < 8; i++) {
+    const w = new E.World({ radius: 1100, foodTarget: 160, itemTarget: 8 });
+    for (let i = 0; i < 12; i++) {
       const p = w.spawnPoint(300);
       w.addSnake({ isBot: true, x: p.x, y: p.y, level: rand(2, 40), skin: SKINS[i * 2 % SKINS.length].id, name: BOT_NAMES[i], aggro: 0.3 });
     }
@@ -1280,10 +1688,10 @@
       if (!demo) demo = makeDemo();
       demo.step(dt);
       demo.takeDelta();
-      if (demo.snakes.length < 6) { const p = demo.spawnPoint(300); demo.addSnake({ isBot: true, x: p.x, y: p.y, level: rand(2, 30), skin: SKINS[randInt(0, SKINS.length - 1)].id, aggro: 0.3 }); }
+      if (demo.snakes.length < 10) { const p = demo.spawnPoint(300); demo.addSnake({ isBot: true, x: p.x, y: p.y, level: rand(2, 30), skin: SKINS[randInt(0, SKINS.length - 1)].id, aggro: 0.3 }); }
       cam.x = lerp(cam.x, 0, 0.02); cam.y = lerp(cam.y, 0, 0.02); cam.z = lerp(cam.z, clamp(Math.min(VW, VH) / 1100, 0.35, 0.9), 0.05);
-      view = { R: demo.R, fv: 1, foods: Array.from(demo.foods.values()),
-        snakes: demo.snakes.map((s) => ({ id: s.id, x: s.x, y: s.y, dir: s.dir, level: s.level, body: s.body, skin: s.skin, name: s.name, latch: !!s.latch, dying: !!s.dying })) };
+      view = { R: demo.R, fv: 1, now: demo.time, foods: Array.from(demo.foods.values()),
+        snakes: demo.snakes.map((s) => ({ id: s.id, x: s.x, y: s.y, dir: s.dir, level: s.level, body: s.body, skin: s.skin, name: s.name, latch: !!s.latch, dying: !!s.dying, fx: demo.flags(s) })) };
     }
     render(view);
     requestAnimationFrame(loop);

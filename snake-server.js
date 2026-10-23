@@ -8,7 +8,7 @@ const Engine = require('./public/snake-battle/engine.js');
 const MATCH_TIME = 120;
 const TICK = 1 / 30;
 const MAX_HUMANS = 8;
-const TOTAL_SNAKES = 10;
+const TOTAL_SNAKES = 16;
 const START_LEVEL = 5;
 const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
   '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부'];
@@ -84,7 +84,7 @@ class Room {
   }
 
   start() {
-    this.world = new Engine.World({ radius: 1800, foodTarget: 260, foodValue: 1, skinEvery: 30 });
+    this.world = new Engine.World({ radius: 2000, foodTarget: 340, foodValue: 1, skinEvery: 30, itemTarget: 14 });
     this.state = 'play';
     this.tm = MATCH_TIME;
     this.tick = 0;
@@ -101,7 +101,7 @@ class Room {
   spawn(c, late) {
     const p = this.world.spawnPoint(500);
     const s = this.world.addSnake({
-      name: c.name, skin: c.skin, level: START_LEVEL, isHuman: true, x: p.x, y: p.y, speed: 215,
+      name: c.name, skin: c.skin, level: START_LEVEL, isHuman: true, x: p.x, y: p.y, speed: 290,
     });
     c.sid = s.id;
     c.best = START_LEVEL;
@@ -128,7 +128,7 @@ class Room {
       const base = 3 + elapsed * 0.6;
       w.addSnake({
         name, skin: pick(SKIN_IDS), isBot: true, x: p.x, y: p.y,
-        level: Math.max(2, base * (0.3 + Math.random() * 1.1)), speed: 195 + Math.random() * 10,
+        level: Math.max(2, base * (0.3 + Math.random() * 1.1)), speed: 258 + Math.random() * 18,
         aggro: 0.45 + Math.random() * 0.3, humanBias: 40,
       });
     }
@@ -144,7 +144,7 @@ class Room {
       if (s && s.level > c.best) c.best = s.level;
     }
     this.botT -= TICK;
-    if (this.botT <= 0 && this.tm > 20) { this.botT = 2.5; this.fillBots(); }
+    if (this.botT <= 0 && this.tm > 20) { this.botT = 1.5; this.fillBots(); }
     if (this.tick % 2 === 0) {
       const d = w.takeDelta();
       this.bcast({

@@ -22,8 +22,20 @@
 
   const widthOf = (L) => 16 + 5.5 * Math.cbrt(Math.max(1, L));
   const lengthOf = (L) => widthOf(L) * Math.min(42, 4 + 1.5 * Math.sqrt(Math.max(1, L)));
-  const turnOf = (L) => Math.max(2.4, 5.6 - 0.32 * Math.log2(Math.max(1, L)));
+  const turnOf = (L) => Math.max(3.2, 7.4 - 0.4 * Math.log2(Math.max(1, L)));
   const TRAIL_STEP = 5;
+  // 먹이 종류: 0 먹이, 1 선물상자(스킨), 2~8 아이템
+  const ITEM = { SKIN: 1, MAGNET: 2, SPEED: 3, SHIELD: 4, DOUBLE: 5, BOMB: 6, STAR: 7, ICE: 8 };
+  const ITEM_TIME = { 2: 10, 3: 6, 4: 8, 5: 10 };
+  const ITEM_WEIGHTS = [[2, 3], [3, 3], [4, 2], [5, 2], [6, 2], [7, 2], [8, 1.5]];
+  const MAGNET_RANGE = 230;
+  function pickItem() {
+    let t = 0;
+    for (const [, w] of ITEM_WEIGHTS) t += w;
+    let r = Math.random() * t;
+    for (const [k, w] of ITEM_WEIGHTS) { r -= w; if (r <= 0) return k; }
+    return 2;
+  }
   const DIE_TIME = 0.45;
 
   // 머리부터 꼬리 방향으로 경로를 일정 간격으로 샘플링 (평탄 배열 [x0,y0,x1,y1,...])
@@ -53,6 +65,9 @@
     this.foodValue = opt.foodValue || 1;
     this.skinEvery = opt.skinEvery || 0;
     this.skinT = this.skinEvery * 0.5;
+    this.itemTarget = opt.itemTarget || 0;
+    this.itemT = 0;
+    this.items = 0;
     this.snakes = [];
     this.foods = new Map();
     this.orbs = 0;
@@ -88,11 +103,17 @@
     return best;
   };
 
-  W.addFood = function (x, y, v, k) {
+  // ox, oy: 튀어나오는 출발 위치 (팡! 효과용)
+  W.addFood = function (x, y, v, k, ox, oy) {
     const id = this.seq++;
-    this.foods.set(id, { id, x, y, v, k: k || 0 });
+    const f = { id, x, y, v, k: k || 0, born: this.time };
+    if (ox !== undefined) { f.ox = ox; f.oy = oy; }
+    this.foods.set(id, f);
     if (!k) this.orbs++;
-    this.fa.push([id, Math.round(x), Math.round(y), v, k || 0]);
+    else if (k >= 2) this.items++;
+    const rec = [id, Math.round(x), Math.round(y), v, k || 0];
+    if (ox !== undefined) rec.push(Math.round(ox), Math.round(oy));
+    this.fa.push(rec);
     return id;
   };
 
@@ -100,6 +121,7 @@
     const f = this.foods.get(id);
     if (!f) return;
     if (!f.k) this.orbs--;
+    else if (f.k >= 2) this.items--;
     this.foods.delete(id);
     this.fr.push(id);
   };
@@ -126,6 +148,7 @@
       isBot: !!o.isBot, isBoss: !!o.isBoss, isHuman: !!o.isHuman,
       aggro: o.aggro !== undefined ? o.aggro : 0.6, chase: o.chase || 480, humanBias: o.humanBias || 0,
       think: rand(0, 0.3), bounceT: 0, latch: 0, dying: null, alive: true, fxT: 0,
+      fx: { 2: 0, 3: 0, 4: 0, 5: 0, slow: 0 },
       trail: [], body: [], kills: 0,
     };
     this.resetTrail(s);
@@ -171,9 +194,10 @@
     this.time += dt;
     const live = this.snakes.filter((s) => s.alive && !s.dying);
     for (const s of live) {
+      for (const k in s.fx) if (s.fx[k] > 0) s.fx[k] -= dt;
       if (s.isBot) {
         s.think -= dt;
-        if (s.think <= 0) { this.think(s); s.think = rand(0.15, 0.3); }
+        if (s.think <= 0) { this.think(s); s.think = rand(0.12, 0.24); }
       }
       this.move(s, dt);
     }
@@ -182,6 +206,14 @@
     for (const s of this.snakes) if (s.dying) this.updateDying(s, dt);
     this.snakes = this.snakes.filter((s) => s.alive);
     while (this.orbs < this.foodTarget) this.spawnFood();
+    if (this.items < this.itemTarget) {
+      this.itemT -= dt;
+      if (this.itemT <= 0) {
+        this.itemT = this.items < this.itemTarget / 2 ? 0.15 : rand(1.5, 3);
+        const p = this.randPoint(120);
+        this.addFood(p.x, p.y, 0, pickItem());
+      }
+    }
     if (this.skinEvery > 0) {
       let has = false;
       for (const f of this.foods.values()) if (f.k === 1) { has = true; break; }
@@ -202,7 +234,8 @@
       const d = angDiff(s.want, s.dir), m = turnOf(s.level) * dt * (s.isHuman ? 1.3 : 1);
       s.dir += clamp(d, -m, m);
     }
-    const sp = s.speed * (s.latch ? 0.8 : 1) * (s.bounceT > 0 ? 0.75 : 1);
+    const sp = s.speed * (s.latch ? 0.8 : 1) * (s.bounceT > 0 ? 0.75 : 1) *
+      (s.fx[3] > 0 ? 1.6 : 1) * (s.fx.slow > 0 ? 0.45 : 1);
     s.x += Math.cos(s.dir) * sp * dt;
     s.y += Math.sin(s.dir) * sp * dt;
     const w = widthOf(s.level);
@@ -227,17 +260,44 @@
 
   W.eat = function (s) {
     const r = widthOf(s.level) * 0.5 + 14, r2 = r * r;
+    const mr = s.fx[2] > 0 ? r + MAGNET_RANGE : 0, mr2 = mr * mr;
+    const dbl = s.fx[5] > 0 ? 2 : 1;
     for (const f of this.foods.values()) {
-      const dx = f.x - s.x, dy = f.y - s.y;
-      if (dx * dx + dy * dy > r2) continue;
-      if (f.k === 1) {
+      const dx = f.x - s.x, dy = f.y - s.y, d2 = dx * dx + dy * dy;
+      if (d2 > r2 && !(f.k === 0 && d2 < mr2)) continue;
+      if (f.k === ITEM.SKIN) {
         if (!s.isHuman) continue;
         this.events.push({ e: 'skin', id: s.id });
+      } else if (f.k >= 2) {
+        this.applyItem(s, f);
       } else {
-        this.grow(s, f.v * s.foodMul);
+        this.grow(s, f.v * s.foodMul * dbl);
+        if (d2 > r2) this.events.push({ e: 'mg', a: s.id, x: Math.round(f.x), y: Math.round(f.y) });
       }
       this.removeFood(f.id);
     }
+  };
+
+  W.applyItem = function (s, f) {
+    const k = f.k;
+    if (ITEM_TIME[k]) s.fx[k] = ITEM_TIME[k];
+    else if (k === ITEM.BOMB) {
+      for (let i = 0; i < 24; i++) {
+        const a = rand(0, TAU), d = rand(70, 280);
+        let x = f.x + Math.cos(a) * d, y = f.y + Math.sin(a) * d;
+        const dd = Math.hypot(x, y), lim = this.R - 40;
+        if (dd > lim) { x *= lim / dd; y *= lim / dd; }
+        this.addFood(x, y, this.foodValue * (Math.random() < 0.3 ? 3 : 1), 0, f.x, f.y);
+      }
+    } else if (k === ITEM.STAR) {
+      this.grow(s, Math.max(5 * this.foodValue, s.level * 0.15));
+    } else if (k === ITEM.ICE) {
+      for (const o of this.snakes) {
+        if (o === s || !o.alive || o.dying) continue;
+        if (Math.hypot(o.x - s.x, o.y - s.y) < 700) o.fx.slow = 3.5;
+      }
+    }
+    this.events.push({ e: 'item', id: s.id, k, x: Math.round(f.x), y: Math.round(f.y) });
   };
 
   W.grow = function (s, v) {
@@ -259,8 +319,8 @@
         // 머리끼리
         if (Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * 0.85) {
           const diff = A.level - B.level;
-          if (diff >= 1) this.swallow(A, B, false);
-          else if (diff <= -1) this.swallow(B, A, false);
+          if (diff >= 1 && !(B.fx[4] > 0)) this.swallow(A, B, false);
+          else if (diff <= -1 && !(A.fx[4] > 0)) this.swallow(B, A, false);
           else { this.bounce(A, B.x, B.y); this.bounce(B, A.x, A.y); }
           continue;
         }
@@ -269,7 +329,7 @@
         for (let k = 4; k < pts.length; k += 2) {
           const dx = pts[k] - A.x, dy = pts[k + 1] - A.y;
           if (dx * dx + dy * dy < lim2) {
-            if (A.level >= B.level) { A.latch = B.id; this.drain(A, B, dt, pts[k], pts[k + 1]); }
+            if (A.level >= B.level && !(B.fx[4] > 0)) { A.latch = B.id; this.drain(A, B, dt, pts[k], pts[k + 1]); }
             else this.bounce(A, pts[k], pts[k + 1]);
             break;
           }
@@ -294,10 +354,31 @@
   W.swallow = function (A, B, drained) {
     if (A.dying || B.dying) return;
     const lv = B.level;
-    this.grow(A, lv * (drained ? 0.7 : 0.5));
+    this.grow(A, lv * (drained ? 0.6 : 0.4));
     A.kills++;
     B.dying = { by: A.id, t: 0, body0: B.body.slice() };
+    this.popBody(B, lv);
     this.events.push({ e: 'eat', a: A.id, b: B.id, x: Math.round(B.x), y: Math.round(B.y), lv: Math.floor(lv) });
+  };
+
+  W.popBody = function (B, lv) {
+    const b = B.body, segs = Math.max(1, (b.length >> 1) - 1);
+    const n = Math.min(30, 6 + Math.floor(segs / 2));
+    const v = Math.max(this.foodValue, Math.round(lv * 0.35 / n));
+    const lim = this.R - 40;
+    for (let i = 0; i < n; i++) {
+      const k = Math.floor((i / n) * segs) * 2;
+      const ox = b[k], oy = b[k + 1];
+      const a = rand(0, TAU), d = rand(40, 170);
+      let x = ox + Math.cos(a) * d, y = oy + Math.sin(a) * d;
+      const dd = Math.hypot(x, y);
+      if (dd > lim) { x *= lim / dd; y *= lim / dd; }
+      this.addFood(x, y, v, 0, ox, oy);
+    }
+    if (Math.random() < 0.5) {
+      const a = rand(0, TAU);
+      this.addFood(B.x + Math.cos(a) * 90, B.y + Math.sin(a) * 90, 0, pickItem(), B.x, B.y);
+    }
   };
 
   W.bounce = function (A, fx, fy) {
@@ -344,10 +425,10 @@
     } else {
       let best = null, bs = -Infinity;
       for (const f of this.foods.values()) {
-        if (f.k) continue;
+        if (f.k === ITEM.SKIN) continue;
         const d = Math.abs(f.x - s.x) + Math.abs(f.y - s.y);
         if (d > 700) continue;
-        const sc = f.v / this.foodValue * 25 - d;
+        const sc = (f.k ? 150 : f.v / this.foodValue * 25) - d;
         if (sc > bs) { bs = sc; best = f; }
       }
       if (best) s.want = Math.atan2(best.y - s.y, best.x - s.x);
@@ -361,11 +442,16 @@
     return this.snakes.map((s) => {
       const b = s.body;
       const out = [s.id, Math.round(s.x), Math.round(s.y), Math.round(s.dir * 100), Math.round(s.level * 10),
-        (s.dying ? 1 : 0) | (s.latch ? 2 : 0)];
+        this.flags(s)];
       for (let i = 2; i < b.length; i += 4) out.push(Math.round(b[i]), Math.round(b[i + 1]));
       if (b.length > 2 && (b.length - 2) % 4 !== 0) out.push(Math.round(b[b.length - 2]), Math.round(b[b.length - 1]));
       return out;
     });
+  };
+  W.flags = function (s) {
+    const f = s.fx;
+    return (s.dying ? 1 : 0) | (s.latch ? 2 : 0) | (f[2] > 0 ? 4 : 0) | (f[3] > 0 ? 8 : 0) |
+      (f[4] > 0 ? 16 : 0) | (f[5] > 0 ? 32 : 0) | (f.slow > 0 ? 64 : 0);
   };
   W.allFoods = function () {
     return Array.from(this.foods.values()).map((f) => [f.id, Math.round(f.x), Math.round(f.y), f.v, f.k]);
@@ -377,5 +463,5 @@
     return r;
   };
 
-  return { World, widthOf, lengthOf, samplePath };
+  return { World, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE };
 });
