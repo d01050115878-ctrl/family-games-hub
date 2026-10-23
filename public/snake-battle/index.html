@@ -1301,8 +1301,27 @@
     }
   }
 
+  // 무는 중인 머리: 입이 빠르게 열렸다 닫히고 송곳니가 보인다
+  function drawChomp(c, hr, W, snout) {
+    const open = 0.18 + 0.22 * (0.5 + 0.5 * Math.sin(T * 22));
+    c.fillStyle = '#3a0a10';
+    c.beginPath();
+    c.moveTo(hr * (snout + 0.05), 0);
+    c.lineTo(hr * 0.55, -W * open * 1.6);
+    c.lineTo(hr * 0.55, W * open * 1.6);
+    c.closePath(); c.fill();
+    c.fillStyle = '#fff';
+    for (const s of [-1, 1]) {
+      c.beginPath();
+      c.moveTo(hr * (snout - 0.25), s * W * open * 0.7);
+      c.lineTo(hr * (snout - 0.4), s * W * open * 0.15);
+      c.lineTo(hr * (snout - 0.1), s * W * open * 0.45);
+      c.closePath(); c.fill();
+    }
+  }
+
   function drawTongue(c, hr, skin, o, bx) {
-    if (!((T * 0.8 + (o.seed || 0) * 0.37) % 2.4 < 0.3 || o.latch)) return;
+    if (o.latch || !((T * 0.8 + (o.seed || 0) * 0.37) % 2.4 < 0.3)) return;
     const tl = hr * (o.latch ? 0.7 : 1.15);
     const wv = Math.sin(T * 40) * hr * 0.05;
     c.strokeStyle = '#c81e45'; c.lineWidth = Math.max(1.5, hr * 0.085); c.lineCap = 'round';
@@ -1360,6 +1379,7 @@
       c.beginPath(); c.moveTo(hr * 0.6, 0); c.lineTo(-hr * 0.5, -W * 0.52); c.lineTo(-hr * 0.3, 0); c.lineTo(-hr * 0.5, W * 0.52); c.closePath(); c.fill();
       c.globalAlpha = 1;
     }
+    if (o.latch) drawChomp(c, hr, W, SN);
     if (skin.mouth && o.latch) {
       c.fillStyle = '#111';
       c.beginPath(); c.ellipse(hr * 1.2, 0, hr * 0.35, hr * 0.28, 0, 0, TAU); c.fill();
@@ -1503,6 +1523,7 @@
       }
       c.stroke();
     }
+    if (o.latch) drawChomp(c, hr, W, 1.95);
     drawEyes(c, hr, W, skin, hr * 0.55, 0.58, 0.19);
     c.restore();
   }
@@ -1604,6 +1625,7 @@
   const cam = { x: 0, y: 0, z: 1 };
   let parts = [], floats = [], rings = [], shake = 0, T = 0;
   const pulses = new Map(), hurts = new Map(), headPos = new Map(), biteAcc = new Map();
+  let marks = [];
   const fmtN = (v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e4 ? (v / 1e3).toFixed(1) + 'K' : v >= 10 || Number.isInteger(v) ? String(Math.round(v)) : v.toFixed(1));
   // 빛 알갱이가 문 뱀의 머리로 빨려 들어간다
   function streamTo(x, y, tid, n, color) {
@@ -1651,15 +1673,26 @@
           game.killer = ev.a;
         }
       } else if (ev.e === 'bite') {
-        // 물린 곳에서 살점이 튀고, 빛 알갱이가 문 뱀에게 빨려 들어간다
+        // 물린 자리에서 상대 몸통 조각이 뜯겨 나가 빙글빙글 돌며 문 뱀의 입으로 들어간다
+        const vic = headPos.get(ev.b);
+        const vskin = skinOf(vic ? vic.skin : 'tree');
+        const vr = E.widthOf(vic ? vic.level : 5) * 0.5;
+        for (let k = 0; k < 2; k++) {
+          const a = rand(0, TAU), sp = rand(120, 260);
+          parts.push({ chunk: true, skin: vskin, col: segColor(vskin, randInt(0, 12)), x: ev.x + rand(-vr, vr) * 0.4, y: ev.y + rand(-vr, vr) * 0.4,
+            vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: vr * rand(0.55, 0.8), rot: rand(0, TAU), spin: rand(-12, 12), life: 0.8, max: 0.8, s: 14, tid: ev.a });
+        }
+        burst(ev.x, ev.y, segColor(vskin, 1), 5);
         burst(ev.x, ev.y, '#ff6b6b', 3);
-        streamTo(ev.x, ev.y, ev.a, 3, '#ffe066');
+        marks.push({ x: ev.x, y: ev.y, r: vr * 1.1, life: 0.5, rot: rand(0, TAU) });
+        if (marks.length > 40) marks.shift();
+        if (ev.a === myId || ev.b === myId) beep(90 + Math.random() * 40, 0.05, 'sawtooth', 0.06);
         pulses.set(ev.a, 1); hurts.set(ev.b, 1);
         const key = ev.a + '-' + ev.b, acc = biteAcc.get(key) || { a: ev.a, b: ev.b, n: 0, l: 0, t: 0 };
         acc.n += ev.n || 0; acc.l += ev.l || 0;
         biteAcc.set(key, acc);
-        if (ev.a === myId) beep(380, 0.05, 'square', 0.04);
-        if (ev.b === myId) { shake = Math.max(shake, 0.15); beep(180, 0.06, 'sawtooth', 0.05); }
+        if (ev.a === myId) { shake = Math.max(shake, 0.06); setTimeout(() => beep(260, 0.04, 'square', 0.04), 40); }
+        if (ev.b === myId) { shake = Math.max(shake, 0.18); beep(170, 0.07, 'sawtooth', 0.05); }
       } else if (ev.e === 'item') {
         const info = ITEM_INFO[ev.k];
         burst(ev.x, ev.y, info.col, 14);
@@ -1704,14 +1737,17 @@
       acc.t += dt;
       if (acc.t < 0.4) continue;
       const pa = headPos.get(acc.a), pb = headPos.get(acc.b);
-      if (pb && acc.l > 0) floatText(pb.x + rand(-20, 20), pb.y - 30, '-' + fmtN(acc.l), '#ff8787');
-      if (pa && acc.n > 0) floatText(pa.x + rand(-20, 20), pa.y - 45, '+' + fmtN(acc.n), '#8ce99a');
+      if (pb && acc.l > 0) { floatText(pb.x + rand(-20, 20), pb.y - 30, '-' + fmtN(acc.l), '#ff6b6b'); floats[floats.length - 1].big = true; }
+      if (pa && acc.n > 0) { floatText(pa.x + rand(-20, 20), pa.y - 45, '+' + fmtN(acc.n), '#8ce99a'); floats[floats.length - 1].big = true; }
       biteAcc.delete(key);
     }
     parts = parts.filter((p) => p.life > 0);
     for (const f of floats) { f.y -= 50 * dt; f.life -= dt; }
     floats = floats.filter((f) => f.life > 0);
     for (const r of rings) { r.life -= dt; r.r += (r.max - r.r) * Math.min(1, dt * 9); }
+    for (const p of parts) if (p.chunk) p.rot += p.spin * dt;
+    for (const m of marks) m.life -= dt;
+    marks = marks.filter((m) => m.life > 0);
     rings = rings.filter((r) => r.life > 0);
     if (shake > 0) shake -= dt;
   }
@@ -1838,7 +1874,7 @@
     }
 
     headPos.clear();
-    for (const s of view.snakes) headPos.set(s.id, { x: s.x, y: s.y });
+    for (const s of view.snakes) headPos.set(s.id, { x: s.x, y: s.y, skin: s.skin, level: s.level });
     const order = view.snakes.slice().sort((a, b) => (a.me ? 1 : 0) - (b.me ? 1 : 0) || a.level - b.level);
     for (const s of order) {
       const w = E.widthOf(s.level) * (s.dying ? 0.8 : 1);
@@ -1862,8 +1898,36 @@
       ctx.strokeStyle = '#fff3bf'; ctx.lineWidth = 10 * r.life + 2;
       ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, TAU); ctx.stroke();
     }
+    // 물린 자리의 이빨 자국
+    for (const m of marks) {
+      ctx.globalAlpha = clamp(m.life * 2, 0, 1);
+      ctx.fillStyle = 'rgba(90,0,10,0.55)';
+      ctx.beginPath(); ctx.arc(m.x, m.y, m.r * 0.55, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#fff';
+      for (let k = 0; k < 8; k++) {
+        const a = m.rot + k * (TAU / 8), x = m.x + Math.cos(a) * m.r * 0.7, y = m.y + Math.sin(a) * m.r * 0.7;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * m.r * 0.22, y + Math.sin(a) * m.r * 0.22);
+        ctx.lineTo(x + Math.cos(a + 1.57) * m.r * 0.08, y + Math.sin(a + 1.57) * m.r * 0.08);
+        ctx.lineTo(x - Math.cos(a + 1.57) * m.r * 0.08, y - Math.sin(a + 1.57) * m.r * 0.08);
+        ctx.closePath(); ctx.fill();
+      }
+    }
     for (const p of parts) {
       ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+      if (p.chunk) {
+        // 뜯겨 나간 몸통 조각 (입으로 들어가며 작아진다)
+        const k = 0.35 + 0.65 * clamp(p.life / p.max, 0, 1), rr = p.r * k;
+        ctx.save();
+        ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.beginPath(); ctx.arc(2, 4, rr * 1.05, 0, TAU); ctx.fill();
+        ctx.drawImage(tube(p.col, p.skin), -rr, -rr, rr * 2, rr * 2);
+        ctx.fillStyle = '#c92a2a';
+        ctx.beginPath(); ctx.ellipse(-rr * 0.75, 0, rr * 0.3, rr * 0.8, 0, 0, TAU); ctx.fill();
+        ctx.restore();
+        continue;
+      }
       ctx.fillStyle = p.color;
       ctx.beginPath(); ctx.arc(p.x, p.y, p.s / 2, 0, TAU); ctx.fill();
     }
@@ -1894,7 +1958,7 @@
     for (const f of floats) {
       const [x, y] = toScreen(f.x, f.y);
       ctx.globalAlpha = clamp(f.life, 0, 1);
-      ctx.font = '22px Jua, sans-serif';
+      ctx.font = (f.big ? '28px' : '22px') + ' Jua, sans-serif';
       ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(20,40,30,0.85)';
       ctx.strokeText(f.text, x, y); ctx.fillStyle = f.color; ctx.fillText(f.text, x, y);
     }
