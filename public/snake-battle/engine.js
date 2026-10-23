@@ -20,7 +20,8 @@
     return d;
   };
 
-  const widthOf = (L) => 16 + 5.5 * Math.cbrt(Math.max(1, L));
+  // 뱀 굵기 (길이도 굵기에 비례)
+  const widthOf = (L) => 0.8 * (16 + 5.5 * Math.cbrt(Math.max(1, L)));
   const lengthOf = (L) => widthOf(L) * Math.min(42, 4 + 1.5 * Math.sqrt(Math.max(1, L)));
   const turnOf = (L) => Math.max(3.2, 7.4 - 0.4 * Math.log2(Math.max(1, L)));
   const TRAIL_STEP = 5;

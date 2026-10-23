@@ -98,7 +98,7 @@ class Room {
   }
 
   start() {
-    this.world = new Engine.World({ radius: 2800, foodTarget: 700, foodValue: 1, skinEvery: 20, giftMax: 3, itemTarget: 4, itemEvery: 10 });
+    this.world = new Engine.World({ radius: 3360, foodTarget: 1000, foodValue: 1, skinEvery: 20, giftMax: 3, itemTarget: 4, itemEvery: 10 });
     this.state = 'play';
     this.tm = MATCH_TIME;
     this.tick = 0;
@@ -115,7 +115,7 @@ class Room {
   spawn(c, late) {
     const p = this.world.spawnPoint(500);
     const s = this.world.addSnake({
-      name: c.name, skin: c.skin, level: START_LEVEL, isHuman: true, x: p.x, y: p.y, speed: 290,
+      name: c.name, skin: c.skin, level: START_LEVEL, isHuman: true, x: p.x, y: p.y, speed: 261,
     });
     c.sid = s.id;
     c.best = START_LEVEL;
@@ -142,7 +142,7 @@ class Room {
       const base = 3 + elapsed * 0.6;
       w.addSnake({
         name, skin: botSkin(), isBot: true, x: p.x, y: p.y,
-        level: Math.max(2, base * (0.3 + Math.random() * 1.1)), speed: 258 + Math.random() * 18,
+        level: Math.max(2, base * (0.3 + Math.random() * 1.1)), speed: 232 + Math.random() * 16,
         aggro: 0.45 + Math.random() * 0.3, humanBias: 40,
       });
     }
