@@ -90,7 +90,7 @@
   .res-emoji { font-size: 58px; }
   .res-coin { font-size: 22px; color: var(--gold); margin: 6px 0 14px; }
   .back-hub { display: inline-block; margin-top: 6px; color: var(--muted); font-size: 14px; text-decoration: none; }
-  .skins { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; max-height: 52vh; overflow-y: auto; padding: 2px; }
+  .skins { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; max-height: 40vh; overflow-y: auto; padding: 2px; }
   .skin { background: rgba(255, 255, 255, 0.07); border: 2px solid transparent; border-radius: 14px; padding: 6px 2px; color: #fff; font-size: 13px; }
   .skin canvas { width: 100%; height: 54px; display: block; }
   .skin.sel { border-color: var(--gold); background: rgba(255, 212, 59, 0.14); }
@@ -116,6 +116,31 @@
   .rank div { display: flex; justify-content: space-between; background: rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 7px 12px; margin-bottom: 5px; font-size: 16px; }
   .rank div.me { background: rgba(105, 219, 124, 0.25); }
   .status { color: var(--muted); font-size: 14px; min-height: 20px; margin: 4px 0 8px; }
+  #itemBtns { position: absolute; right: 10px; bottom: 14px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+  #itemBtns button { width: 56px; height: 56px; border-radius: 50%; background: var(--panel); border: 2px solid var(--line); color: #fff;
+    font-size: 24px; position: relative; }
+  #itemBtns button:active { transform: scale(0.92); }
+  #itemBtns button.empty { opacity: 0.35; }
+  #itemBtns b { position: absolute; right: -4px; bottom: -4px; background: var(--gold); color: #3b2a00; border-radius: 999px; font-size: 12px; padding: 1px 6px; }
+  .shop { display: grid; gap: 8px; margin-bottom: 12px; }
+  .sitem { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px; text-align: left; }
+  .sitem .ico { font-size: 30px; width: 40px; text-align: center; }
+  .sitem .info { flex: 1; min-width: 0; }
+  .sitem .nm { font-size: 16px; }
+  .sitem .ds { font-size: 12px; color: var(--muted); }
+  .sitem .own { font-size: 12px; color: var(--gold); }
+  .sitem .buy { padding: 9px 12px; border-radius: 12px; background: var(--gold); color: #3b2a00; font-size: 14px; white-space: nowrap; }
+  .sitem .buy.cant { background: rgba(255, 255, 255, 0.18); color: var(--muted); }
+  .sitem .tog { margin-top: 4px; padding: 3px 8px; border-radius: 999px; font-size: 11px; background: rgba(255, 255, 255, 0.15); color: #fff; }
+  .skininfo { background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line); border-radius: 14px; padding: 10px; margin-bottom: 10px;
+    display: flex; gap: 10px; align-items: center; text-align: left; }
+  .skininfo canvas { width: 130px; height: 78px; flex: none; }
+  .skininfo .nm { font-size: 17px; }
+  .skininfo .meta { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .skininfo .lvup { margin-top: 6px; padding: 7px 12px; border-radius: 12px; background: var(--gold); color: #3b2a00; font-size: 14px; }
+  .skininfo .lvup.cant { background: rgba(255, 255, 255, 0.18); color: var(--muted); }
+  .skin .slv { display: block; font-size: 11px; color: var(--gold); }
 
   #toast { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; padding: 10px 20px; border-radius: 16px;
     background: rgba(16, 36, 28, 0.9); border: 1px solid var(--line); pointer-events: none; opacity: 0; transition: opacity 0.3s;
@@ -145,9 +170,15 @@
   <div id="board"></div>
   <canvas id="mini" width="240" height="240"></canvas>
   <div id="fxBar"></div>
+  <div id="itemBtns">
+    <button data-item="speed" title="스피드 부스트 (1)">⚡<b>0</b></button>
+    <button data-item="magnet" title="자석 (2)">🧲<b>0</b></button>
+    <button data-item="shield" title="방패 (3)">🛡️<b>0</b></button>
+  </div>
   <div id="respawnBox" class="hidden">
     <p>꿀꺽! 먹혀버렸어요 😵</p>
-    <button class="btn" id="respawnBtn">다시 참가하기</button>
+    <button class="btn" id="reviveOnlineBtn">❤️ 부활 (레벨 그대로)</button>
+    <button class="btn blue" id="respawnBtn">다시 참가하기 (Lv.5)</button>
   </div>
 </div>
 
@@ -168,8 +199,9 @@
     <button class="btn" id="playBtn">▶ 스테이지 도전</button>
     <button class="btn blue" id="onlineBtn">🌐 온라인 대전</button>
     <div class="row">
-      <button class="ghost" id="skinBtn">🎨 뱀 고르기</button>
-      <button class="ghost" id="howBtn">❓ 게임 방법</button>
+      <button class="ghost" id="skinBtn">🎨 캐릭터</button>
+      <button class="ghost" id="shopBtn">🛒 상점</button>
+      <button class="ghost" id="howBtn">❓ 방법</button>
     </div>
     <div class="row">
       <button class="ghost" id="musicBtn">🎵 음악 켜짐</button>
@@ -182,8 +214,11 @@
       <li>레벨이 같거나 높으면 상대 <b>몸통을 물어서</b> 레벨을 빼앗아요. 레벨이 낮으면 튕겨나가요.</li>
       <li>나보다 큰 뱀의 머리에 부딪히면 먹혀요. 큰 뱀에게 몸통을 물리지 않게 조심!</li>
       <li>90초 동안 성장한 뒤 <b>👑 보스와 1:1 대결</b>! 보스보다 레벨이 높아야 이길 수 있어요.</li>
+      <li>레벨이 오르면 <b>진화</b>해요: 새끼 → 어린 시절 → 성체 → 가시 → 뿔 → 날개 → 고대!</li>
+      <li><b>🛒 상점</b>에서 ⚡스피드 · 🧲자석 · 🛡️방패 · 🚀시작 부스트 · ❤️부활을 사서 게임 중에 써요.</li>
       <li>가끔 나오는 능력 아이템: <b>🧲 자석</b> · <b>⚡ 번개</b> · <b>🛡️ 방패</b> · <b>✨x2 두배</b> · <b>💣 먹이폭탄</b> · <b>⭐ 별</b> · <b>❄️ 얼음</b></li>
-      <li>경기장의 <b>🎁 선물상자</b>를 먹으면 경기가 끝난 뒤 열 수 있어요. 나온 뱀 3마리 중 하나를 골라 가져요!</li>
+      <li>경기장의 <b>🎁 선물상자</b>를 먹으면 경기가 끝난 뒤 열어서 캐릭터 3개 중 하나를 골라요. 같은 캐릭터가 또 나오면 그 캐릭터의 레벨이 올라요!</li>
+      <li><b>🎨 캐릭터</b>에서 모은 뱀·용·상어·장어를 골라 코인으로 레벨업하면 시작 레벨과 먹이 효율이 올라가요.</li>
       <li>🪙 코인으로 시작 레벨·속도·먹이 효율을 강화하세요.</li>
     </ul>
     <a class="back-hub" href="/">← 가족 게임 모음으로</a>
@@ -193,8 +228,9 @@
 <!-- 스킨 고르기 -->
 <div id="skinsOv" class="overlay hidden">
   <div class="card">
-    <h2>🎨 뱀 고르기</h2>
-    <p class="sub" id="skinCount">🎁 선물상자를 먹으면 새로운 뱀이 열려요</p>
+    <h2>🎨 캐릭터</h2>
+    <p class="sub" id="skinCount">🎁 선물상자를 먹으면 새로운 캐릭터가 열려요</p>
+    <div class="skininfo" id="skinInfo"></div>
     <div class="skins" id="skins"></div>
     <button class="btn" id="skinDone">완료</button>
   </div>
@@ -253,6 +289,28 @@
   </div>
 </div>
 
+<!-- 상점 -->
+<div id="shopOv" class="overlay hidden">
+  <div class="card">
+    <h2>🛒 아이템 상점</h2>
+    <p class="sub">🪙 <b id="shopCoin">0</b> · 산 아이템은 게임 중 오른쪽 아래 버튼(키보드 1·2·3)으로 써요</p>
+    <div class="shop" id="shop"></div>
+    <button class="btn" id="shopDone">완료</button>
+  </div>
+</div>
+
+<!-- 부활 -->
+<div id="reviveOv" class="overlay hidden">
+  <div class="card">
+    <div class="res-emoji">❤️</div>
+    <h1>부활할까요?</h1>
+    <p class="sub" id="reviveSub"></p>
+    <div class="code" id="reviveCount">5</div>
+    <button class="btn" id="reviveBtn">❤️ 부활하기</button>
+    <button class="ghost" id="reviveNo">포기하기</button>
+  </div>
+</div>
+
 <!-- 일시정지 -->
 <div id="pause" class="overlay hidden">
   <div class="card">
@@ -294,71 +352,111 @@
   /* =========================================================
      뱀 스킨
      ========================================================= */
-  // 실제 뱀 종류에서 따온 무늬 + 상상 속 용 (등급: 1 일반, 2 희귀, 3 영웅, 4 전설, 5 신화)
-  // pat: plain | stripe | diamond | blotch | spots | bands
-  const SKINS = [
-    { id: 'tree', head: 'slim', name: '초록 나무뱀', rare: 1, base: '#3f9142', pat: 'plain' },
-    { id: 'garter', head: 'slim', name: '줄무늬 가터뱀', rare: 1, base: '#33422c', pat: 'stripe', p1: '#e8cf5a' },
-    { id: 'corn', name: '옥수수뱀', rare: 1, base: '#de7b3e', pat: 'blotch', p1: '#a8321f', p2: '#3b1608' },
-    { id: 'field', head: 'viper', name: '갈색 들뱀', rare: 1, base: '#7d5d3c', pat: 'diamond', p1: '#4a3320', p2: '#c9a97a' },
-    { id: 'sand', head: 'viper', name: '모래 독사', rare: 1, base: '#cba86e', pat: 'blotch', p1: '#8a6b3d', p2: '#5b4422' },
-    { id: 'racer', head: 'slim', name: '블랙 레이서', rare: 1, base: '#2b2c33', pat: 'plain', eye: '#c9a227', gloss: true },
-    { id: 'ball', name: '볼 파이톤', rare: 1, base: '#3a2a1a', pat: 'blotch', p1: '#b08a4a', p2: '#e1c48a' },
-    { id: 'hognose', head: 'viper', name: '돼지코뱀', rare: 1, base: '#b58b52', pat: 'blotch', p1: '#5c3c1e', p2: '#3b2412' },
-    { id: 'python', name: '그물무늬 비단뱀', rare: 2, base: '#b8954e', pat: 'diamond', p1: '#3d2f1d', p2: '#efe0b0' },
-    { id: 'coral', head: 'slim', name: '산호뱀', rare: 2, pat: 'bands', bands: ['#c92a2a', '#c92a2a', '#c92a2a', '#151515', '#f2c94c', '#151515'] },
-    { id: 'milk', head: 'slim', name: '밀크스네이크', rare: 2, pat: 'bands', bands: ['#d63a2f', '#d63a2f', '#1c1c1c', '#f1ede0', '#1c1c1c'] },
-    { id: 'king', head: 'slim', name: '킹스네이크', rare: 2, pat: 'bands', bands: ['#1b1b1b', '#1b1b1b', '#1b1b1b', '#f0ead2'], gloss: true },
-    { id: 'rattle', head: 'viper', name: '방울뱀', rare: 2, base: '#a8875a', pat: 'diamond', p1: '#5a4126', p2: '#e6d3a8', rattle: true },
-    { id: 'seakrait', head: 'slim', name: '바다뱀', rare: 2, pat: 'bands', bands: ['#2f6db5', '#2f6db5', '#e8eef5', '#e8eef5'] },
-    { id: 'emerald', name: '에메랄드 보아', rare: 2, base: '#14a052', pat: 'spots', p1: '#f1f8e9' },
-    { id: 'greenmamba', head: 'slim', name: '그린맘바', rare: 2, base: '#58b83a', pat: 'plain', eye: '#d9c23a', gloss: true },
-    { id: 'anaconda', name: '아나콘다', rare: 2, base: '#5f6b2f', pat: 'spots', p1: '#17170c', spot: 0.42 },
-    { id: 'blood', name: '블러드 파이톤', rare: 2, base: '#9b2a1e', pat: 'blotch', p1: '#c9772f', p2: '#5b130c' },
-    { id: 'cobra', name: '킹코브라', rare: 3, pat: 'bands', bands: ['#4b4630', '#4b4630', '#4b4630', '#2a2718'], hood: true, eye: '#d9a520' },
-    { id: 'mamba', head: 'slim', name: '블랙맘바', rare: 3, base: '#545a58', pat: 'plain', eye: '#8b8b6a', gloss: true, mouth: true },
-    { id: 'albino', name: '알비노 비단뱀', rare: 3, base: '#f4e7c9', pat: 'blotch', p1: '#f2c14e', p2: '#e0a82e', eye: '#e03131' },
-    { id: 'viper', head: 'viper', name: '살무사', rare: 3, base: '#6b5a48', pat: 'diamond', p1: '#2e241a', p2: '#a89272', eye: '#e8b923' },
-    { id: 'taipan', head: 'slim', name: '내륙 타이판', rare: 3, base: '#8a6a3f', pat: 'plain', headCol: '#2a1f14', eye: '#3b2a18' },
-    { id: 'gaboon', head: 'viper', name: '가봉 북살무사', rare: 3, base: '#8f6b45', pat: 'diamond', p1: '#4a2c16', p2: '#e2c89a', eye: '#d1b26f' },
-    { id: 'horned', head: 'viper', name: '사막 뿔살무사', rare: 3, base: '#d2b48c', pat: 'blotch', p1: '#a07c50', p2: '#7a5a34', eyeHorns: true },
-    { id: 'rainbow', name: '무지개 보아', rare: 3, base: '#b5582a', pat: 'blotch', p1: '#7a2d10', p2: '#5a1f08', iridescent: true },
-    { id: 'gold', name: '황금 비단뱀', rare: 4, base: '#e2b43c', pat: 'blotch', p1: '#9a6b12', p2: '#5c3d05', shine: true },
-    { id: 'crystal', name: '수정 뱀', rare: 4, base: '#9fd8ef', pat: 'spots', p1: '#ffffff', shine: true, eye: '#4dabf7' },
-    { id: 'lava', name: '용암 뱀', rare: 4, base: '#2a0e0a', pat: 'blotch', p1: '#ff6a1a', p2: '#ffd43b', glowPat: true, eye: '#ff922b' },
-    { id: 'nebula', name: '은하 뱀', rare: 4, base: '#2c1f5e', pat: 'spots', p1: '#e5dbff', stars: true, eye: '#da77f2' },
-    { id: 'firedragon', name: '불꽃 용', rare: 5, base: '#b8261c', pat: 'plain', eye: '#ffd43b', eyeGlow: true,
+  // 캐릭터: 뱀 · 용 · 상어 · 장어 (등급은 engine.js의 SKIN_TIERS 하나로 관리)
+  // kind: snake | dragon | shark | eel,  head: viper | slim | normal
+  // pat: plain | stripe | diamond | blotch | spots | bands | tiger
+  const SKIN_DEFS = [
+    // ---------- 일반 ----------
+    { id: 'tree', name: '초록 나무뱀', head: 'slim', base: '#3f9142', pat: 'plain' },
+    { id: 'garter', name: '줄무늬 가터뱀', head: 'slim', base: '#33422c', pat: 'stripe', p1: '#e8cf5a' },
+    { id: 'corn', name: '옥수수뱀', base: '#de7b3e', pat: 'blotch', p1: '#a8321f', p2: '#3b1608' },
+    { id: 'field', name: '갈색 들뱀', head: 'viper', base: '#7d5d3c', pat: 'diamond', p1: '#4a3320', p2: '#c9a97a' },
+    { id: 'sand', name: '모래 독사', head: 'viper', base: '#cba86e', pat: 'blotch', p1: '#8a6b3d', p2: '#5b4422' },
+    { id: 'racer', name: '블랙 레이서', head: 'slim', base: '#2b2c33', pat: 'plain', eye: '#c9a227', gloss: true },
+    { id: 'ball', name: '볼 파이톤', base: '#3a2a1a', pat: 'blotch', p1: '#b08a4a', p2: '#e1c48a' },
+    { id: 'hognose', name: '돼지코뱀', head: 'viper', base: '#b58b52', pat: 'blotch', p1: '#5c3c1e', p2: '#3b2412' },
+    { id: 'redrat', name: '붉은 쥐잡이뱀', base: '#b8342a', pat: 'blotch', p1: '#7a1d14', p2: '#e2a07a' },
+    { id: 'yellowrat', name: '노란 쥐잡이뱀', head: 'slim', base: '#d9b83a', pat: 'stripe', p1: '#5a4a14' },
+    { id: 'bluerace', name: '블루 레이서', head: 'slim', base: '#3d7cc9', pat: 'plain', gloss: true },
+    { id: 'rosy', name: '로지 보아', base: '#c98f8a', pat: 'stripe', p1: '#8a4b5a' },
+    { id: 'blueshark', name: '청새리상어', kind: 'shark', base: '#3f78c8', belly: '#e8f1fb', eye: '#0b0b0b' },
+    // ---------- 레어 ----------
+    { id: 'python', name: '그물무늬 비단뱀', base: '#b8954e', pat: 'diamond', p1: '#3d2f1d', p2: '#efe0b0' },
+    { id: 'coral', name: '산호뱀', head: 'slim', pat: 'bands', bands: ['#c92a2a', '#c92a2a', '#c92a2a', '#151515', '#f2c94c', '#151515'] },
+    { id: 'milk', name: '밀크스네이크', head: 'slim', pat: 'bands', bands: ['#d63a2f', '#d63a2f', '#1c1c1c', '#f1ede0', '#1c1c1c'] },
+    { id: 'king', name: '킹스네이크', head: 'slim', pat: 'bands', bands: ['#1b1b1b', '#1b1b1b', '#1b1b1b', '#f0ead2'], gloss: true },
+    { id: 'rattle', name: '방울뱀', head: 'viper', base: '#a8875a', pat: 'diamond', p1: '#5a4126', p2: '#e6d3a8', rattle: true },
+    { id: 'seakrait', name: '바다뱀', head: 'slim', pat: 'bands', bands: ['#2f6db5', '#2f6db5', '#e8eef5', '#e8eef5'] },
+    { id: 'emerald', name: '에메랄드 보아', base: '#14a052', pat: 'spots', p1: '#f1f8e9' },
+    { id: 'greenmamba', name: '그린맘바', head: 'slim', base: '#58b83a', pat: 'plain', eye: '#d9c23a', gloss: true },
+    { id: 'anaconda', name: '아나콘다', base: '#5f6b2f', pat: 'spots', p1: '#17170c', spot: 0.42 },
+    { id: 'blood', name: '블러드 파이톤', base: '#9b2a1e', pat: 'blotch', p1: '#c9772f', p2: '#5b130c' },
+    { id: 'indigo', name: '인디고 뱀', head: 'slim', base: '#1d2a63', pat: 'plain', gloss: true, iridescent: true },
+    { id: 'banana', name: '바나나 파이톤', base: '#f2d36b', pat: 'blotch', p1: '#e8a33d', p2: '#b8741a' },
+    { id: 'violet', name: '바이올렛 파이톤', base: '#6a3fa0', pat: 'blotch', p1: '#b48ee0', p2: '#3e2166' },
+    { id: 'tigershark', name: '뱀상어', kind: 'shark', base: '#7f8570', belly: '#e9e7d8', pat: 'tiger', p1: '#43473a' },
+    { id: 'hammer', name: '귀상어', kind: 'shark', base: '#7d8d9b', belly: '#eef2f5', hammer: true },
+    { id: 'moray', name: '곰치', kind: 'eel', base: '#6b6a2a', pat: 'spots', p1: '#2a2a10', spot: 0.35, fin: '#57561f' },
+    // ---------- 에픽 ----------
+    { id: 'cobra', name: '킹코브라', pat: 'bands', bands: ['#4b4630', '#4b4630', '#4b4630', '#2a2718'], hood: true, eye: '#d9a520' },
+    { id: 'mamba', name: '블랙맘바', head: 'slim', base: '#545a58', pat: 'plain', eye: '#8b8b6a', gloss: true, mouth: true },
+    { id: 'albino', name: '알비노 비단뱀', base: '#f4e7c9', pat: 'blotch', p1: '#f2c14e', p2: '#e0a82e', eye: '#e03131' },
+    { id: 'viper', name: '살무사', head: 'viper', base: '#6b5a48', pat: 'diamond', p1: '#2e241a', p2: '#a89272', eye: '#e8b923' },
+    { id: 'taipan', name: '내륙 타이판', head: 'slim', base: '#8a6a3f', pat: 'plain', headCol: '#2a1f14', eye: '#3b2a18' },
+    { id: 'gaboon', name: '가봉 북살무사', head: 'viper', base: '#8f6b45', pat: 'diamond', p1: '#4a2c16', p2: '#e2c89a', eye: '#d1b26f' },
+    { id: 'horned', name: '사막 뿔살무사', head: 'viper', base: '#d2b48c', pat: 'blotch', p1: '#a07c50', p2: '#7a5a34', eyeHorns: true },
+    { id: 'rainbow', name: '무지개 보아', base: '#b5582a', pat: 'blotch', p1: '#7a2d10', p2: '#5a1f08', iridescent: true },
+    { id: 'sapphire', name: '사파이어 뱀', head: 'slim', base: '#1f5fbf', pat: 'plain', shine: true, eye: '#a5d8ff' },
+    { id: 'ruby', name: '루비 뱀', base: '#b0122a', pat: 'plain', shine: true, eye: '#ffd43b' },
+    { id: 'pearl', name: '진주 뱀', base: '#efe9f7', pat: 'spots', p1: '#d8c8f0', shine: true, eye: '#845ef7' },
+    { id: 'greatwhite', name: '백상아리', kind: 'shark', base: '#66737f', belly: '#f4f6f8' },
+    { id: 'whaleshark', name: '고래상어', kind: 'shark', base: '#344a66', belly: '#e6edf5', pat: 'spots', p1: '#e8eef5', spot: 0.16 },
+    { id: 'electric', name: '전기뱀장어', kind: 'eel', base: '#3a3426', pat: 'plain', fin: '#5a503a', zap: '#7ef9ff', eye: '#7ef9ff' },
+    // ---------- 전설 ----------
+    { id: 'gold', name: '황금 비단뱀', base: '#e2b43c', pat: 'blotch', p1: '#9a6b12', p2: '#5c3d05', shine: true },
+    { id: 'crystal', name: '수정 뱀', base: '#9fd8ef', pat: 'spots', p1: '#ffffff', shine: true, eye: '#4dabf7' },
+    { id: 'lava', name: '용암 뱀', base: '#2a0e0a', pat: 'blotch', p1: '#ff6a1a', p2: '#ffd43b', glowPat: true, eye: '#ff922b' },
+    { id: 'nebula', name: '은하 뱀', base: '#2c1f5e', pat: 'spots', p1: '#e5dbff', stars: true, eye: '#da77f2' },
+    { id: 'shadow', name: '그림자 뱀', head: 'slim', base: '#121218', pat: 'spots', p1: '#b14cff', glowPat: true, eye: '#b14cff', eyeGlow: true },
+    { id: 'megalodon', name: '메갈로돈', kind: 'shark', base: '#45505a', belly: '#cfd8dc', eye: '#e03131', eyeGlow: true, scars: true },
+    { id: 'firedragon', name: '불꽃 용', kind: 'dragon', base: '#b8261c', eye: '#ffd43b', eyeGlow: true,
       dragon: { mane: '#ffb02e', horn: '#f3e3b5', glow: 'rgba(255,122,26,0.35)', belly: '#f5c26b' } },
-    { id: 'icedragon', name: '얼음 용', rare: 5, base: '#5fa8dc', pat: 'plain', eye: '#e3f8ff', eyeGlow: true, shine: true,
+    { id: 'icedragon', name: '얼음 용', kind: 'dragon', base: '#5fa8dc', eye: '#e3f8ff', eyeGlow: true, shine: true,
       dragon: { mane: '#e7f7ff', horn: '#ffffff', glow: 'rgba(159,227,255,0.35)', belly: '#d4efff' } },
-    { id: 'thunderdragon', name: '번개 용', rare: 5, base: '#353a8c', pat: 'plain', eye: '#fff3bf', eyeGlow: true,
+    { id: 'thunderdragon', name: '번개 용', kind: 'dragon', base: '#353a8c', eye: '#fff3bf', eyeGlow: true,
       dragon: { mane: '#ffe066', horn: '#fff8db', glow: 'rgba(255,224,102,0.32)', belly: '#9ea7ff' } },
-    { id: 'blackdragon', name: '흑룡', rare: 5, base: '#1b1b24', pat: 'plain', eye: '#ff3b3b', eyeGlow: true, gloss: true,
+    { id: 'blackdragon', name: '흑룡', kind: 'dragon', base: '#1b1b24', eye: '#ff3b3b', eyeGlow: true, gloss: true,
       dragon: { mane: '#8f3bd6', horn: '#cfc6e0', glow: 'rgba(177,76,255,0.35)', belly: '#4a3a66' } },
-    { id: 'golddragon', name: '황금 용', rare: 5, base: '#d99a1e', pat: 'plain', eye: '#ff6b6b', eyeGlow: true, shine: true,
+    { id: 'golddragon', name: '황금 용', kind: 'dragon', base: '#d99a1e', eye: '#ff6b6b', eyeGlow: true, shine: true,
       dragon: { mane: '#fff3bf', horn: '#fffaf0', glow: 'rgba(255,212,59,0.38)', belly: '#ffe8a3' } },
-    { id: 'jadedragon', name: '청룡', rare: 5, base: '#1c8a6b', pat: 'plain', eye: '#ffe066', eyeGlow: true,
+    { id: 'jadedragon', name: '청룡', kind: 'dragon', base: '#1c8a6b', eye: '#ffe066', eyeGlow: true,
       dragon: { mane: '#9ff0d2', horn: '#f1f8e9', glow: 'rgba(99,230,190,0.32)', belly: '#bff2dd' } },
   ];
   const RARITY = {
-    1: { nm: '일반', col: '#adb5bd' }, 2: { nm: '희귀', col: '#4dabf7' }, 3: { nm: '영웅', col: '#b197fc' },
-    4: { nm: '전설', col: '#ffd43b' }, 5: { nm: '신화', col: '#ff6b6b' },
+    1: { nm: '일반', col: '#adb5bd', maxLv: 20 },
+    2: { nm: '레어', col: '#4dabf7', maxLv: 30 },
+    3: { nm: '에픽', col: '#b197fc', maxLv: 40 },
+    4: { nm: '전설', col: '#ffd43b', maxLv: 50 },
   };
-  const STARTER_SKINS = ['tree', 'garter'];
-  const BOSS_SKIN = { id: 'boss', name: '보스', pat: 'bands', bands: ['#2b2350', '#2b2350', '#120f22'], hood: true, eye: '#ff2d2d', eyeGlow: true, gloss: true };
-  const BOSS_DRAGON = { id: 'bossdragon', name: '보스 용', base: '#22101a', pat: 'plain', eye: '#ff2d2d', eyeGlow: true, gloss: true,
+  const KIND_NM = { snake: '뱀', dragon: '용', shark: '상어', eel: '장어' };
+  const SKINS = SKIN_DEFS.map((s) => Object.assign({ kind: 'snake', pat: 'plain', rare: E.SKIN_TIER[s.id] || 1 }, s));
+  const STARTER_SKINS = ['tree', 'corn', 'bluerace'];
+  const BOSS_SKIN = { id: 'boss', name: '보스', kind: 'snake', pat: 'bands', bands: ['#2b2350', '#2b2350', '#120f22'], hood: true, eye: '#ff2d2d', eyeGlow: true, gloss: true };
+  const BOSS_DRAGON = { id: 'bossdragon', name: '보스 용', kind: 'dragon', base: '#22101a', pat: 'plain', eye: '#ff2d2d', eyeGlow: true, gloss: true,
     dragon: { mane: '#e03131', horn: '#e9ecef', glow: 'rgba(224,49,49,0.4)', belly: '#5c1a2a' } };
+  const BOSS_SHARK = { id: 'bossshark', name: '보스 상어', kind: 'shark', base: '#2a2f3a', belly: '#8a96a8', eye: '#ff2d2d', eyeGlow: true, scars: true };
   const SKIN_MAP = {};
-  SKINS.concat([BOSS_SKIN, BOSS_DRAGON]).forEach((s) => { SKIN_MAP[s.id] = s; });
+  SKINS.concat([BOSS_SKIN, BOSS_DRAGON, BOSS_SHARK]).forEach((s) => { SKIN_MAP[s.id] = s; });
   const skinOf = (id) => SKIN_MAP[id] || SKINS[0];
-  // 컴퓨터 뱀은 흔한 뱀이 더 자주 나오게
-  const BOT_RARE_WEIGHT = { 1: 50, 2: 30, 3: 14, 4: 5, 5: 1.5 };
+  // 컴퓨터 뱀은 흔한 캐릭터가 더 자주 나오게
+  const BOT_RARE_WEIGHT = { 1: 60, 2: 28, 3: 10, 4: 2 };
   function botSkin() {
     let t = 0;
     for (const s of SKINS) t += BOT_RARE_WEIGHT[s.rare];
     let r = Math.random() * t;
     for (const s of SKINS) { r -= BOT_RARE_WEIGHT[s.rare]; if (r <= 0) return s.id; }
     return SKINS[0].id;
+  }
+
+  // 진화 단계 (레벨이 오르면 모양이 바뀐다)
+  const EVO = [
+    { lv: 0, nm: '새끼' }, { lv: 15, nm: '어린 시절' }, { lv: 60, nm: '성체' }, { lv: 250, nm: '가시 진화' },
+    { lv: 1000, nm: '뿔 진화' }, { lv: 5000, nm: '날개 진화' }, { lv: 20000, nm: '고대 진화' },
+  ];
+  function evoOf(level) {
+    let k = 0;
+    for (let i = 0; i < EVO.length; i++) if (level >= EVO[i].lv) k = i;
+    return k;
   }
 
   function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
@@ -372,12 +470,11 @@
     const f = (v) => Math.round(p < 0 ? v * (1 + p) : v + (255 - v) * p);
     return `rgb(${f(rgb[0])},${f(rgb[1])},${f(rgb[2])})`;
   }
-  // 몸통 마디 색 (띠무늬 뱀은 길이에 따라 색이 바뀜)
+  // 몸통 마디 색 (띠무늬는 길이에 따라 색이 바뀜)
   function segColor(skin, i) {
     if (skin.pat === 'bands') return skin.bands[Math.floor(i / 4) % skin.bands.length];
     return skin.base;
   }
-
   // 마디마다 아주 살짝 밝기를 달리해서 자연스러운 얼룩을 만든다
   const mottleCache = new Map();
   function mottle(color, i) {
@@ -389,24 +486,38 @@
     return out;
   }
 
-  // 몸통 조각: 가로(x축)로 누운 원통. 비늘이 몸 방향을 따라가도록 마디마다 회전해서 그린다.
+  // 몸통 조각: 가로(x축)로 누운 원통. 비늘(상어는 매끈한 피부)이 몸 방향을 따라가도록 마디마다 회전해서 그린다.
   const tubeCache = new Map();
   function tube(color, skin) {
-    const key = color + (skin.shine ? 's' : '') + (skin.gloss ? 'g' : '') + (skin.iridescent ? 'i' : '') + (skin.dragon ? 'd' : '');
+    const smooth = skin.kind === 'shark' || skin.kind === 'eel';
+    const key = color + (skin.shine ? 's' : '') + (skin.gloss ? 'g' : '') + (skin.iridescent ? 'i' : '') + (skin.kind === 'dragon' ? 'd' : '') + (smooth ? 'm' : '') + (skin.belly && smooth ? skin.belly : '');
     let cvs = tubeCache.get(key);
     if (cvs) return cvs;
     cvs = document.createElement('canvas');
     cvs.width = cvs.height = 128;
     const c = cvs.getContext('2d'), rgb = toRgb(color);
     c.beginPath(); c.arc(64, 64, 64, 0, TAU); c.clip();
-    const hi = skin.shine ? 0.62 : skin.gloss ? 0.45 : 0.3;
+    const hi = skin.shine ? 0.62 : skin.gloss || smooth ? 0.45 : 0.3;
     const g = c.createLinearGradient(0, 0, 0, 128);
-    g.addColorStop(0, shadeRgb(rgb, -0.62));
-    g.addColorStop(0.16, shadeRgb(rgb, -0.25));
-    g.addColorStop(0.36, shadeRgb(rgb, hi));
-    g.addColorStop(0.5, color);
-    g.addColorStop(0.78, shadeRgb(rgb, -0.32));
-    g.addColorStop(1, shadeRgb(rgb, -0.7));
+    if (smooth && skin.belly) {
+      // 상어: 등은 진하고 옆구리로 갈수록 하얀 배가 보이는 색 (카운터셰이딩)
+      const b = toRgb(skin.belly);
+      g.addColorStop(0, shadeRgb(b, -0.35));
+      g.addColorStop(0.12, skin.belly);
+      g.addColorStop(0.26, color);
+      g.addColorStop(0.42, shadeRgb(rgb, hi));
+      g.addColorStop(0.58, color);
+      g.addColorStop(0.74, color);
+      g.addColorStop(0.88, skin.belly);
+      g.addColorStop(1, shadeRgb(b, -0.4));
+    } else {
+      g.addColorStop(0, shadeRgb(rgb, -0.62));
+      g.addColorStop(0.16, shadeRgb(rgb, -0.25));
+      g.addColorStop(0.36, shadeRgb(rgb, hi));
+      g.addColorStop(0.5, color);
+      g.addColorStop(0.78, shadeRgb(rgb, -0.32));
+      g.addColorStop(1, shadeRgb(rgb, -0.7));
+    }
     c.fillStyle = g; c.fillRect(0, 0, 128, 128);
     if (skin.iridescent) {
       const ir = c.createLinearGradient(0, 20, 128, 108);
@@ -414,21 +525,27 @@
       ir.addColorStop(0.7, 'rgba(255,200,60,0.22)'); ir.addColorStop(1, 'rgba(255,80,160,0.25)');
       c.fillStyle = ir; c.fillRect(0, 0, 128, 128);
     }
-    // 비늘: 꼬리 쪽(-x)을 향해 겹친 둥근 마름모
-    const sw = skin.dragon ? 18 : 13, sh = skin.dragon ? 14 : 10;
-    for (let row = 0, y = -sh / 2; y < 128 + sh; y += sh, row++) {
-      for (let x = (row % 2) * (sw / 2) - sw; x < 128 + sw; x += sw) {
-        const edge = Math.abs(y - 64) / 64;
-        c.beginPath();
-        c.moveTo(x + sw * 0.55, y);
-        c.quadraticCurveTo(x, y - sh * 0.62, x - sw * 0.45, y);
-        c.quadraticCurveTo(x, y + sh * 0.62, x + sw * 0.55, y);
-        c.strokeStyle = `rgba(0,0,0,${0.16 + edge * 0.18})`;
-        c.lineWidth = 1.3;
-        c.stroke();
-        c.fillStyle = `rgba(255,255,255,${(skin.shine || skin.gloss ? 0.1 : 0.05) * (1 - edge)})`;
-        c.beginPath(); c.ellipse(x + sw * 0.05, y - sh * 0.15, sw * 0.22, sh * 0.16, 0, 0, TAU); c.fill();
+    if (!smooth) {
+      // 비늘: 꼬리 쪽(-x)을 향해 겹친 둥근 마름모
+      const sw = skin.kind === 'dragon' ? 18 : 13, sh = skin.kind === 'dragon' ? 14 : 10;
+      for (let row = 0, y = -sh / 2; y < 128 + sh; y += sh, row++) {
+        for (let x = (row % 2) * (sw / 2) - sw; x < 128 + sw; x += sw) {
+          const edge = Math.abs(y - 64) / 64;
+          c.beginPath();
+          c.moveTo(x + sw * 0.55, y);
+          c.quadraticCurveTo(x, y - sh * 0.62, x - sw * 0.45, y);
+          c.quadraticCurveTo(x, y + sh * 0.62, x + sw * 0.55, y);
+          c.strokeStyle = `rgba(0,0,0,${0.16 + edge * 0.18})`;
+          c.lineWidth = 1.3;
+          c.stroke();
+          c.fillStyle = `rgba(255,255,255,${(skin.shine || skin.gloss ? 0.1 : 0.05) * (1 - edge)})`;
+          c.beginPath(); c.ellipse(x + sw * 0.05, y - sh * 0.15, sw * 0.22, sh * 0.16, 0, 0, TAU); c.fill();
+        }
       }
+    } else {
+      // 매끈한 피부의 잔결
+      c.strokeStyle = 'rgba(255,255,255,0.05)'; c.lineWidth = 1;
+      for (let y = 30; y < 100; y += 7) { c.beginPath(); c.moveTo(0, y); c.lineTo(128, y + 3); c.stroke(); }
     }
     tubeCache.set(key, cvs);
     return cvs;
@@ -490,9 +607,9 @@
      ========================================================= */
   const SAVE_KEY = 'snakeBattle.v1';
   const UPGRADES = [
-    { id: 'start', ico: '🐣', nm: '시작 레벨', max: 60, base: 40 },
-    { id: 'speed', ico: '⚡', nm: '속도', max: 10, base: 60 },
-    { id: 'food', ico: '🍯', nm: '먹이 효율', max: 40, base: 50 },
+    { id: 'start', ico: '🐣', nm: '시작 레벨', max: 200, base: 40, grow: 1.12 },
+    { id: 'speed', ico: '⚡', nm: '속도', max: 20, base: 60, grow: 1.22 },
+    { id: 'food', ico: '🍯', nm: '먹이 효율', max: 150, base: 50, grow: 1.12 },
   ];
   function loadSave() {
     let s = null;
@@ -501,23 +618,46 @@
     return {
       coins: s.coins || 0, stage: s.stage || 1, sound: s.sound !== false, music: s.music !== false,
       up: Object.assign({ start: 0, speed: 0, food: 0 }, s.up || {}),
-      skins: STARTER_SKINS.concat((Array.isArray(s.skins) ? s.skins : []).filter((id) => SKIN_MAP[id] && !STARTER_SKINS.includes(id))),
-      skin: SKIN_MAP[s.skin] && s.skin !== 'boss' ? s.skin : 'tree',
+      skins: STARTER_SKINS.concat((Array.isArray(s.skins) ? s.skins : []).filter((id) => E.SKIN_TIER[id] && !STARTER_SKINS.includes(id))),
+      skin: E.SKIN_TIER[s.skin] ? s.skin : 'tree',
       name: s.name || '',
+      inv: Object.assign({ speed: 1, magnet: 1, shield: 0, boost: 0, revive: 1 }, s.inv || {}),
+      autoBoost: s.autoBoost !== false,
+      skinLv: s.skinLv || {},
     };
   }
   let save = loadSave();
   function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) { /* 저장 불가 */ } }
-  const upCost = (u) => Math.round(u.base * Math.pow(1.3, save.up[u.id]) / 10) * 10;
-  const startLevel = () => 1 + save.up.start * 3;
+  const upCost = (u) => Math.round(u.base * Math.pow(u.grow, save.up[u.id]) / 10) * 10;
 
-  // 선물상자 하나에서 뱀 3마리 뽑기 (등급 확률: 일반 55 / 희귀 27 / 영웅 12 / 전설 4.5 / 신화 1.5)
-  const RARE_WEIGHT = { 1: 55, 2: 27, 3: 12, 4: 4.5, 5: 1.5 };
+  // 캐릭터 레벨: 등급이 높을수록 보너스가 크다
+  const skinLv = (id) => save.skinLv[id] || 1;
+  function skinBonus(id) {
+    const t = skinOf(id).rare || 1, lv = skinLv(id);
+    return { start: t * 2 + Math.floor(lv * t * 0.8), food: t * 4 + Math.round(lv * t * 0.5) };
+  }
+  const SKIN_COST_MUL = { 1: 1, 2: 1.6, 3: 2.5, 4: 4 };
+  const skinCost = (id) => Math.round(40 * SKIN_COST_MUL[skinOf(id).rare || 1] * Math.pow(1.17, skinLv(id) - 1) / 10) * 10;
+  const startLevel = () => 1 + save.up.start * 3 + skinBonus(save.skin).start;
+  const foodMulOf = () => 1 + 0.1 * save.up.food + skinBonus(save.skin).food / 100;
+
+  // 상점 아이템 (k: 엔진 효과 번호, dur: 지속 시간)
+  const SHOP = [
+    { id: 'speed', ico: '⚡', nm: '스피드 부스트', ds: '8초 동안 1.6배 빨라져요', price: 60, k: 3, dur: 8 },
+    { id: 'magnet', ico: '🧲', nm: '자석', ds: '15초 동안 주변 먹이를 끌어와요', price: 60, k: 2, dur: 15 },
+    { id: 'shield', ico: '🛡️', nm: '방패', ds: '6초 동안 먹히지도 물리지도 않아요', price: 100, k: 4, dur: 6 },
+    { id: 'boost', ico: '🚀', nm: '시작 부스트', ds: '다음 스테이지를 시작 레벨 2배(+10)로 시작', price: 80 },
+    { id: 'revive', ico: '❤️', nm: '부활', ds: '먹혀도 레벨 그대로 부활! 3초 무적', price: 150 },
+  ];
+  const shopItem = (id) => SHOP.find((x) => x.id === id);
+
+  // 선물상자 하나에서 캐릭터 3개 뽑기 (등급 확률: 일반 60 / 레어 28 / 에픽 10 / 전설 2)
+  const RARE_WEIGHT = { 1: 60, 2: 28, 3: 10, 4: 2 };
   function rollGift() {
     const picks = [];
     for (let tries = 0; picks.length < 3 && tries < 50; tries++) {
       let r = Math.random() * 100, rare = 1;
-      for (const k of [5, 4, 3, 2, 1]) { r -= RARE_WEIGHT[k]; if (r <= 0) { rare = k; break; } }
+      for (const k of [4, 3, 2, 1]) { r -= RARE_WEIGHT[k]; if (r <= 0) { rare = k; break; } }
       const pool = SKINS.filter((s) => s.rare === rare && !picks.includes(s));
       if (!pool.length) continue;
       // 아직 없는 뱀이 더 잘 나오게
@@ -693,41 +833,48 @@
   // 화면 고정 조명 방향 (왼쪽 위)
   const LIGHT = { x: -0.55, y: -0.83 };
 
+  // o: { wave, seed, evo, latch, boss, pulse, hurt, magnet, speed, shield, dbl, slow }
   function drawSnake(c, pts, w, skin, dir, o) {
-    const n = pts.length;
+    let n = pts.length;
     if (n < 2) return;
     o = o || {};
+    const kind = skin.kind || 'snake';
+    const evo = o.evo === undefined ? 2 : o.evo;
+    // 문 뱀은 잠깐 부풀고, 물린 뱀은 움찔 줄어든다
+    w *= 1 + (o.pulse || 0) * 0.35 - (o.hurt || 0) * 0.2;
     const r = w / 2;
     const dr = skin.dragon;
-    const headShape = dr ? 'dragon' : skin.head || 'normal';
-    // 목은 살짝 가늘고, 꼬리로 갈수록 뾰족하게
-    const rad = new Array(n), ang = new Array(n);
-    const tail = Math.max(4, Math.floor(n * (dr ? 0.5 : 0.42)));
     if (o.wave) {
       // 머리는 그대로, 몸통은 좌우로 살짝 물결치며 기어가는 느낌 (화면 표현만)
-      const src = pts;
+      const src = pts, amp0 = kind === 'shark' ? 0.18 : 0.28;
       pts = new Array(n);
       pts[0] = src[0];
       for (let i = 1; i < n; i++) {
         const a = src[i - 1], b = src[Math.min(n - 1, i + 1)];
         const an = Math.atan2(a.y - b.y, a.x - b.x);
-        const amp = r * 0.28 * Math.min(1, i / 8);
+        const amp = r * amp0 * Math.min(1, i / 8);
         const off = Math.sin(T * 7 + (o.seed || 0) - i * 0.32) * amp;
         pts[i] = { x: src[i].x - Math.sin(an) * off, y: src[i].y + Math.cos(an) * off };
       }
     }
+    // 두께: 목은 살짝 가늘고, 꼬리로 갈수록 뾰족하게 (상어는 앞쪽이 통통)
+    const rad = new Array(n), ang = new Array(n);
+    const tail = Math.max(4, Math.floor(n * (dr ? 0.5 : kind === 'shark' ? 0.62 : 0.42)));
     for (let i = 0; i < n; i++) {
       const k = n - 1 - i;
-      let v = k < tail ? r * (0.12 + 0.88 * Math.pow(k / tail, 0.75)) : r;
-      if (i < 5) v *= 0.8 + i * 0.04;
+      let v = k < tail ? r * ((kind === 'shark' ? 0.2 : 0.12) + (kind === 'shark' ? 0.8 : 0.88) * Math.pow(k / tail, 0.75)) : r;
+      if (kind === 'shark') v *= 1 + 0.18 * Math.max(0, 1 - i / (n * 0.35));
+      else if (i < 5) v *= 0.8 + i * 0.04;
+      if (evo === 0) v *= 0.92;
       rad[i] = v;
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
       ang[i] = Math.atan2(a.y - b.y, a.x - b.x);
     }
-    // 효과 오라 (속도·두배·얼음)
-    const aura = o.speed ? 'rgba(255,214,90,0.25)' : o.dbl ? 'rgba(218,119,242,0.28)' : o.slow ? 'rgba(130,210,255,0.32)' : null;
-    if (aura || dr) {
-      c.strokeStyle = aura || dr.glow;
+    // 효과 오라 (아이템·용·고대 진화)
+    const aura = o.speed ? 'rgba(255,214,90,0.25)' : o.dbl ? 'rgba(218,119,242,0.28)' : o.slow ? 'rgba(130,210,255,0.32)'
+      : dr ? dr.glow : evo >= 6 ? 'rgba(255,236,153,0.25)' : evo >= 5 ? 'rgba(165,216,255,0.16)' : null;
+    if (aura) {
+      c.strokeStyle = aura;
       c.lineCap = 'round'; c.lineJoin = 'round';
       c.lineWidth = r * 2 + 14 + Math.sin(T * 6) * 4;
       c.beginPath();
@@ -741,8 +888,11 @@
       for (let i = 0; i < n; i += 2) { const p = pts[i]; c.moveTo(p.x + ox + rad[i] * k, p.y + oy); c.arc(p.x + ox, p.y + oy, rad[i] * k, 0, TAU); }
       c.fill();
     }
-    // 용 다리 (몸 아래)
+    // 몸 아래쪽에 깔리는 부속: 용 다리, 상어 가슴지느러미, 날개 진화
     if (dr) for (const f of [0.2, 0.55]) drawLegs(c, pts, rad, ang, Math.floor(n * f), skin);
+    if (kind === 'shark') drawPectoral(c, pts, rad, ang, skin, Math.floor(n * 0.16), 1);
+    if (evo >= 5) drawWings(c, pts, rad, ang, skin, evo);
+    if (kind === 'shark') drawTailFin(c, pts, rad, ang, skin);
     // 테두리 (우주 배경과 구분)
     c.fillStyle = shadeRgb(toRgb(segColor(skin, 2)), -0.72);
     c.beginPath();
@@ -757,8 +907,22 @@
       c.drawImage(tube(mottle(segColor(skin, i), i), skin), -rr, -rr, rr * 2, rr * 2);
     }
     c.setTransform(m);
-    drawPattern(c, pts, rad, ang, skin);
+    // 무늬: 새끼는 무늬가 없고, 어릴 때는 흐릿하다
+    if (evo >= 1) {
+      c.globalAlpha = evo === 1 ? 0.55 : 1;
+      drawPattern(c, pts, rad, ang, skin);
+      c.globalAlpha = 1;
+    } else {
+      // 새끼: 몸 색이 연하다
+      c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineCap = 'round'; c.lineWidth = r * 1.6;
+      c.beginPath();
+      for (let i = 1; i < n; i += 2) { const p = pts[i]; if (i === 1) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y); }
+      c.stroke();
+    }
     if (dr) drawMane(c, pts, rad, ang, skin);
+    if (kind === 'eel') drawEelFin(c, pts, rad, ang, skin);
+    if (kind === 'shark') { drawDorsal(c, pts, rad, ang, skin, Math.floor(n * 0.28), 1); if (skin.scars) drawScars(c, pts, rad, ang); }
+    if (evo >= 3) drawSpikes(c, pts, rad, ang, skin, kind, evo);
     // 방울뱀 꼬리
     if (skin.rattle) {
       for (let i = n - 1, k = 0; i >= Math.max(1, n - 7); i--, k++) {
@@ -769,9 +933,9 @@
         c.beginPath(); c.arc(p.x, p.y, rr, 0, TAU); c.fill(); c.stroke();
       }
     }
-    // 화면 고정 조명에 맞춘 등줄기 반사광
+    // 화면 고정 조명에 맞춘 등줄기 반사광 (뿔 진화부터는 금속처럼 더 반짝임)
     c.lineCap = 'round'; c.lineJoin = 'round';
-    const spec = skin.shine ? 1.9 : skin.gloss ? 1.5 : 1;
+    const spec = (skin.shine ? 1.9 : skin.gloss || kind === 'shark' ? 1.5 : 1) * (evo >= 4 ? 1.4 : 1);
     for (const [lw, a, off] of [[0.42, 0.08, 0.3], [0.16, 0.22, 0.42], [0.06, 0.4, 0.46]]) {
       c.strokeStyle = `rgba(255,255,255,${Math.min(0.8, a * spec)})`;
       c.lineWidth = r * lw;
@@ -789,8 +953,21 @@
         c.beginPath(); c.arc(p.x + (k / 13 - 0.5) * rad[i], p.y + (((k * 5) % 13) / 13 - 0.5) * rad[i], Math.max(1.2, r * 0.07), 0, TAU); c.fill();
       }
     }
+    if (skin.zap) drawZap(c, pts, rad, skin);
+    // 물린 뱀: 빨갛게 번쩍
+    if (o.hurt) {
+      c.strokeStyle = `rgba(255,60,60,${0.45 * o.hurt})`; c.lineWidth = r * 2.1;
+      c.beginPath();
+      for (let i = 0; i < n; i += 2) { const p = pts[i]; if (!i) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y); }
+      c.stroke();
+    }
+    // 머리
     if (dr) drawDragonHead(c, pts, r, skin, dir, o);
-    else drawHead(c, pts, r, skin, dir, o, headShape);
+    else if (kind === 'shark') drawSharkHead(c, pts, r, skin, dir, o);
+    else if (kind === 'eel') drawEelHead(c, pts, r, skin, dir, o);
+    else drawHead(c, pts, r, skin, dir, o, skin.head || 'normal');
+    if (evo >= 4 && !dr) drawHeadHorns(c, pts[0], r, dir, skin, evo);
+    if (evo >= 6) drawCrownGlow(c, pts[0], r, skin);
     if (o.shield) {
       const h = pts[0], sr = r * 2.6 + Math.sin(T * 8) * 3;
       const g = c.createRadialGradient(h.x, h.y, sr * 0.55, h.x, h.y, sr);
@@ -807,10 +984,10 @@
     }
   }
 
-  // 등 무늬: 마름모 / 얼룩 / 줄 / 점
+  // 등 무늬: 마름모 / 얼룩 / 줄 / 점 / 가로줄(뱀상어)
   function drawPattern(c, pts, rad, ang, skin) {
     const n = pts.length, pat = skin.pat;
-    if (pat === 'plain' || pat === 'bands') return;
+    if (!pat || pat === 'plain' || pat === 'bands') return;
     if (pat === 'stripe') {
       c.strokeStyle = skin.p1; c.lineCap = 'round';
       c.beginPath();
@@ -819,7 +996,7 @@
       return;
     }
     if (skin.glowPat) { c.save(); c.shadowColor = skin.p1; c.shadowBlur = 12; }
-    const step = pat === 'spots' ? 4 : 6;
+    const step = pat === 'spots' ? (skin.spot && skin.spot < 0.2 ? 2 : 4) : pat === 'tiger' ? 3 : 6;
     for (let i = 5; i < n - 3; i += step) {
       const p = pts[i], rr = rad[i];
       c.save();
@@ -837,18 +1014,91 @@
         c.beginPath(); c.ellipse(rr * 0.05, side * rr * 0.12, rr * 0.7, rr * 0.52, side * 0.3, 0, TAU); c.fill();
         c.fillStyle = skin.p1;
         c.beginPath(); c.ellipse(rr * 0.05, side * rr * 0.12, rr * 0.54, rr * 0.38, side * 0.3, 0, TAU); c.fill();
+      } else if (pat === 'tiger') {
+        c.fillStyle = skin.p1; c.globalAlpha = 0.75;
+        c.beginPath(); c.ellipse(0, 0, rr * 0.16, rr * 0.7, 0.25, 0, TAU); c.fill();
+        c.globalAlpha = 1;
       } else {
         const sz = skin.spot || 0.22;
         c.fillStyle = skin.p1;
         c.globalAlpha = 0.88;
-        for (const s of skin.spot ? [-1, 1] : [0]) {
-          c.beginPath(); c.ellipse(0, s * rr * 0.35, rr * sz, rr * sz * 0.62, 0, 0, TAU); c.fill();
-        }
+        const offs = skin.spot && skin.spot < 0.2 ? [-0.55, 0, 0.55] : skin.spot ? [-0.35, 0.35] : [0];
+        for (const s of offs) { c.beginPath(); c.ellipse(0, s * rr, rr * sz, rr * sz * 0.8, 0, 0, TAU); c.fill(); }
         c.globalAlpha = 1;
       }
       c.restore();
     }
     if (skin.glowPat) c.restore();
+  }
+
+  // 가시 진화: 등을 따라 솟은 가시 (상어는 작은 지느러미 줄)
+  function drawSpikes(c, pts, rad, ang, skin, kind, evo) {
+    const n = pts.length;
+    const col = kind === 'dragon' ? skin.dragon.horn : shadeRgb(toRgb(segColor(skin, 3)), evo >= 4 ? 0.25 : -0.45);
+    c.fillStyle = col; c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 1;
+    const step = kind === 'shark' ? 5 : 3;
+    for (let i = 4; i < n - 4; i += step) {
+      const p = pts[i], rr = rad[i], s = kind === 'shark' ? 0.55 : 0.42 + (evo - 3) * 0.06;
+      c.save(); c.translate(p.x, p.y); c.rotate(ang[i]);
+      c.beginPath();
+      c.moveTo(rr * 0.35, -rr * 0.08); c.lineTo(-rr * s * 1.6, 0); c.lineTo(rr * 0.35, rr * 0.08);
+      c.closePath(); c.fill(); c.stroke();
+      c.restore();
+    }
+  }
+
+  // 날개 진화: 목 뒤로 펼쳐지는 반투명 날개막
+  function drawWings(c, pts, rad, ang, skin, evo) {
+    const i = Math.min(pts.length - 1, Math.max(2, Math.floor(pts.length * 0.12)));
+    const p = pts[i], rr = rad[i], a = ang[i];
+    const flap = Math.sin(T * 5) * 0.18;
+    const col = skin.dragon ? skin.dragon.mane : evo >= 6 ? '#ffe066' : shadeRgb(toRgb(segColor(skin, 2)), 0.35);
+    c.save(); c.translate(p.x, p.y); c.rotate(a);
+    for (const s of [-1, 1]) {
+      c.save(); c.rotate(s * flap);
+      const g = c.createLinearGradient(0, 0, -rr * 3, s * rr * 3.4);
+      g.addColorStop(0, col); g.addColorStop(1, 'rgba(255,255,255,0.05)');
+      c.fillStyle = g; c.globalAlpha = 0.7;
+      c.beginPath();
+      c.moveTo(rr * 0.4, s * rr * 0.5);
+      c.quadraticCurveTo(rr * 0.2, s * rr * 3.2, -rr * 2.6, s * rr * 3.6);
+      c.quadraticCurveTo(-rr * 1.6, s * rr * 2.2, -rr * 2.4, s * rr * 1.4);
+      c.quadraticCurveTo(-rr * 1.2, s * rr * 1.1, -rr * 1.4, s * rr * 0.5);
+      c.closePath(); c.fill();
+      c.globalAlpha = 1;
+      c.strokeStyle = 'rgba(0,0,0,0.3)'; c.lineWidth = 1.2;
+      c.beginPath(); c.moveTo(rr * 0.3, s * rr * 0.6); c.lineTo(-rr * 2.4, s * rr * 3.4);
+      c.moveTo(rr * 0.2, s * rr * 0.6); c.lineTo(-rr * 2.2, s * rr * 1.5); c.stroke();
+      c.restore();
+    }
+    c.restore();
+  }
+
+  // 고대 진화: 머리 위의 빛나는 관과 떠도는 빛
+  function drawCrownGlow(c, h, r, skin) {
+    c.save();
+    c.shadowColor = '#ffe066'; c.shadowBlur = 18;
+    c.fillStyle = 'rgba(255,224,102,0.9)';
+    for (let k = 0; k < 6; k++) {
+      const a = T * 1.5 + k * (TAU / 6);
+      c.beginPath(); c.arc(h.x + Math.cos(a) * r * 2.2, h.y + Math.sin(a) * r * 2.2, Math.max(2, r * 0.13), 0, TAU); c.fill();
+    }
+    c.restore();
+  }
+
+  // 뿔 진화: 머리 뒤쪽의 휘어진 뿔
+  function drawHeadHorns(c, h, r, dir, skin, evo) {
+    const hr = r * 1.15;
+    c.save(); c.translate(h.x, h.y); c.rotate(dir);
+    c.strokeStyle = evo >= 6 ? '#ffe9a8' : '#e9e2cf'; c.lineCap = 'round';
+    for (const s of [-1, 1]) {
+      c.lineWidth = hr * 0.16;
+      c.beginPath(); c.moveTo(-hr * 0.1, s * hr * 0.55); c.quadraticCurveTo(-hr * 0.7, s * hr * 1.05, -hr * 1.3, s * hr * 0.85); c.stroke();
+      c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = hr * 0.05;
+      c.beginPath(); c.moveTo(-hr * 0.4, s * hr * 0.8); c.lineTo(-hr * 0.5, s * hr * 0.92); c.stroke();
+      c.strokeStyle = evo >= 6 ? '#ffe9a8' : '#e9e2cf';
+    }
+    c.restore();
   }
 
   // 용: 등을 따라 이어지는 갈기 지느러미
@@ -893,6 +1143,103 @@
     c.restore();
   }
 
+  // 상어: 가슴지느러미 / 등지느러미 / 꼬리지느러미 / 흉터
+  function finFill(c, skin, rr) {
+    const g = c.createLinearGradient(0, -rr, 0, rr);
+    g.addColorStop(0, shadeRgb(toRgb(skin.base), 0.15)); g.addColorStop(1, shadeRgb(toRgb(skin.base), -0.45));
+    return g;
+  }
+  function drawPectoral(c, pts, rad, ang, skin, i) {
+    if (i < 1 || i >= pts.length) return;
+    const p = pts[i], rr = rad[i];
+    const sweep = Math.sin(T * 4) * 0.12;
+    c.save(); c.translate(p.x, p.y); c.rotate(ang[i]);
+    for (const s of [-1, 1]) {
+      c.save(); c.rotate(s * sweep);
+      c.fillStyle = finFill(c, skin, rr * 2);
+      c.beginPath();
+      c.moveTo(rr * 0.4, s * rr * 0.6);
+      c.quadraticCurveTo(-rr * 0.2, s * rr * 1.9, -rr * 1.5, s * rr * 2.3);
+      c.quadraticCurveTo(-rr * 0.6, s * rr * 1.2, -rr * 0.6, s * rr * 0.6);
+      c.closePath(); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 1.2; c.stroke();
+      c.restore();
+    }
+    c.restore();
+  }
+  function drawDorsal(c, pts, rad, ang, skin, i) {
+    if (i < 1 || i >= pts.length) return;
+    const p = pts[i], rr = rad[i];
+    c.save(); c.translate(p.x, p.y); c.rotate(ang[i]);
+    // 위에서 본 등지느러미: 등줄기 위의 날렵한 삼각형 + 그림자
+    c.fillStyle = 'rgba(0,0,0,0.3)';
+    c.beginPath(); c.moveTo(rr * 0.7, rr * 0.12); c.quadraticCurveTo(-rr * 0.6, rr * 0.5, -rr * 1.9, rr * 0.55); c.lineTo(-rr * 0.6, rr * 0.05); c.closePath(); c.fill();
+    const g = c.createLinearGradient(rr * 0.7, -rr * 0.2, -rr * 1.8, rr * 0.2);
+    g.addColorStop(0, shadeRgb(toRgb(skin.base), 0.25)); g.addColorStop(1, shadeRgb(toRgb(skin.base), -0.5));
+    c.fillStyle = g;
+    c.beginPath(); c.moveTo(rr * 0.8, -rr * 0.12); c.quadraticCurveTo(-rr * 0.2, -rr * 0.22, -rr * 1.7, -rr * 0.02); c.lineTo(-rr * 0.5, rr * 0.16); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(0,0,0,0.4)'; c.lineWidth = 1.2; c.stroke();
+    c.restore();
+  }
+  function drawTailFin(c, pts, rad, ang, skin) {
+    const n = pts.length, i = n - 1, p = pts[i], a = ang[Math.max(0, i - 1)];
+    const rr = rad[Math.max(0, n - 6)] * 2.4;
+    const sw = Math.sin(T * 9) * 0.25;
+    c.save(); c.translate(p.x, p.y); c.rotate(a + sw);
+    c.fillStyle = finFill(c, skin, rr);
+    c.beginPath();
+    c.moveTo(rr * 0.25, 0);
+    c.quadraticCurveTo(-rr * 0.3, -rr * 0.35, -rr * 0.95, -rr * 0.95);
+    c.quadraticCurveTo(-rr * 0.45, -rr * 0.2, -rr * 0.5, 0);
+    c.quadraticCurveTo(-rr * 0.45, rr * 0.2, -rr * 0.8, rr * 0.75);
+    c.quadraticCurveTo(-rr * 0.3, rr * 0.3, rr * 0.25, 0);
+    c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(0,0,0,0.4)'; c.lineWidth = 1.2; c.stroke();
+    c.restore();
+  }
+  function drawScars(c, pts, rad, ang) {
+    c.strokeStyle = 'rgba(230,230,230,0.45)'; c.lineCap = 'round';
+    for (const f of [0.18, 0.33, 0.47]) {
+      const i = Math.floor(pts.length * f);
+      if (i < 1 || i >= pts.length) continue;
+      const p = pts[i], rr = rad[i];
+      c.lineWidth = Math.max(1, rr * 0.07);
+      c.save(); c.translate(p.x, p.y); c.rotate(ang[i] + 0.9);
+      c.beginPath(); c.moveTo(-rr * 0.5, 0); c.lineTo(rr * 0.5, 0); c.moveTo(-rr * 0.4, rr * 0.18); c.lineTo(rr * 0.35, rr * 0.18); c.stroke();
+      c.restore();
+    }
+  }
+
+  // 장어: 등을 따라 이어지는 긴 지느러미 띠
+  function drawEelFin(c, pts, rad, ang, skin) {
+    const n = pts.length;
+    c.strokeStyle = skin.fin || shadeRgb(toRgb(skin.base), -0.3);
+    c.globalAlpha = 0.8; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.lineWidth = Math.max(2, rad[Math.floor(n / 3)] * 0.28);
+    c.beginPath();
+    for (let i = 4; i < n; i++) {
+      const p = pts[i], wob = Math.sin(T * 10 - i * 0.6) * rad[i] * 0.12;
+      const x = p.x - Math.sin(ang[i]) * wob, y = p.y + Math.cos(ang[i]) * wob;
+      if (i === 4) c.moveTo(x, y); else c.lineTo(x, y);
+    }
+    c.stroke();
+    c.globalAlpha = 1;
+  }
+  // 전기뱀장어: 몸을 타고 흐르는 번개
+  function drawZap(c, pts, rad, skin) {
+    if ((T * 3) % 1.6 > 0.7) return;
+    c.save();
+    c.shadowColor = skin.zap; c.shadowBlur = 10;
+    c.strokeStyle = skin.zap; c.lineWidth = 2;
+    c.beginPath();
+    for (let i = 2; i < pts.length; i += 2) {
+      const p = pts[i], j = (Math.sin(i * 12.9 + T * 50) * 0.8) * rad[i];
+      if (i === 2) c.moveTo(p.x + j, p.y - j * 0.5); else c.lineTo(p.x + j, p.y - j * 0.5);
+    }
+    c.stroke();
+    c.restore();
+  }
+
   // 머리 모양 경로 (x축이 앞쪽)
   function headPath(c, hr, W, snout) {
     c.beginPath();
@@ -913,28 +1260,33 @@
     return g;
   }
 
-  function drawEyes(c, hr, W, skin, ex, ew) {
+  function drawEyes(c, hr, W, skin, ex, ew, size) {
     const ec = skin.eye || '#e0b028';
+    const round = skin.kind === 'shark' || skin.kind === 'eel';
     for (const s of [-1, 1]) {
-      const ey = s * W * ew, er = hr * (skin.dragon ? 0.19 : 0.15);
+      const ey = s * W * ew, er = hr * (size || 0.15);
       c.fillStyle = 'rgba(0,0,0,0.5)';
       c.beginPath(); c.ellipse(ex, ey, er * 1.32, er * 1.12, 0, 0, TAU); c.fill();
       if (skin.eyeGlow) { c.save(); c.shadowColor = ec; c.shadowBlur = 16; }
       const eg = c.createRadialGradient(ex - er * 0.3, ey - er * 0.3, er * 0.1, ex, ey, er);
-      eg.addColorStop(0, '#fff6d6'); eg.addColorStop(0.45, ec); eg.addColorStop(1, shadeRgb(toRgb(ec), -0.55));
+      eg.addColorStop(0, round ? '#555' : '#fff6d6'); eg.addColorStop(0.45, ec); eg.addColorStop(1, shadeRgb(toRgb(ec), -0.55));
       c.fillStyle = eg;
       c.beginPath(); c.ellipse(ex, ey, er * 1.1, er * 0.95, 0, 0, TAU); c.fill();
       if (skin.eyeGlow) c.restore();
-      c.fillStyle = '#080808';
-      c.beginPath(); c.ellipse(ex + er * 0.08, ey, er * 0.72, er * 0.16, 0, 0, TAU); c.fill();
+      if (!round) {
+        c.fillStyle = '#080808';
+        c.beginPath(); c.ellipse(ex + er * 0.08, ey, er * 0.72, er * 0.16, 0, 0, TAU); c.fill();
+      }
       c.fillStyle = 'rgba(255,255,255,0.75)';
       c.beginPath(); c.ellipse(ex - er * 0.4, ey - s * er * 0.3, er * 0.22, er * 0.1, -0.5, 0, TAU); c.fill();
-      // 눈 위 비늘(눈썹 판)
-      c.fillStyle = 'rgba(0,0,0,0.35)';
-      c.beginPath();
-      if (s < 0) c.ellipse(ex - er * 0.1, ey - er * 0.55, er * 1.35, er * 0.5, 0, Math.PI, TAU);
-      else c.ellipse(ex - er * 0.1, ey + er * 0.55, er * 1.35, er * 0.5, 0, 0, Math.PI);
-      c.fill();
+      if (!round) {
+        // 눈 위 비늘(눈썹 판)
+        c.fillStyle = 'rgba(0,0,0,0.35)';
+        c.beginPath();
+        if (s < 0) c.ellipse(ex - er * 0.1, ey - er * 0.55, er * 1.35, er * 0.5, 0, Math.PI, TAU);
+        else c.ellipse(ex - er * 0.1, ey + er * 0.55, er * 1.35, er * 0.5, 0, 0, Math.PI);
+        c.fill();
+      }
       if (skin.eyeHorns) {
         c.fillStyle = shadeRgb(toRgb(skin.base), -0.15);
         c.strokeStyle = 'rgba(0,0,0,0.4)'; c.lineWidth = 1;
@@ -957,10 +1309,11 @@
     c.stroke();
   }
 
-  // 뱀 머리: 삼각형 머리, 입술 비늘, 세로 동공 눈, 콧구멍, 혀
+  // 뱀 머리: 종류별 모양, 입술 비늘, 세로 동공 눈, 콧구멍, 혀
   function drawHead(c, pts, r, skin, dir, o, shape) {
     const h = pts[0];
-    const hr = r * (shape === 'viper' ? 1.12 : shape === 'slim' ? 1.08 : 1.12);
+    const baby = (o.evo === undefined ? 2 : o.evo) === 0 ? 1.12 : 1;
+    const hr = r * (shape === 'slim' ? 1.08 : 1.12) * baby;
     const W = hr * (shape === 'viper' ? 1.22 : shape === 'slim' ? 0.8 : 0.98);
     const SN = shape === 'viper' ? 1.45 : shape === 'slim' ? 1.8 : 1.62;
     const col = skin.headCol || segColor(skin, 0), rgb = toRgb(col);
@@ -997,7 +1350,7 @@
     c.moveTo(hr * 0.85, -W * 0.36); c.lineTo(hr * 0.85, W * 0.36);
     c.moveTo(hr * 0.35, -W * 0.5); c.lineTo(hr * 0.35, W * 0.5);
     c.stroke();
-    if (skin.pat === 'diamond' || skin.pat === 'blotch') {
+    if ((skin.pat === 'diamond' || skin.pat === 'blotch') && o.evo !== 0) {
       c.fillStyle = skin.p1;
       c.globalAlpha = 0.72;
       c.beginPath(); c.moveTo(hr * 0.6, 0); c.lineTo(-hr * 0.5, -W * 0.52); c.lineTo(-hr * 0.3, 0); c.lineTo(-hr * 0.5, W * 0.52); c.closePath(); c.fill();
@@ -1014,7 +1367,86 @@
       c.fillStyle = 'rgba(0,0,0,0.55)';
       for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hr * 1.02, s * W * 0.52, hr * 0.05, hr * 0.035, 0, 0, TAU); c.fill(); }
     }
-    drawEyes(c, hr, W, skin, hr * (shape === 'slim' ? 0.75 : 0.62), shape === 'viper' ? 0.62 : 0.6);
+    drawEyes(c, hr, W, skin, hr * (shape === 'slim' ? 0.75 : 0.62), shape === 'viper' ? 0.62 : 0.6, baby > 1 ? 0.19 : 0.15);
+    c.restore();
+  }
+
+  // 상어 머리: 뾰족한 주둥이, 아가미 구멍, 동그란 검은 눈 (귀상어는 망치 머리)
+  function drawSharkHead(c, pts, r, skin, dir, o) {
+    const h = pts[0], hr = r * 1.3, W = hr * 0.95;
+    const col = skin.base, rgb = toRgb(col);
+    c.save();
+    c.translate(h.x, h.y); c.rotate(dir);
+    // 아가미 구멍 (머리 뒤 양옆)
+    c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = Math.max(1, hr * 0.05); c.lineCap = 'round';
+    for (const s of [-1, 1]) for (let k = 0; k < 4; k++) {
+      c.beginPath(); c.moveTo(-hr * (0.5 + k * 0.17), s * W * 0.55); c.lineTo(-hr * (0.42 + k * 0.17), s * W * 0.9); c.stroke();
+    }
+    if (skin.hammer) {
+      c.beginPath();
+      c.moveTo(-hr * 0.5, -W * 0.7);
+      c.quadraticCurveTo(hr * 0.5, -W * 0.8, hr * 0.85, -W * 1.9);
+      c.quadraticCurveTo(hr * 1.3, -W * 2.0, hr * 1.35, -W * 1.5);
+      c.quadraticCurveTo(hr * 1.45, 0, hr * 1.35, W * 1.5);
+      c.quadraticCurveTo(hr * 1.3, W * 2.0, hr * 0.85, W * 1.9);
+      c.quadraticCurveTo(hr * 0.5, W * 0.8, -hr * 0.5, W * 0.7);
+      c.closePath();
+    } else {
+      c.beginPath();
+      c.moveTo(-hr * 0.6, -W * 0.85);
+      c.bezierCurveTo(hr * 0.3, -W * 1.05, hr * 1.2, -W * 0.75, hr * 1.95, -W * 0.12);
+      c.quadraticCurveTo(hr * 2.1, 0, hr * 1.95, W * 0.12);
+      c.bezierCurveTo(hr * 1.2, W * 0.75, hr * 0.3, W * 1.05, -hr * 0.6, W * 0.85);
+      c.closePath();
+    }
+    c.fillStyle = headGradient(c, hr, dir, col, rgb, { gloss: true });
+    c.fill();
+    c.strokeStyle = shadeRgb(rgb, -0.65); c.lineWidth = Math.max(1.5, hr * 0.05); c.stroke();
+    // 옆구리의 흰 배 색이 살짝 보이게
+    c.save(); c.clip();
+    c.strokeStyle = skin.belly || '#eee'; c.globalAlpha = 0.55; c.lineWidth = hr * 0.22; c.stroke();
+    c.globalAlpha = 1; c.restore();
+    // 콧구멍
+    c.fillStyle = 'rgba(0,0,0,0.55)';
+    for (const s of [-1, 1]) { c.beginPath(); c.ellipse(skin.hammer ? hr * 1.25 : hr * 1.6, s * (skin.hammer ? W * 1.1 : W * 0.28), hr * 0.07, hr * 0.03, 0.3 * s, 0, TAU); c.fill(); }
+    if (skin.hammer) {
+      drawEyes(c, hr, W, skin, hr * 1.1, 1.75, 0.13);
+    } else {
+      drawEyes(c, hr, W, skin, hr * 1.05, 0.62, 0.12);
+    }
+    // 무는 중이면 이빨 보이는 입
+    if (o.latch) {
+      c.fillStyle = '#3a0d12';
+      c.beginPath(); c.ellipse(hr * 1.55, 0, hr * 0.35, hr * 0.32, 0, 0, TAU); c.fill();
+      c.fillStyle = '#fff';
+      for (let k = -2; k <= 2; k++) { c.beginPath(); c.moveTo(hr * 1.75, k * hr * 0.12); c.lineTo(hr * 1.6, k * hr * 0.12 + hr * 0.05); c.lineTo(hr * 1.75, k * hr * 0.12 + hr * 0.1); c.fill(); }
+    }
+    c.restore();
+  }
+
+  // 장어 머리: 뭉툭한 머리, 작은 눈, 콧구멍 관, (곰치는) 벌린 입
+  function drawEelHead(c, pts, r, skin, dir, o) {
+    const h = pts[0], hr = r * 1.12, W = hr * 0.88;
+    const col = skin.base, rgb = toRgb(col);
+    c.save();
+    c.translate(h.x, h.y); c.rotate(dir);
+    headPath(c, hr, W, 1.7);
+    c.fillStyle = headGradient(c, hr, dir, col, rgb, { gloss: true }); c.fill();
+    c.strokeStyle = shadeRgb(rgb, -0.65); c.lineWidth = Math.max(1.5, hr * 0.05); c.stroke();
+    if (skin.pat === 'spots') {
+      c.fillStyle = skin.p1; c.globalAlpha = 0.7;
+      for (const [x, y] of [[0.2, -0.3], [0.6, 0.25], [-0.2, 0.3], [0.9, -0.15]]) { c.beginPath(); c.arc(hr * x, W * y, hr * 0.12, 0, TAU); c.fill(); }
+      c.globalAlpha = 1;
+    }
+    // 입 (곰치는 늘 살짝 벌리고 있다)
+    if (o.latch || skin.id === 'moray') {
+      const open = o.latch ? 0.3 : 0.16 + Math.sin(T * 3) * 0.05;
+      c.fillStyle = '#2a0f0f';
+      c.beginPath(); c.moveTo(hr * 1.7, 0); c.lineTo(hr * 0.7, -W * open); c.lineTo(hr * 0.7, W * open); c.closePath(); c.fill();
+    }
+    c.strokeStyle = shadeRgb(rgb, -0.4); c.lineWidth = Math.max(1.5, hr * 0.08); c.lineCap = 'round';
+    for (const s of [-1, 1]) { c.beginPath(); c.moveTo(hr * 1.5, s * W * 0.2); c.lineTo(hr * 1.75, s * W * 0.3); c.stroke(); }
+    drawEyes(c, hr, W, skin, hr * 0.95, 0.5, 0.12);
     c.restore();
   }
 
@@ -1024,7 +1456,6 @@
     const col = skin.base, rgb = toRgb(col);
     c.save();
     c.translate(h.x, h.y); c.rotate(dir);
-    // 뒤로 뻗은 갈기 털
     c.fillStyle = d.mane;
     for (let k = -3; k <= 3; k++) {
       const sway = Math.sin(T * 5 + k) * 0.15;
@@ -1033,7 +1464,6 @@
       c.globalAlpha = 0.85; c.fill(); c.globalAlpha = 1;
       c.restore();
     }
-    // 뿔 (가지 뿔)
     c.strokeStyle = d.horn; c.lineCap = 'round';
     for (const s of [-1, 1]) {
       c.lineWidth = hr * 0.17;
@@ -1042,28 +1472,23 @@
       c.beginPath(); c.moveTo(-hr * 0.85, s * W * 0.82); c.lineTo(-hr * 1.15, s * W * 1.25); c.stroke();
     }
     drawTongue(c, hr, skin, o, hr * 1.85);
-    // 머리
     headPath(c, hr, W, 1.95);
     c.fillStyle = headGradient(c, hr, dir, col, rgb, skin); c.fill();
     c.strokeStyle = shadeRgb(rgb, -0.7); c.lineWidth = Math.max(1.5, hr * 0.06); c.stroke();
-    // 턱 아래 밝은 비늘
     c.save(); headPath(c, hr, W, 1.95); c.clip();
     c.strokeStyle = d.belly; c.globalAlpha = 0.5; c.lineWidth = hr * 0.18;
     headPath(c, hr * 1.03, W * 1.03, 1.95); c.stroke();
     c.globalAlpha = 1;
     c.restore();
-    // 콧등 비늘 줄
     c.strokeStyle = 'rgba(0,0,0,0.28)'; c.lineWidth = Math.max(1, hr * 0.045);
     for (let k = 0; k < 4; k++) {
       const x = hr * (0.2 + k * 0.38);
       c.beginPath(); c.moveTo(x, -W * (0.55 - k * 0.08)); c.quadraticCurveTo(x + hr * 0.16, 0, x, W * (0.55 - k * 0.08)); c.stroke();
     }
-    // 빛나는 콧구멍
     c.save(); c.shadowColor = d.mane; c.shadowBlur = 8;
     c.fillStyle = d.mane;
     for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hr * 1.72, s * W * 0.2, hr * 0.08, hr * 0.05, 0, 0, TAU); c.fill(); }
     c.restore();
-    // 수염
     c.strokeStyle = d.mane; c.lineWidth = Math.max(1.5, hr * 0.06);
     for (const s of [-1, 1]) {
       c.beginPath();
@@ -1074,7 +1499,7 @@
       }
       c.stroke();
     }
-    drawEyes(c, hr, W, skin, hr * 0.55, 0.58);
+    drawEyes(c, hr, W, skin, hr * 0.55, 0.58, 0.19);
     c.restore();
   }
 
@@ -1164,6 +1589,15 @@
   let paused = false;
   const cam = { x: 0, y: 0, z: 1 };
   let parts = [], floats = [], rings = [], shake = 0, T = 0;
+  const pulses = new Map(), hurts = new Map(), headPos = new Map(), biteAcc = new Map();
+  const fmtN = (v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e4 ? (v / 1e3).toFixed(1) + 'K' : v >= 10 || Number.isInteger(v) ? String(Math.round(v)) : v.toFixed(1));
+  // 빛 알갱이가 문 뱀의 머리로 빨려 들어간다
+  function streamTo(x, y, tid, n, color) {
+    for (let k = 0; k < n; k++) {
+      const a = rand(0, TAU), sp = rand(60, 220);
+      parts.push({ x: x + rand(-10, 10), y: y + rand(-10, 10), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.9, max: 0.9, color, s: rand(7, 11), tid });
+    }
+  }
   const CONFETTI = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b', '#ffffff'];
   function pang(x, y, size) {
     rings.push({ x, y, r: 10, max: 120 + size * 2, life: 0.5 });
@@ -1186,6 +1620,10 @@
     for (const ev of evs) {
       if (ev.e === 'eat') {
         pang(ev.x, ev.y, Math.min(60, Math.sqrt(ev.lv) * 4));
+        streamTo(ev.x, ev.y, ev.a, 12, '#ffd43b');
+        pulses.set(ev.a, 1.4);
+        const eh = headPos.get(ev.a);
+        if (eh) floatText(eh.x, eh.y - 40, '+' + fmtN(ev.lv * 0.4), '#8ce99a');
         floatText(ev.x, ev.y - 50, '팡!', '#ff8787');
         if (ev.a === myId) {
           floatText(ev.x, ev.y, `꿀꺽! ${nameOf(ev.b)}`, '#ffd43b');
@@ -1199,7 +1637,13 @@
           game.killer = ev.a;
         }
       } else if (ev.e === 'bite') {
-        burst(ev.x, ev.y, '#ff8787', 3);
+        // 물린 곳에서 살점이 튀고, 빛 알갱이가 문 뱀에게 빨려 들어간다
+        burst(ev.x, ev.y, '#ff6b6b', 3);
+        streamTo(ev.x, ev.y, ev.a, 3, '#ffe066');
+        pulses.set(ev.a, 1); hurts.set(ev.b, 1);
+        const key = ev.a + '-' + ev.b, acc = biteAcc.get(key) || { a: ev.a, b: ev.b, n: 0, l: 0, t: 0 };
+        acc.n += ev.n || 0; acc.l += ev.l || 0;
+        biteAcc.set(key, acc);
         if (ev.a === myId) beep(380, 0.05, 'square', 0.04);
         if (ev.b === myId) { shake = Math.max(shake, 0.15); beep(180, 0.06, 'sawtooth', 0.05); }
       } else if (ev.e === 'item') {
@@ -1228,7 +1672,28 @@
   }
 
   function updateFx(dt) {
-    for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; if (p.s < 12) { p.vx *= 0.92; p.vy *= 0.92; } p.life -= dt; }
+    for (const p of parts) {
+      if (p.tid) {
+        const t = headPos.get(p.tid);
+        if (t) {
+          const dx = t.x - p.x, dy = t.y - p.y, d = Math.hypot(dx, dy) || 1;
+          p.vx = (p.vx + dx / d * 3000 * dt) * 0.9; p.vy = (p.vy + dy / d * 3000 * dt) * 0.9;
+          if (d < 18) p.life = 0;
+        }
+      } else if (p.s < 12) { p.vx *= 0.92; p.vy *= 0.92; }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    }
+    for (const [k, v] of pulses) { if (v - dt * 3 <= 0) pulses.delete(k); else pulses.set(k, v - dt * 3); }
+    for (const [k, v] of hurts) { if (v - dt * 3 <= 0) hurts.delete(k); else hurts.set(k, v - dt * 3); }
+    // 물기로 오간 레벨을 모아서 숫자로 띄우기 (-잃은 양 / +얻은 양)
+    for (const [key, acc] of biteAcc) {
+      acc.t += dt;
+      if (acc.t < 0.4) continue;
+      const pa = headPos.get(acc.a), pb = headPos.get(acc.b);
+      if (pb && acc.l > 0) floatText(pb.x + rand(-20, 20), pb.y - 30, '-' + fmtN(acc.l), '#ff8787');
+      if (pa && acc.n > 0) floatText(pa.x + rand(-20, 20), pa.y - 45, '+' + fmtN(acc.n), '#8ce99a');
+      biteAcc.delete(key);
+    }
     parts = parts.filter((p) => p.life > 0);
     for (const f of floats) { f.y -= 50 * dt; f.life -= dt; }
     floats = floats.filter((f) => f.life > 0);
@@ -1357,6 +1822,8 @@
       drawFood(ctx, f, T, view.fv, view.now);
     }
 
+    headPos.clear();
+    for (const s of view.snakes) headPos.set(s.id, { x: s.x, y: s.y });
     const order = view.snakes.slice().sort((a, b) => (a.me ? 1 : 0) - (b.me ? 1 : 0) || a.level - b.level);
     for (const s of order) {
       const w = E.widthOf(s.level) * (s.dying ? 0.8 : 1);
@@ -1369,7 +1836,7 @@
       if (!vis) continue;
       ctx.globalAlpha = s.dying ? 0.85 : 1;
       drawSnake(ctx, pts, w, skinOf(s.skin), s.dir, {
-        wave: !s.dying,
+        wave: !s.dying, evo: evoOf(s.level), pulse: pulses.get(s.id) || 0, hurt: hurts.get(s.id) || 0,
         latch: s.latch, boss: s.boss, seed: s.id, magnet: s.fx & 4, speed: s.fx & 8, shield: s.fx & 16, dbl: s.fx & 32, slow: s.fx & 64,
       });
       ctx.globalAlpha = 1;
@@ -1396,11 +1863,13 @@
       const [x, y] = toScreen(s.x, s.y);
       if (x < -80 || x > VW + 80 || y < -80 || y > VH + 80) continue;
       const off = E.widthOf(s.level) * 0.6 * z + (s.boss ? 34 : 16);
-      const lv = 'Lv.' + Math.floor(s.level);
+      const lv = 'Lv.' + fmtN(Math.floor(s.level));
       ctx.font = '17px Jua, sans-serif';
       const tw = ctx.measureText(lv).width + 14;
-      ctx.fillStyle = s.me ? '#2f9e44' : s.boss ? '#7048e8' : 'rgba(20,40,30,0.8)';
+      // 배지 색으로 진화 단계를 보여준다
+      ctx.fillStyle = s.boss ? '#7048e8' : EVO_COL[evoOf(s.level)];
       roundRect(ctx, x - tw / 2, y - off - 12, tw, 24, 12); ctx.fill();
+      if (s.me) { ctx.strokeStyle = '#8ce99a'; ctx.lineWidth = 2.5; ctx.stroke(); }
       ctx.fillStyle = '#fff'; ctx.fillText(lv, x, y - off);
       ctx.font = '13px Jua, sans-serif';
       ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(20,40,30,0.75)';
@@ -1418,6 +1887,8 @@
     if (input.active && input.ang !== null) drawStick();
     drawMini(view);
   }
+
+  const EVO_COL = ['rgba(60,64,80,0.85)', '#2f9e44', '#1971c2', '#7048e8', '#e8590c', '#c2255c', '#d4a017'];
 
   function toPts(flat) {
     const out = [];
@@ -1472,7 +1943,7 @@
      ========================================================= */
   const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
     '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부', '구름이', '번개'];
-  const GROW_TIME = 90, DUEL_TIME = 30, STAGE_BOTS = 26;
+  const GROW_TIME = 90, DUEL_TIME = 30, STAGE_BOTS = 36;
   const stagePower = (n) => 20 * Math.pow(1.3, n - 1);
   const bossLevel = (n) => Math.round(stagePower(n) * 4.5);
 
@@ -1481,11 +1952,13 @@
     const P = stagePower(stage);
     const fv = Math.max(1, Math.round(P / 60));
     const world = new E.World({ radius: 3120, foodTarget: 940, foodValue: fv, skinEvery: 18, giftMax: 2, itemTarget: 3, itemEvery: 12 });
-    const player = world.addSnake({
-      name: '나', skin: save.skin, level: startLevel(), isHuman: true, x: 0, y: 0,
-      speed: 261 * (1 + 0.04 * save.up.speed), foodMul: 1 + 0.1 * save.up.food,
-    });
+    let lv0 = startLevel();
+    let boosted = false;
+    if (save.autoBoost && save.inv.boost > 0) { save.inv.boost--; persist(); lv0 = lv0 * 2 + 10; boosted = true; }
+    const playerOpts = { name: '나', skin: save.skin, isHuman: true, speed: 261 * (1 + 0.03 * save.up.speed), foodMul: foodMulOf() };
+    const player = world.addSnake(Object.assign({ level: lv0, x: 0, y: 0 }, playerOpts));
     game = {
+      playerOpts, lastEvo: evoOf(lv0), reviveWait: 0,
       mode: 'stage', stage, P, fv, world, player, phase: 'grow', time: GROW_TIME, elapsed: 0,
       coins: 0, botT: 0, boss: null, ending: 0, endInfo: null, myId: player.id, killer: 0, gifts: 0,
     };
@@ -1496,7 +1969,9 @@
     showHud(true);
     $('respawnBox').classList.add('hidden');
     $('pauseBtn').classList.remove('hidden');
-    banner(`STAGE ${stage}`, `보스 Lv.${bossLevel(stage)} 보다 커지세요!`, 2200);
+    banner(`STAGE ${stage}`, `보스 Lv.${fmtN(bossLevel(stage))} 보다 커지세요!`, 2200);
+    if (boosted) setTimeout(() => toast(`🚀 시작 부스트! Lv.${Math.floor(lv0)}에서 시작해요`, 1800), 600);
+    renderItemBtns();
   }
 
   function spawnStageBot() {
@@ -1526,7 +2001,7 @@
     p.x = -500; p.y = 0; p.dir = 0; p.want = 0; p.latch = 0; p.bounceT = 0;
     w.resetTrail(p);
     g.boss = w.addSnake({
-      name: g.stage % 5 === 0 ? '보스 용' : '보스', skin: g.stage % 5 === 0 ? 'bossdragon' : 'boss', isBot: true, isBoss: true, x: 500, y: 0, dir: Math.PI,
+      name: g.stage % 5 === 0 ? '보스 용' : g.stage % 5 === 3 ? '보스 상어' : '보스', skin: g.stage % 5 === 0 ? 'bossdragon' : g.stage % 5 === 3 ? 'bossshark' : 'boss', isBot: true, isBoss: true, x: 500, y: 0, dir: Math.PI,
       level: bossLevel(g.stage), speed: 245, aggro: 0.95, chase: 1400, humanBias: 300,
     });
     w.takeDelta();
@@ -1550,6 +2025,13 @@
 
   function updateStage(dt) {
     const g = game, w = g.world;
+    if (g.reviveWait > 0) {
+      // 부활할지 고르는 동안은 경기가 멈춘다
+      g.reviveWait -= dt;
+      $('reviveCount').textContent = Math.max(1, Math.ceil(g.reviveWait));
+      if (g.reviveWait <= 0) giveUp();
+      return;
+    }
     if (g.ending > 0) {
       g.ending -= dt;
       w.step(dt);
@@ -1571,8 +2053,15 @@
     g.elapsed += dt;
 
     if (!g.player.alive || g.player.dying) {
-      const k = w.get(g.killer);
-      return endStage(false, k && k.isBoss ? '보스에게 꿀꺽 먹혔어요' : `${k ? k.name : '다른 뱀'}에게 꿀꺽 먹혔어요`);
+      if (save.inv.revive > 0) {
+        g.reviveWait = 5;
+        g.deadLevel = g.player.level;
+        $('reviveSub').textContent = `Lv.${fmtN(Math.floor(g.deadLevel))} 그대로 다시 시작해요 · 남은 부활 ❤️ ${save.inv.revive}개`;
+        $('reviveCount').textContent = '5';
+        $('reviveOv').classList.remove('hidden');
+        return;
+      }
+      return giveUp();
     }
     if (g.phase === 'grow') {
       g.botT -= dt;
@@ -1588,6 +2077,31 @@
         else endStage(false, '시간 종료! 보스의 레벨이 더 높아요');
       }
     }
+  }
+
+  function giveUp() {
+    const g = game, w = g.world;
+    g.reviveWait = 0;
+    $('reviveOv').classList.add('hidden');
+    const k = w.get(g.killer);
+    endStage(false, k && k.isBoss ? '보스에게 꿀꺽 먹혔어요' : `${k ? k.name : '다른 뱀'}에게 꿀꺽 먹혔어요`);
+  }
+
+  function reviveStage() {
+    const g = game, w = g.world;
+    if (!g || g.reviveWait <= 0 || save.inv.revive <= 0) return;
+    save.inv.revive--; persist();
+    const p = g.phase === 'duel' ? w.randPoint(300) : w.spawnPoint(900);
+    const np = w.addSnake(Object.assign({ level: g.deadLevel, x: p.x, y: p.y }, g.playerOpts));
+    np.fx[4] = 3;
+    np.best = Math.max(np.best, g.player.best);
+    g.player = np; g.myId = np.id; g.reviveWait = 0;
+    $('reviveOv').classList.add('hidden');
+    cam.x = p.x; cam.y = p.y;
+    pang(p.x, p.y, 40);
+    banner('❤️ 부활!', '3초 동안 무적이에요', 1600);
+    beep(660, 0.15, 'triangle', 0.09); setTimeout(() => beep(990, 0.25, 'triangle', 0.09), 140);
+    renderItemBtns();
   }
 
   function endStage(win, msg) {
@@ -1628,7 +2142,7 @@
         const own = save.skins.includes(s.id), R = RARITY[s.rare];
         return `<button class="gcard" data-id="${s.id}" style="border-color:${R.col}"><canvas width="200" height="140"></canvas>
           ${esc(s.name)}<br><span class="rar" style="background:${R.col}">${R.nm}</span>
-          <span class="own">${own ? '이미 있음 → 🪙 +30' : '✨ NEW'}</span></button>`;
+          <span class="own">${own ? (skinLv(s.id) < R.maxLv ? `이미 있음 → Lv.${skinLv(s.id) + 1}로 레벨업!` : '최대 레벨 → 🪙 +50') : '✨ NEW'}</span></button>`;
       }).join('');
       $('gifts').querySelectorAll('.gcard').forEach((b) => previewSnake(b.querySelector('canvas'), skinOf(b.dataset.id), 200, 140));
       show('giftOv');
@@ -1638,8 +2152,10 @@
         if (!b) return;
         $('gifts').onclick = null;
         const s = skinOf(b.dataset.id);
-        if (save.skins.includes(s.id)) { save.coins += 30; toast(`「${s.name}」은(는) 이미 있어서 🪙 30을 받았어요`, 1800); }
-        else { save.skins.push(s.id); toast(`🎉 「${s.name}」 획득! 뱀 고르기에서 바꿀 수 있어요`, 2000); }
+        if (save.skins.includes(s.id)) {
+          if (skinLv(s.id) < RARITY[s.rare].maxLv) { save.skinLv[s.id] = skinLv(s.id) + 1; toast(`⬆️ 「${s.name}」 Lv.${skinLv(s.id)}!`, 1800); }
+          else { save.coins += 50; toast(`「${s.name}」은(는) 최대 레벨이라 🪙 50을 받았어요`, 1800); }
+        } else { save.skins.push(s.id); toast(`🎉 「${s.name}」 획득! 캐릭터 메뉴에서 바꿀 수 있어요`, 2000); }
         persist();
         beep(880, 0.15, 'triangle', 0.09); setTimeout(() => beep(1320, 0.2, 'triangle', 0.08), 120);
         left--;
@@ -1649,14 +2165,14 @@
     next();
   }
 
-  function previewSnake(cvs, skin, W, H) {
+  function previewSnake(cvs, skin, W, H, evo) {
     const c = cvs.getContext('2d');
     c.clearRect(0, 0, W, H);
     const pts = [];
     const len = Math.floor(W / 9);
     for (let i = 0; i < len; i++) pts.push({ x: W * 0.78 - i * 7.5, y: H * 0.5 + Math.sin(i * 0.38) * H * 0.18 });
     const dir = Math.atan2(pts[0].y - pts[1].y, pts[0].x - pts[1].x);
-    drawSnake(c, pts, Math.min(30, H * 0.22), skin, dir, {});
+    drawSnake(c, pts, Math.min(30, H * 0.22), skin, dir, { evo: evo === undefined ? 2 : evo });
   }
 
   /* =========================================================
@@ -1731,7 +2247,7 @@
     m.foods.forEach((f) => foods.set(f[0], { id: f[0], x: f[1], y: f[2], v: f[3], k: f[4] }));
     game = {
       mode: 'online', R: m.R, myId: m.you, metas, foods, snaps: [], off: null, tm: m.tm / 10,
-      kills: 0, killer: 0, priv: m.priv, lastSent: 0, lastAng: null, view: null, best: 5, gifts: 0,
+      kills: 0, killer: 0, priv: m.priv, lastSent: 0, lastAng: null, view: null, best: 5, gifts: 0, lastEvo: -1,
     };
     pushSnap(Date.now(), m.sn);
     parts = []; floats = [];
@@ -1740,6 +2256,7 @@
     showHud(true);
     $('respawnBox').classList.add('hidden');
     $('pauseBtn').classList.add('hidden');
+    renderItemBtns();
     banner('온라인 대전!', '가장 레벨이 높은 뱀이 우승!', 1800);
   }
 
@@ -1818,7 +2335,10 @@
       }
       $('respawnBox').classList.add('hidden');
     } else {
-      $('respawnBox').classList.toggle('hidden', g.tm < 15);
+      $('respawnBox').classList.toggle('hidden', g.tm < 5);
+      $('respawnBtn').classList.toggle('hidden', g.tm < 15);
+      $('reviveOnlineBtn').classList.toggle('hidden', save.inv.revive <= 0);
+      $('reviveOnlineBtn').textContent = `❤️ 부활 (레벨 그대로 · ${save.inv.revive}개)`;
     }
   }
 
@@ -1850,7 +2370,7 @@
   /* =========================================================
      화면 전환
      ========================================================= */
-  const OVERLAYS = ['menu', 'skinsOv', 'onlineOv', 'roomOv', 'result', 'pause', 'giftOv'];
+  const OVERLAYS = ['menu', 'skinsOv', 'onlineOv', 'roomOv', 'result', 'pause', 'giftOv', 'shopOv', 'reviveOv'];
   function hideAll() { OVERLAYS.forEach((id) => $(id).classList.add('hidden')); }
   function show(id) { hideAll(); $(id).classList.remove('hidden'); }
   function showHud(on) { $('hud').classList.toggle('hidden', !on); if (on) hideAll(); }
@@ -1887,15 +2407,15 @@
   function renderMenu() {
     $('mStage').textContent = `STAGE ${save.stage}`;
     $('mCoin').textContent = `🪙 ${save.coins}`;
-    $('mStart').textContent = `시작 Lv ${startLevel()}`;
+    $('mStart').textContent = `시작 Lv ${fmtN(startLevel())}`;
     $('soundBtn').textContent = save.sound ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
     $('musicBtn').textContent = save.music ? '🎵 음악 켜짐' : '🔇 음악 꺼짐';
     $('ups').innerHTML = UPGRADES.map((u) => {
       const lv = save.up[u.id], isMax = lv >= u.max, cost = upCost(u);
       const cls = isMax ? 'max' : save.coins < cost ? 'cant' : '';
-      const info = u.id === 'start' ? `Lv ${startLevel()}` : u.id === 'speed' ? `+${lv * 4}%` : `+${lv * 10}%`;
+      const info = u.id === 'start' ? `+${lv * 3}` : u.id === 'speed' ? `+${lv * 3}%` : `+${lv * 10}%`;
       return `<button class="up ${cls}" data-id="${u.id}"><div class="ico">${u.ico}</div><div class="nm">${u.nm}</div>
-        <div class="lv">${info}</div><div class="cost">${isMax ? 'MAX' : '🪙 ' + cost}</div></button>`;
+        <div class="lv">Lv.${lv}/${u.max} · ${info}</div><div class="cost">${isMax ? 'MAX' : '🪙 ' + cost}</div></button>`;
     }).join('');
     drawLogo();
   }
@@ -1905,15 +2425,16 @@
     c.clearRect(0, 0, 440, 140);
     const pts = [];
     for (let i = 0; i < 34; i++) pts.push({ x: 380 - i * 9.5, y: 70 + Math.sin(i * 0.32) * 26 });
-    drawSnake(c, pts, 34, skinOf(save.skin), Math.atan2(pts[0].y - pts[1].y, pts[0].x - pts[1].x), {});
+    drawSnake(c, pts, 30, skinOf(save.skin), Math.atan2(pts[0].y - pts[1].y, pts[0].x - pts[1].x), { evo: 4 });
   }
 
   function renderSkins() {
-    $('skinCount').textContent = `모은 뱀 ${save.skins.length} / ${SKINS.length} · 🎁 선물상자를 먹으면 새로운 뱀을 고를 수 있어요`;
+    $('skinCount').textContent = `모은 캐릭터 ${save.skins.length} / ${SKINS.length} · 🎁 선물상자를 먹으면 새로운 캐릭터를 고를 수 있어요`;
+    renderSkinInfo();
     $('skins').innerHTML = SKINS.map((s) => {
       const own = save.skins.includes(s.id), R = RARITY[s.rare];
       return `<button class="skin ${own ? '' : 'locked'} ${save.skin === s.id ? 'sel' : ''}" data-id="${s.id}">
-        <canvas width="200" height="108"></canvas>${own ? esc(s.name) : '🔒 ???'}<span class="rar" style="color:${R.col}">${R.nm}</span></button>`;
+        <canvas width="200" height="108"></canvas>${own ? esc(s.name) : '🔒 ???'}<span class="rar" style="color:${R.col}">${R.nm} · ${KIND_NM[s.kind]}</span>${own ? `<span class="slv">Lv.${skinLv(s.id)}</span>` : ''}</button>`;
     }).join('');
     $('skins').querySelectorAll('.skin').forEach((b) => {
       const s = skinOf(b.dataset.id), own = save.skins.includes(s.id);
@@ -1921,6 +2442,24 @@
       if (own) previewSnake(cvs, s, 200, 108);
       else { cvs.getContext('2d').globalAlpha = 0.45; previewSnake(cvs, { base: '#3a3f47', pat: 'plain', eye: '#5c636a' }, 200, 108); }
     });
+  }
+
+  function renderSkinInfo() {
+    const s = skinOf(save.skin), R = RARITY[s.rare], lv = skinLv(s.id), b = skinBonus(s.id);
+    const isMax = lv >= R.maxLv, cost = skinCost(s.id);
+    $('skinInfo').innerHTML = `<canvas width="260" height="156"></canvas><div>
+      <div class="nm">${esc(s.name)} <span style="color:${R.col};font-size:13px">${R.nm} ${KIND_NM[s.kind]}</span></div>
+      <div class="meta">Lv.${lv} / ${R.maxLv}<br>보너스: 시작 레벨 +${b.start} · 먹이 +${b.food}%</div>
+      <button class="lvup ${isMax || save.coins < cost ? 'cant' : ''}" id="skinLvUp">${isMax ? '최대 레벨' : '⬆️ 레벨업 🪙 ' + cost}</button></div>`;
+    previewSnake($('skinInfo').querySelector('canvas'), s, 260, 156, 4);
+    $('skinLvUp').onclick = () => {
+      if (isMax) return;
+      if (save.coins < cost) { toast('코인이 부족해요 🪙', 1200); return; }
+      save.coins -= cost; save.skinLv[s.id] = lv + 1; persist();
+      renderSkins();
+      toast(`⬆️ 「${s.name}」 Lv.${lv + 1}! 시작 레벨·먹이 효율이 올랐어요`, 1600);
+      beep(880, 0.12, 'triangle', 0.08); setTimeout(() => beep(1320, 0.15, 'triangle', 0.08), 100);
+    };
   }
 
   $('skins').addEventListener('click', (e) => {
@@ -1964,6 +2503,72 @@
   $('startBtn').addEventListener('click', () => netSend({ t: 'start' }));
   $('roomLeave').addEventListener('click', () => { netSend({ t: 'leave' }); net.room = null; show('onlineOv'); });
   $('respawnBtn').addEventListener('click', () => netSend({ t: 'respawn' }));
+  $('reviveOnlineBtn').addEventListener('click', () => {
+    if (!game || game.mode !== 'online' || save.inv.revive <= 0) return;
+    save.inv.revive--; persist();
+    netSend({ t: 'revive' });
+    $('respawnBox').classList.add('hidden');
+  });
+  $('reviveBtn').addEventListener('click', reviveStage);
+  $('reviveNo').addEventListener('click', () => { if (game && game.reviveWait > 0) giveUp(); });
+
+  /* ---------- 게임 중 아이템 사용 ---------- */
+  function renderItemBtns() {
+    $('itemBtns').querySelectorAll('button').forEach((b) => {
+      const n = save.inv[b.dataset.item] || 0;
+      b.querySelector('b').textContent = n;
+      b.classList.toggle('empty', n <= 0);
+    });
+  }
+  function useItem(id) {
+    if (!game) return;
+    const it = shopItem(id);
+    if (!it || !it.k) return;
+    if ((save.inv[id] || 0) <= 0) { toast(`${it.ico} ${it.nm}이(가) 없어요. 상점에서 살 수 있어요`, 1500); return; }
+    if (game.mode === 'stage') {
+      const p = game.player;
+      if (!p.alive || p.dying || game.reviveWait > 0) return;
+      p.fx[it.k] = Math.max(p.fx[it.k] || 0, it.dur);
+      floatText(p.x, p.y - 50, `${it.ico} ${it.nm}!`, '#ffe066');
+    } else {
+      const me = game.view && game.view.snakes.find((s) => s.me && !s.dying);
+      if (!me) return;
+      netSend({ t: 'use', k: it.k });
+      floatText(me.x, me.y - 50, `${it.ico} ${it.nm}!`, '#ffe066');
+    }
+    save.inv[id]--; persist(); renderItemBtns();
+    beep(880, 0.12, 'triangle', 0.08); setTimeout(() => beep(1320, 0.12, 'triangle', 0.07), 90);
+  }
+  $('itemBtns').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) useItem(b.dataset.item); });
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || !game) return;
+    const map = { 1: 'speed', 2: 'magnet', 3: 'shield' };
+    if (map[e.key]) useItem(map[e.key]);
+  });
+
+  /* ---------- 상점 ---------- */
+  function renderShop() {
+    $('shopCoin').textContent = save.coins;
+    $('shop').innerHTML = SHOP.map((it) => {
+      const can = save.coins >= it.price;
+      const tog = it.id === 'boost' ? `<br><button class="tog" data-tog="1">다음 판에 자동 사용: ${save.autoBoost ? '켜짐 ✅' : '꺼짐'}</button>` : '';
+      return `<div class="sitem"><div class="ico">${it.ico}</div><div class="info"><div class="nm">${it.nm}</div>
+        <div class="ds">${it.ds}</div><div class="own">가진 개수: ${save.inv[it.id] || 0}개</div>${tog}</div>
+        <button class="buy ${can ? '' : 'cant'}" data-buy="${it.id}">🪙 ${it.price}</button></div>`;
+    }).join('');
+  }
+  $('shop').addEventListener('click', (e) => {
+    if (e.target.closest('[data-tog]')) { save.autoBoost = !save.autoBoost; persist(); renderShop(); return; }
+    const b = e.target.closest('[data-buy]');
+    if (!b) return;
+    const it = shopItem(b.dataset.buy);
+    if (save.coins < it.price) { toast('코인이 부족해요 🪙', 1200); return; }
+    save.coins -= it.price; save.inv[it.id] = (save.inv[it.id] || 0) + 1;
+    persist(); renderShop();
+    beep(700, 0.12, 'triangle', 0.08);
+  });
+  $('shopBtn').addEventListener('click', () => { renderShop(); show('shopOv'); });
+  $('shopDone').addEventListener('click', showMenu);
   $('rMain').addEventListener('click', () => { if (resultAction) resultAction(); });
   $('rMenu').addEventListener('click', () => { if (net.room) { netSend({ t: 'leave' }); net.room = null; } showMenu(); });
   $('pauseBtn').addEventListener('click', togglePause);
@@ -2030,6 +2635,20 @@
     return w;
   }
 
+  // 내 뱀이 진화하면 알려준다
+  function checkEvolve(view) {
+    const me = view.snakes.find((s) => s.id === game.myId && !s.dying);
+    if (!me) return;
+    const e = evoOf(me.level);
+    if (game.lastEvo >= 0 && e > game.lastEvo) {
+      const sk = skinOf(me.skin);
+      banner('🧬 진화!', `${EVO[e].nm} ${KIND_NM[sk.kind] || '뱀'}가 되었어요`, 2000);
+      pang(me.x, me.y, 50);
+      [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.14, 'triangle', 0.08), i * 90));
+    }
+    game.lastEvo = e;
+  }
+
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
@@ -2062,6 +2681,7 @@
       view = { R: demo.R, fv: 1, now: demo.time, foods: Array.from(demo.foods.values()),
         snakes: demo.snakes.map((s) => ({ id: s.id, x: s.x, y: s.y, dir: s.dir, level: s.level, body: s.body, skin: s.skin, name: s.name, latch: !!s.latch, dying: !!s.dying, fx: demo.flags(s) })) };
     }
+    if (game && view) checkEvolve(view);
     render(view);
     requestAnimationFrame(loop);
   }

@@ -8,26 +8,22 @@ const Engine = require('./public/snake-battle/engine.js');
 const MATCH_TIME = 120;
 const TICK = 1 / 30;
 const MAX_HUMANS = 8;
-const TOTAL_SNAKES = 20;
+const TOTAL_SNAKES = 28;
 const START_LEVEL = 5;
 const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
   '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부'];
-// 등급별 뱀 (컴퓨터 뱀은 흔한 뱀이 더 자주 나옴)
-const SKIN_TIERS = [
-  [50, ['tree', 'garter', 'corn', 'field', 'sand', 'racer', 'ball', 'hognose']],
-  [30, ['python', 'coral', 'milk', 'king', 'rattle', 'seakrait', 'emerald', 'greenmamba', 'anaconda', 'blood']],
-  [14, ['cobra', 'mamba', 'albino', 'viper', 'taipan', 'gaboon', 'horned', 'rainbow']],
-  [5, ['gold', 'crystal', 'lava', 'nebula']],
-  [1.5, ['firedragon', 'icedragon', 'thunderdragon', 'blackdragon', 'golddragon', 'jadedragon']],
-];
-const SKIN_IDS = SKIN_TIERS.flatMap(([, ids]) => ids);
+// 캐릭터 등급은 엔진의 SKIN_TIERS를 함께 쓴다 (컴퓨터 뱀은 흔한 캐릭터가 더 자주 나옴)
+const TIER_WEIGHT = { 1: 60, 2: 28, 3: 10, 4: 2 };
+const SKIN_IDS = Object.keys(Engine.SKIN_TIER);
 function botSkin() {
   let t = 0;
-  for (const [w, ids] of SKIN_TIERS) t += w * ids.length;
+  for (const id of SKIN_IDS) t += TIER_WEIGHT[Engine.SKIN_TIER[id]];
   let r = Math.random() * t;
-  for (const [w, ids] of SKIN_TIERS) for (const id of ids) { r -= w; if (r <= 0) return id; }
+  for (const id of SKIN_IDS) { r -= TIER_WEIGHT[Engine.SKIN_TIER[id]]; if (r <= 0) return id; }
   return 'tree';
 }
+// 상점 아이템 효과 시간 (엔진 효과 번호: 2 자석, 3 스피드, 4 방패)
+const USE_TIME = { 2: 15, 3: 8, 4: 6 };
 
 const rooms = new Map();
 let cidSeq = 1;
@@ -112,13 +108,15 @@ class Room {
     this.loop = setInterval(() => this.step(), TICK * 1000);
   }
 
-  spawn(c, late) {
+  spawn(c, late, level) {
     const p = this.world.spawnPoint(500);
     const s = this.world.addSnake({
-      name: c.name, skin: c.skin, level: START_LEVEL, isHuman: true, x: p.x, y: p.y, speed: 261,
+      name: c.name, skin: c.skin, level: level || START_LEVEL, isHuman: true, x: p.x, y: p.y, speed: 261,
     });
     c.sid = s.id;
-    c.best = START_LEVEL;
+    c.best = Math.max(c.best || 0, level || START_LEVEL);
+    c.lastLevel = level || START_LEVEL;
+    if (level) s.fx[4] = 3;
     if (late) this.sendStart(c);
   }
 
@@ -155,6 +153,7 @@ class Room {
     this.tick++;
     for (const c of this.clients) {
       const s = c.sid && w.get(c.sid);
+      if (s && !s.dying) c.lastLevel = s.level;
       if (s && s.level > c.best) c.best = s.level;
     }
     this.botT -= TICK;
@@ -251,10 +250,23 @@ module.exports = function attachSnakeServer(server) {
             if (s) s.want = m.a;
           }
           break;
+        case 'use': {
+          const dur = USE_TIME[m.k];
+          const s = r && r.world && c.sid && r.world.get(c.sid);
+          if (dur && s && !s.dying) s.fx[m.k] = Math.max(s.fx[m.k] || 0, dur);
+          break;
+        }
+        case 'revive':
+          // 부활: 먹히기 전 레벨 그대로, 3초 무적
+          if (r && r.world && r.tm > 3) {
+            const s = c.sid && r.world.get(c.sid);
+            if (!s || s.dying) r.spawn(c, true, Math.max(START_LEVEL, c.lastLevel || START_LEVEL));
+          }
+          break;
         case 'respawn':
           if (r && r.world && r.tm > 15) {
             const s = c.sid && r.world.get(c.sid);
-            if (!s || s.dying) r.spawn(c, true);
+            if (!s || s.dying) { c.best = 0; r.spawn(c, true); }
           }
           break;
         case 'leave':

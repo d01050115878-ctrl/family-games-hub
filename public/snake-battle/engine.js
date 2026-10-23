@@ -24,6 +24,19 @@
   const widthOf = (L) => 0.8 * (16 + 5.5 * Math.cbrt(Math.max(1, L)));
   const lengthOf = (L) => widthOf(L) * Math.min(42, 4 + 1.5 * Math.sqrt(Math.max(1, L)));
   const turnOf = (L) => Math.max(3.2, 7.4 - 0.4 * Math.log2(Math.max(1, L)));
+  // 캐릭터 등급 (1 일반, 2 레어, 3 에픽, 4 전설) - 브라우저와 서버가 함께 사용
+  const SKIN_TIERS = {
+    1: ['tree', 'garter', 'corn', 'field', 'sand', 'racer', 'ball', 'hognose', 'redrat', 'yellowrat', 'bluerace', 'rosy', 'blueshark'],
+    2: ['python', 'coral', 'milk', 'king', 'rattle', 'seakrait', 'emerald', 'greenmamba', 'anaconda', 'blood', 'indigo', 'banana',
+      'violet', 'tigershark', 'hammer', 'moray'],
+    3: ['cobra', 'mamba', 'albino', 'viper', 'taipan', 'gaboon', 'horned', 'rainbow', 'sapphire', 'ruby', 'pearl', 'greatwhite',
+      'whaleshark', 'electric'],
+    4: ['gold', 'crystal', 'lava', 'nebula', 'shadow', 'megalodon', 'firedragon', 'icedragon', 'thunderdragon', 'blackdragon',
+      'golddragon', 'jadedragon'],
+  };
+  const SKIN_TIER = {};
+  for (const t in SKIN_TIERS) for (const id of SKIN_TIERS[t]) SKIN_TIER[id] = +t;
+
   const TRAIL_STEP = 5;
   // 먹이 종류: 0 먹이, 1 선물상자(스킨), 2~8 아이템
   const ITEM = { SKIN: 1, MAGNET: 2, SPEED: 3, SHIELD: 4, DOUBLE: 5, BOMB: 6, STAR: 7, ICE: 8 };
@@ -346,10 +359,14 @@
     const d = Math.min(rate * dt, B.level - 1);
     B.level -= d;
     this.grow(A, d * 0.7);
+    A.biteLoss = (A.biteLoss || 0) + d;
     A.fxT -= dt;
     if (A.fxT <= 0) {
       A.fxT = 0.12;
-      this.events.push({ e: 'bite', a: A.id, b: B.id, x: Math.round(x), y: Math.round(y) });
+      // n: 빼앗은 레벨(문 뱀이 얻은 양), l: 물린 뱀이 잃은 양
+      this.events.push({ e: 'bite', a: A.id, b: B.id, x: Math.round(x), y: Math.round(y),
+        n: Math.round(A.biteLoss * 0.7 * 10) / 10, l: Math.round(A.biteLoss * 10) / 10 });
+      A.biteLoss = 0;
     }
     if (B.level <= 1.05) this.swallow(A, B, true);
   };
@@ -462,5 +479,5 @@
     return r;
   };
 
-  return { World, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE };
+  return { World, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE, SKIN_TIERS, SKIN_TIER };
 });
