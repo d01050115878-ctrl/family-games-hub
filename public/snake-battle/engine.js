@@ -67,7 +67,8 @@
     this.skinT = Math.min(6, this.skinEvery * 0.3);
     this.giftMax = opt.giftMax || 1;
     this.itemTarget = opt.itemTarget || 0;
-    this.itemT = 0;
+    this.itemEvery = opt.itemEvery || 10;
+    this.itemT = this.itemEvery * 0.4;
     this.items = 0;
     this.snakes = [];
     this.foods = new Map();
@@ -210,7 +211,7 @@
     if (this.items < this.itemTarget) {
       this.itemT -= dt;
       if (this.itemT <= 0) {
-        this.itemT = this.items < this.itemTarget / 2 ? 0.15 : rand(1.5, 3);
+        this.itemT = this.itemEvery * rand(0.7, 1.3);
         const p = this.randPoint(120);
         this.addFood(p.x, p.y, 0, pickItem());
       }

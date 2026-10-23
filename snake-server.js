@@ -12,8 +12,22 @@ const TOTAL_SNAKES = 20;
 const START_LEVEL = 5;
 const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
   '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부'];
-const SKIN_IDS = ['tree', 'garter', 'corn', 'field', 'sand', 'racer', 'python', 'coral', 'milk', 'rattle',
-  'seakrait', 'emerald', 'cobra', 'mamba', 'albino', 'viper', 'gold', 'crystal', 'lava', 'nebula'];
+// 등급별 뱀 (컴퓨터 뱀은 흔한 뱀이 더 자주 나옴)
+const SKIN_TIERS = [
+  [50, ['tree', 'garter', 'corn', 'field', 'sand', 'racer', 'ball', 'hognose']],
+  [30, ['python', 'coral', 'milk', 'king', 'rattle', 'seakrait', 'emerald', 'greenmamba', 'anaconda', 'blood']],
+  [14, ['cobra', 'mamba', 'albino', 'viper', 'taipan', 'gaboon', 'horned', 'rainbow']],
+  [5, ['gold', 'crystal', 'lava', 'nebula']],
+  [1.5, ['firedragon', 'icedragon', 'thunderdragon', 'blackdragon', 'golddragon', 'jadedragon']],
+];
+const SKIN_IDS = SKIN_TIERS.flatMap(([, ids]) => ids);
+function botSkin() {
+  let t = 0;
+  for (const [w, ids] of SKIN_TIERS) t += w * ids.length;
+  let r = Math.random() * t;
+  for (const [w, ids] of SKIN_TIERS) for (const id of ids) { r -= w; if (r <= 0) return id; }
+  return 'tree';
+}
 
 const rooms = new Map();
 let cidSeq = 1;
@@ -84,7 +98,7 @@ class Room {
   }
 
   start() {
-    this.world = new Engine.World({ radius: 2800, foodTarget: 700, foodValue: 1, skinEvery: 20, giftMax: 3 });
+    this.world = new Engine.World({ radius: 2800, foodTarget: 700, foodValue: 1, skinEvery: 20, giftMax: 3, itemTarget: 4, itemEvery: 10 });
     this.state = 'play';
     this.tm = MATCH_TIME;
     this.tick = 0;
@@ -127,7 +141,7 @@ class Room {
       const p = w.spawnPoint(600);
       const base = 3 + elapsed * 0.6;
       w.addSnake({
-        name, skin: pick(SKIN_IDS), isBot: true, x: p.x, y: p.y,
+        name, skin: botSkin(), isBot: true, x: p.x, y: p.y,
         level: Math.max(2, base * (0.3 + Math.random() * 1.1)), speed: 258 + Math.random() * 18,
         aggro: 0.45 + Math.random() * 0.3, humanBias: 40,
       });
