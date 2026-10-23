@@ -95,6 +95,19 @@
   .skin canvas { width: 100%; height: 54px; display: block; }
   .skin.sel { border-color: var(--gold); background: rgba(255, 212, 59, 0.14); }
   .skin.locked { opacity: 0.55; }
+  .skin .rar { display: block; font-size: 11px; margin-top: 2px; }
+  .gifts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0 14px; }
+  .gcard { background: rgba(255, 255, 255, 0.08); border: 2px solid var(--line); border-radius: 16px; padding: 8px 4px; color: #fff;
+    font-size: 13px; animation: flip 0.5s ease both; }
+  .gcard:nth-child(2) { animation-delay: 0.12s; }
+  .gcard:nth-child(3) { animation-delay: 0.24s; }
+  .gcard canvas { width: 100%; height: 70px; display: block; }
+  .gcard .rar { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; color: #111; }
+  .gcard .own { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+  .gcard:active { transform: scale(0.96); }
+  @keyframes flip { from { transform: rotateY(90deg) scale(0.8); opacity: 0; } to { transform: none; opacity: 1; } }
+  .giftbox { font-size: 64px; animation: shake 0.6s ease-in-out infinite; display: inline-block; }
+  @keyframes shake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
   input.txt { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.1);
     color: #fff; font-size: 18px; text-align: center; margin-bottom: 10px; outline: none; }
   .code { font-size: 46px; letter-spacing: 8px; color: var(--gold); margin: 4px 0; }
@@ -169,9 +182,7 @@
       <li>레벨이 같거나 높으면 상대 <b>몸통을 물어서</b> 레벨을 빼앗아요. 레벨이 낮으면 튕겨나가요.</li>
       <li>나보다 큰 뱀의 머리에 부딪히면 먹혀요. 큰 뱀에게 몸통을 물리지 않게 조심!</li>
       <li>90초 동안 성장한 뒤 <b>👑 보스와 1:1 대결</b>! 보스보다 레벨이 높아야 이길 수 있어요.</li>
-      <li>경기장의 <b>🎁 선물상자</b>를 먹으면 새로운 뱀이 열려요.</li>
-      <li>아이템: <b>🧲 자석</b>(먹이 끌어오기) · <b>⚡ 번개</b>(빨라짐) · <b>🛡️ 방패</b>(안 먹힘) · <b>✨x2 두배</b>(먹이 2배) ·
-        <b>💣 먹이폭탄</b> · <b>⭐ 별</b>(레벨 쑥) · <b>❄️ 얼음</b>(주변 뱀 느리게)</li>
+      <li>경기장의 <b>🎁 선물상자</b>를 먹으면 경기가 끝난 뒤 열 수 있어요. 나온 뱀 3마리 중 하나를 골라 가져요!</li>
       <li>🪙 코인으로 시작 레벨·속도·먹이 효율을 강화하세요.</li>
     </ul>
     <a class="back-hub" href="/">← 가족 게임 모음으로</a>
@@ -231,6 +242,16 @@
   </div>
 </div>
 
+<!-- 선물상자 열기 -->
+<div id="giftOv" class="overlay hidden">
+  <div class="card">
+    <div class="giftbox">🎁</div>
+    <h2 id="giftTitle">선물상자 열기</h2>
+    <p class="sub">마음에 드는 뱀을 하나 골라주세요!</p>
+    <div class="gifts" id="gifts"></div>
+  </div>
+</div>
+
 <!-- 일시정지 -->
 <div id="pause" class="overlay hidden">
   <div class="card">
@@ -272,57 +293,39 @@
   /* =========================================================
      뱀 스킨
      ========================================================= */
+  // 실제 뱀 종류에서 따온 무늬 (등급: 1 일반, 2 희귀, 3 영웅, 4 전설)
+  // pat: plain | stripe | diamond | blotch | spots | bands
   const SKINS = [
-    { id: 'basic', name: '초록이', colors: ['#69db7c', '#51cf66'], band: 3, out: '#2b8a3e' },
-    { id: 'sunny', name: '노랑이', colors: ['#ffe066', '#fcc419'], band: 3, out: '#b07b00' },
-    { id: 'berry', name: '딸기', colors: ['#ff4d6d'], band: 1, out: '#a3122f', dots: '#ffe066', acc: 'leaf' },
-    { id: 'rainbow', name: '무지개', colors: ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa'], band: 2, out: '#3d3d5c' },
-    { id: 'bee', name: '꿀벌', colors: ['#ffd43b', '#ffd43b', '#2b2b2b', '#2b2b2b'], band: 1, out: '#1a1a1a', acc: 'antenna' },
-    { id: 'zebra', name: '얼룩말', colors: ['#ffffff', '#ffffff', '#262626'], band: 1, out: '#111111' },
-    { id: 'tiger', name: '호랑이', colors: ['#ff922b', '#ff922b', '#ff922b', '#2b2b2b'], band: 1, out: '#7a3b00', acc: 'ears' },
-    { id: 'ocean', name: '바다', grad: ['#1c7ed6', '#66d9e8', '#1c7ed6'], out: '#0b4f8a', dots: '#e7f5ff' },
-    { id: 'galaxy', name: '은하수', grad: ['#3b1f73', '#6741d9', '#1b1446'], out: '#140b33', stars: true },
-    { id: 'candy', name: '사탕', colors: ['#ff8fab', '#ffffff'], band: 2, out: '#c2255c' },
-    { id: 'lava', name: '용암', grad: ['#c92a2a', '#ff922b', '#c92a2a'], out: '#5c0d0d', dots: '#2b0a0a' },
-    { id: 'ice', name: '얼음', colors: ['#e3fafc', '#99e9f2'], band: 2, out: '#1098ad', stars: true },
-    { id: 'gold', name: '황금', grad: ['#fcc419', '#fff3bf', '#f59f00'], out: '#a16207', acc: 'crown' },
-    { id: 'mint', name: '민트초코', colors: ['#96f2d7', '#96f2d7', '#6b4226'], band: 1, out: '#2f6f5e', dots: '#6b4226' },
-    { id: 'robot', name: '로봇', colors: ['#ced4da', '#adb5bd'], band: 2, out: '#343a40', dots: '#4dabf7', acc: 'antenna' },
-    { id: 'dragon', name: '드래곤', grad: ['#e03131', '#f76707'], out: '#7a1010', dots: '#ffd43b', acc: 'horns' },
-    { id: 'melon', name: '수박', colors: ['#2f9e44', '#2f9e44', '#1b5e2a'], band: 1, out: '#0d3b17', acc: 'leaf' },
-    { id: 'cotton', name: '솜사탕', grad: ['#fcc2d7', '#d0bfff', '#a5d8ff'], out: '#9c6ad1', acc: 'ears' },
-    { id: 'night', name: '밤하늘', colors: ['#364fc7', '#1b2a7a'], band: 2, out: '#0b1240', stars: true, acc: 'horns' },
-    { id: 'choco', name: '초코', colors: ['#8b5a2b', '#a9713d'], band: 2, out: '#4a2c12', dots: '#ffe8cc' },
+    { id: 'tree', name: '초록 나무뱀', rare: 1, base: '#3f9142', belly: '#a8d672', pat: 'plain' },
+    { id: 'garter', name: '줄무늬 가터뱀', rare: 1, base: '#33422c', pat: 'stripe', p1: '#e8cf5a' },
+    { id: 'corn', name: '옥수수뱀', rare: 1, base: '#de7b3e', pat: 'blotch', p1: '#a8321f', p2: '#3b1608' },
+    { id: 'field', name: '갈색 들뱀', rare: 1, base: '#7d5d3c', pat: 'diamond', p1: '#4a3320', p2: '#c9a97a' },
+    { id: 'sand', name: '모래 독사', rare: 1, base: '#cba86e', pat: 'blotch', p1: '#8a6b3d', p2: '#5b4422' },
+    { id: 'racer', name: '블랙 레이서', rare: 1, base: '#2b2c33', pat: 'plain', eye: '#c9a227' },
+    { id: 'python', name: '그물무늬 비단뱀', rare: 2, base: '#b8954e', pat: 'diamond', p1: '#3d2f1d', p2: '#efe0b0' },
+    { id: 'coral', name: '산호뱀', rare: 2, pat: 'bands', bands: ['#c92a2a', '#c92a2a', '#c92a2a', '#151515', '#f2c94c', '#151515'] },
+    { id: 'milk', name: '밀크스네이크', rare: 2, pat: 'bands', bands: ['#d63a2f', '#d63a2f', '#1c1c1c', '#f1ede0', '#1c1c1c'] },
+    { id: 'rattle', name: '방울뱀', rare: 2, base: '#a8875a', pat: 'diamond', p1: '#5a4126', p2: '#e6d3a8', rattle: true },
+    { id: 'seakrait', name: '바다뱀', rare: 2, pat: 'bands', bands: ['#2f6db5', '#2f6db5', '#e8eef5', '#e8eef5'] },
+    { id: 'emerald', name: '에메랄드 보아', rare: 2, base: '#14a052', pat: 'spots', p1: '#f1f8e9' },
+    { id: 'cobra', name: '킹코브라', rare: 3, base: '#4b4630', pat: 'bands', bands: ['#4b4630', '#4b4630', '#4b4630', '#2a2718'], hood: true, eye: '#d9a520' },
+    { id: 'mamba', name: '블랙맘바', rare: 3, base: '#545a58', pat: 'plain', eye: '#8b8b6a' },
+    { id: 'albino', name: '알비노 비단뱀', rare: 3, base: '#f4e7c9', pat: 'blotch', p1: '#f2c14e', p2: '#e0a82e', eye: '#e03131' },
+    { id: 'viper', name: '살무사', rare: 3, base: '#6b5a48', pat: 'diamond', p1: '#2e241a', p2: '#a89272', eye: '#e8b923' },
+    { id: 'gold', name: '황금 비단뱀', rare: 4, base: '#e2b43c', pat: 'blotch', p1: '#9a6b12', p2: '#5c3d05', shine: true },
+    { id: 'crystal', name: '수정 뱀', rare: 4, base: '#9fd8ef', pat: 'spots', p1: '#ffffff', shine: true, eye: '#4dabf7' },
+    { id: 'lava', name: '용암 뱀', rare: 4, base: '#2a0e0a', pat: 'blotch', p1: '#ff6a1a', p2: '#ffd43b', glowPat: true, eye: '#ff922b' },
+    { id: 'nebula', name: '은하 뱀', rare: 4, base: '#2c1f5e', pat: 'spots', p1: '#e5dbff', stars: true, eye: '#da77f2' },
   ];
-  const BOSS_SKIN = { id: 'boss', name: '보스', grad: ['#5f3dc4', '#2b1a63', '#c92a2a'], out: '#12062e', acc: 'bosscrown', dots: '#ffd43b' };
+  const RARITY = { 1: { nm: '일반', col: '#adb5bd' }, 2: { nm: '희귀', col: '#4dabf7' }, 3: { nm: '영웅', col: '#b197fc' }, 4: { nm: '전설', col: '#ffd43b' } };
+  const STARTER_SKINS = ['tree', 'garter'];
+  const BOSS_SKIN = { id: 'boss', name: '보스', base: '#1d1a2e', pat: 'bands', bands: ['#2b2350', '#2b2350', '#120f22'], hood: true, eye: '#ff2d2d', eyeGlow: true };
   const SKIN_MAP = {};
   SKINS.concat([BOSS_SKIN]).forEach((s) => { SKIN_MAP[s.id] = s; });
   const skinOf = (id) => SKIN_MAP[id] || SKINS[0];
 
   function hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
   function mixRgb(a, b, t) { return `rgb(${Math.round(lerp(a[0], b[0], t))},${Math.round(lerp(a[1], b[1], t))},${Math.round(lerp(a[2], b[2], t))})`; }
-  // 그라데이션 스킨은 24단계 색으로 미리 나눠 둔다 (구슬 스프라이트 캐시용)
-  const GRAD_STEPS = 24;
-  function preparePal(s) {
-    if (s.pal) return;
-    if (s.grad) {
-      const g = s.grad.map(hexRgb);
-      s.pal = [];
-      for (let k = 0; k < GRAD_STEPS; k++) {
-        const t = k / (GRAD_STEPS - 1);
-        const seg = Math.min(g.length - 2, Math.floor(t * (g.length - 1)));
-        s.pal.push(mixRgb(g[seg], g[seg + 1], t * (g.length - 1) - seg));
-      }
-    } else s.pal = s.colors;
-  }
-  SKINS.concat([BOSS_SKIN]).forEach(preparePal);
-
-  function skinColor(s, i, n) {
-    preparePal(s);
-    if (s.grad) return s.pal[Math.round((n > 1 ? i / (n - 1) : 0) * (GRAD_STEPS - 1))];
-    return s.pal[Math.floor(i / (s.band || 2)) % s.pal.length];
-  }
-
   function toRgb(c) {
     if (c[0] === '#') return hexRgb(c);
     const m = c.match(/\d+/g);
@@ -332,24 +335,42 @@
     const f = (v) => Math.round(p < 0 ? v * (1 + p) : v + (255 - v) * p);
     return `rgb(${f(rgb[0])},${f(rgb[1])},${f(rgb[2])})`;
   }
-  // 입체 구슬 모양 몸통 조각 (색깔별로 한 번만 그려서 재사용)
-  const sphereCache = new Map();
-  function sphere(color) {
-    let cvs = sphereCache.get(color);
+  // 몸통 마디 색 (띠무늬 뱀은 길이에 따라 색이 바뀜)
+  function segColor(skin, i) {
+    if (skin.pat === 'bands') return skin.bands[Math.floor(i / 3) % skin.bands.length];
+    return skin.base;
+  }
+
+  // 원통처럼 보이는 비늘 마디 (색깔별로 한 번만 그려서 재사용)
+  const tubeCache = new Map();
+  function tube(color, shine) {
+    const key = color + (shine ? '*' : '');
+    let cvs = tubeCache.get(key);
     if (cvs) return cvs;
     cvs = document.createElement('canvas');
-    cvs.width = cvs.height = 64;
+    cvs.width = cvs.height = 96;
     const c = cvs.getContext('2d'), rgb = toRgb(color);
-    const g = c.createRadialGradient(24, 20, 3, 32, 32, 32);
-    g.addColorStop(0, shadeRgb(rgb, 0.6));
-    g.addColorStop(0.3, color);
-    g.addColorStop(0.82, shadeRgb(rgb, -0.22));
-    g.addColorStop(1, shadeRgb(rgb, -0.45));
-    c.fillStyle = g;
-    c.beginPath(); c.arc(32, 32, 32, 0, TAU); c.fill();
-    sphereCache.set(color, cvs);
+    c.beginPath(); c.arc(48, 48, 48, 0, TAU); c.clip();
+    const g = c.createRadialGradient(40, 30, 4, 48, 50, 50);
+    g.addColorStop(0, shadeRgb(rgb, shine ? 0.7 : 0.38));
+    g.addColorStop(0.35, color);
+    g.addColorStop(0.78, shadeRgb(rgb, -0.3));
+    g.addColorStop(1, shadeRgb(rgb, -0.6));
+    c.fillStyle = g; c.fillRect(0, 0, 96, 96);
+    // 비늘
+    c.strokeStyle = shine ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.2)';
+    c.lineWidth = 1.4;
+    for (let row = 0, y = 4; y < 100; y += 9, row++) {
+      for (let x = (row % 2) * 6 - 6; x < 100; x += 12) {
+        c.beginPath(); c.arc(x, y, 6.5, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+      }
+    }
+    c.fillStyle = 'rgba(255,255,255,0.18)';
+    c.beginPath(); c.ellipse(38, 28, 22, 11, -0.4, 0, TAU); c.fill();
+    tubeCache.set(key, cvs);
     return cvs;
   }
+
   // 빛나는 먹이
   const glowCache = new Map();
   function glow(color) {
@@ -417,8 +438,8 @@
     return {
       coins: s.coins || 0, stage: s.stage || 1, sound: s.sound !== false, music: s.music !== false,
       up: Object.assign({ start: 0, speed: 0, food: 0 }, s.up || {}),
-      skins: Array.isArray(s.skins) && s.skins.length ? s.skins : ['basic', 'sunny'],
-      skin: s.skin || 'basic',
+      skins: STARTER_SKINS.concat((Array.isArray(s.skins) ? s.skins : []).filter((id) => SKIN_MAP[id] && !STARTER_SKINS.includes(id))),
+      skin: SKIN_MAP[s.skin] && s.skin !== 'boss' ? s.skin : 'tree',
       name: s.name || '',
     };
   }
@@ -427,13 +448,21 @@
   const upCost = (u) => Math.round(u.base * Math.pow(1.3, save.up[u.id]) / 10) * 10;
   const startLevel = () => 1 + save.up.start * 3;
 
-  function unlockRandomSkin() {
-    const locked = SKINS.filter((s) => !save.skins.includes(s.id));
-    if (!locked.length) { save.coins += 30; persist(); return null; }
-    const s = locked[randInt(0, locked.length - 1)];
-    save.skins.push(s.id);
-    persist();
-    return s;
+  // 선물상자 하나에서 뱀 3마리 뽑기 (등급 확률: 일반 60 / 희귀 28 / 영웅 10 / 전설 2)
+  const RARE_WEIGHT = { 1: 60, 2: 28, 3: 10, 4: 2 };
+  function rollGift() {
+    const picks = [];
+    for (let tries = 0; picks.length < 3 && tries < 50; tries++) {
+      let r = Math.random() * 100, rare = 1;
+      for (const k of [4, 3, 2, 1]) { r -= RARE_WEIGHT[k]; if (r <= 0) { rare = k; break; } }
+      const pool = SKINS.filter((s) => s.rare === rare && !picks.includes(s));
+      if (!pool.length) continue;
+      // 아직 없는 뱀이 더 잘 나오게
+      const fresh = pool.filter((s) => !save.skins.includes(s.id));
+      const from = fresh.length && Math.random() < 0.75 ? fresh : pool;
+      picks.push(from[randInt(0, from.length - 1)]);
+    }
+    return picks;
   }
 
   /* =========================================================
@@ -600,154 +629,181 @@
 
   function drawSnake(c, pts, w, skin, dir, o) {
     const n = pts.length;
-    if (!n) return;
+    if (n < 2) return;
     o = o || {};
     const r = w / 2;
-    // 꼬리로 갈수록 가늘어지는 두께
+    // 목은 살짝 가늘고, 꼬리로 갈수록 뾰족하게
     const rad = new Array(n);
-    const tail = Math.max(3, Math.floor(n * 0.35));
+    const tail = Math.max(4, Math.floor(n * 0.42));
     for (let i = 0; i < n; i++) {
       const k = n - 1 - i;
-      rad[i] = k < tail ? r * (0.35 + 0.65 * k / tail) : r;
+      let v = k < tail ? r * (0.16 + 0.84 * Math.pow(k / tail, 0.8)) : r;
+      if (i < 4) v *= 0.82 + i * 0.045;
+      rad[i] = v;
     }
-    // 효과 오라 (속도·두배·얼음)
-    const aura = o.speed ? 'rgba(255,214,90,0.28)' : o.dbl ? 'rgba(218,119,242,0.3)' : o.slow ? 'rgba(130,210,255,0.35)' : null;
-    if (aura) {
-      const pul = 6 + Math.sin(T * 10) * 2;
-      c.fillStyle = aura;
-      c.beginPath();
-      for (let i = 0; i < n; i += 2) { const p = pts[i]; c.moveTo(p.x + rad[i] + pul, p.y); c.arc(p.x, p.y, rad[i] + pul, 0, TAU); }
-      c.fill();
-    }
-    c.fillStyle = 'rgba(0,0,10,0.35)';
+    // 바닥 그림자
+    c.fillStyle = 'rgba(0,0,12,0.38)';
     c.beginPath();
-    for (let i = 0; i < n; i += 2) { const p = pts[i]; c.moveTo(p.x + 5 + rad[i], p.y + 9); c.arc(p.x + 5, p.y + 9, rad[i], 0, TAU); }
+    for (let i = 0; i < n; i += 2) { const p = pts[i]; c.moveTo(p.x + 6 + rad[i], p.y + 11); c.arc(p.x + 6, p.y + 11, rad[i] * 1.02, 0, TAU); }
     c.fill();
-    c.fillStyle = skin.out;
-    c.beginPath();
-    for (let i = 0; i < n; i++) { const p = pts[i]; c.moveTo(p.x + rad[i] + 2.5, p.y); c.arc(p.x, p.y, rad[i] + 2.5, 0, TAU); }
-    c.fill();
+    // 몸통 (꼬리 → 목)
     for (let i = n - 1; i >= 1; i--) {
       const p = pts[i], rr = rad[i];
-      c.drawImage(sphere(skinColor(skin, i, n)), p.x - rr, p.y - rr, rr * 2, rr * 2);
+      c.drawImage(tube(segColor(skin, i), skin.shine), p.x - rr, p.y - rr, rr * 2, rr * 2);
     }
-    // 등줄기 비늘 무늬
-    c.strokeStyle = 'rgba(255,255,255,0.16)';
-    c.lineWidth = r * 0.22; c.lineCap = 'round'; c.lineJoin = 'round';
-    c.beginPath();
-    for (let i = 1; i < n - 1; i++) { const p = pts[i]; if (i === 1) c.moveTo(p.x, p.y - r * 0.2); else c.lineTo(p.x, p.y - r * 0.2); }
-    c.stroke();
-    if (skin.dots) {
-      c.fillStyle = skin.dots;
-      for (let i = 3; i < n - 2; i += 3) {
-        const p = pts[i], q = pts[i - 1];
-        const a = Math.atan2(p.y - q.y, p.x - q.x) + ((i / 3) % 2 ? 1.57 : -1.57);
-        c.beginPath(); c.arc(p.x + Math.cos(a) * rad[i] * 0.42, p.y + Math.sin(a) * rad[i] * 0.42, rad[i] * 0.2, 0, TAU); c.fill();
+    drawPattern(c, pts, rad, skin);
+    // 방울뱀 꼬리
+    if (skin.rattle) {
+      for (let i = n - 1, k = 0; i >= Math.max(1, n - 6); i--, k++) {
+        const p = pts[i], rr = r * (0.22 + k * 0.03);
+        c.fillStyle = k % 2 ? '#d8c39a' : '#bfa676';
+        c.strokeStyle = '#6b5530'; c.lineWidth = 1.5;
+        c.beginPath(); c.arc(p.x, p.y, rr, 0, TAU); c.fill(); c.stroke();
       }
+    }
+    // 등줄기 광택 (빛은 왼쪽 위)
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (const [lw, a] of [[0.34, 0.12], [0.12, 0.28]]) {
+      c.strokeStyle = `rgba(255,255,255,${skin.shine ? a * 1.8 : a})`;
+      c.lineWidth = r * lw;
+      c.beginPath();
+      for (let i = 2; i < n - 2; i++) {
+        const p = pts[i], off = rad[i] * 0.35;
+        if (i === 2) c.moveTo(p.x - off * 0.5, p.y - off); else c.lineTo(p.x - off * 0.5, p.y - off);
+      }
+      c.stroke();
     }
     if (skin.stars) {
       for (let i = 2; i < n; i += 2) {
         const p = pts[i], k = (i * 7919) % 13;
-        c.fillStyle = `rgba(255,255,255,${0.55 + 0.45 * Math.sin(T * 5 + i)})`;
-        c.beginPath(); c.arc(p.x + (k / 13 - 0.5) * rad[i], p.y + (((k * 5) % 13) / 13 - 0.5) * rad[i], Math.max(1.2, r * 0.09), 0, TAU); c.fill();
+        c.fillStyle = `rgba(255,255,255,${0.5 + 0.5 * Math.sin(T * 4 + i)})`;
+        c.beginPath(); c.arc(p.x + (k / 13 - 0.5) * rad[i], p.y + (((k * 5) % 13) / 13 - 0.5) * rad[i], Math.max(1.2, r * 0.07), 0, TAU); c.fill();
       }
     }
-
-    // 머리: 앞뒤로 긴 타원 + 혀 + 콧구멍 + 큰 눈
-    const h = pts[0], hr = r * 1.22;
-    const cx = Math.cos(dir), cy = Math.sin(dir), px = -cy, py = cx;
-    if ((T * 0.9 + (o.seed || 0)) % 2.2 < 0.35 || o.latch) {
-      const tl = hr * (o.latch ? 0.9 : 1.35);
-      const bx = h.x + cx * hr * 1.15, by = h.y + cy * hr * 1.15;
-      const ex = bx + cx * tl, ey = by + cy * tl;
-      c.strokeStyle = '#ff3b5c'; c.lineWidth = Math.max(2, hr * 0.13); c.lineCap = 'round';
-      c.beginPath(); c.moveTo(bx, by); c.lineTo(ex, ey);
-      c.moveTo(ex, ey); c.lineTo(ex + (cx * 0.6 + px * 0.5) * hr * 0.35, ey + (cy * 0.6 + py * 0.5) * hr * 0.35);
-      c.moveTo(ex, ey); c.lineTo(ex + (cx * 0.6 - px * 0.5) * hr * 0.35, ey + (cy * 0.6 - py * 0.5) * hr * 0.35);
-      c.stroke();
-    }
-    drawAccessory(c, skin.acc, h, hr, cx, cy, px, py, true);
-    c.save();
-    c.translate(h.x, h.y); c.rotate(dir);
-    c.fillStyle = skin.out;
-    c.beginPath(); c.ellipse(hr * 0.12, 0, hr * 1.25 + 2.5, hr + 2.5, 0, 0, TAU); c.fill();
-    c.scale(1.25, 1);
-    c.drawImage(sphere(skinColor(skin, 0, n)), -hr + hr * 0.1, -hr, hr * 2, hr * 2);
-    c.restore();
-    for (const side of [-1, 1]) {
-      c.fillStyle = 'rgba(0,0,0,0.45)';
-      c.beginPath(); c.arc(h.x + cx * hr * 1.08 + px * hr * 0.22 * side, h.y + cy * hr * 1.08 + py * hr * 0.22 * side, hr * 0.07, 0, TAU); c.fill();
-    }
-    for (const side of [-1, 1]) {
-      const ex = h.x + cx * hr * 0.35 + px * hr * 0.5 * side, ey = h.y + cy * hr * 0.35 + py * hr * 0.5 * side;
-      c.fillStyle = '#fff'; c.beginPath(); c.arc(ex, ey, hr * 0.36, 0, TAU); c.fill();
-      c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 1.5; c.stroke();
-      c.fillStyle = '#16123a'; c.beginPath(); c.arc(ex + cx * hr * 0.13, ey + cy * hr * 0.13, hr * 0.2, 0, TAU); c.fill();
-      c.fillStyle = '#fff'; c.beginPath(); c.arc(ex + cx * hr * 0.06 - hr * 0.06, ey + cy * hr * 0.06 - hr * 0.08, hr * 0.075, 0, TAU); c.fill();
-      if (o.boss) {
-        c.strokeStyle = '#12062e'; c.lineWidth = Math.max(2, hr * 0.12);
-        c.beginPath();
-        c.moveTo(ex - cx * hr * 0.1 + px * hr * 0.3 * side, ey - cy * hr * 0.1 + py * hr * 0.3 * side);
-        c.lineTo(ex + cx * hr * 0.25 - px * hr * 0.15 * side, ey + cy * hr * 0.25 - py * hr * 0.15 * side);
-        c.stroke();
-      }
-    }
-    drawAccessory(c, skin.acc, h, hr, cx, cy, px, py, false);
-    // 자석 고리 · 방패 거품
-    if (o.magnet) {
-      const mr = r + E.MAGNET_RANGE;
-      c.strokeStyle = 'rgba(255,107,107,0.35)'; c.lineWidth = 3;
-      c.setLineDash([14, 12]); c.lineDashOffset = -T * 60;
-      c.beginPath(); c.arc(h.x, h.y, mr, 0, TAU); c.stroke();
-      c.setLineDash([]);
-    }
-    if (o.shield) {
-      const sr = hr * 2 + Math.sin(T * 8) * 3;
-      const g = c.createRadialGradient(h.x, h.y, sr * 0.5, h.x, h.y, sr);
-      g.addColorStop(0, 'rgba(77,171,247,0.05)'); g.addColorStop(1, 'rgba(116,192,252,0.45)');
-      c.fillStyle = g; c.beginPath(); c.arc(h.x, h.y, sr, 0, TAU); c.fill();
-      c.strokeStyle = 'rgba(165,216,255,0.9)'; c.lineWidth = 2.5; c.stroke();
-    }
+    drawHead(c, pts, r, skin, dir, o);
   }
 
-  function drawAccessory(c, acc, h, hr, cx, cy, px, py, behind) {
-    if (!acc) return;
-    if (behind && (acc === 'horns' || acc === 'ears' || acc === 'antenna')) {
-      for (const side of [-1, 1]) {
-        const bx = h.x - cx * hr * 0.2 + px * hr * 0.6 * side, by = h.y - cy * hr * 0.2 + py * hr * 0.6 * side;
-        if (acc === 'horns') {
-          c.fillStyle = '#fff3bf'; c.strokeStyle = '#7a5a00'; c.lineWidth = 2;
-          c.beginPath();
-          c.moveTo(bx + cx * hr * 0.25, by + cy * hr * 0.25);
-          c.lineTo(bx - cx * hr * 0.25, by - cy * hr * 0.25);
-          c.lineTo(bx - cx * hr * 0.75 + px * hr * 0.45 * side, by - cy * hr * 0.75 + py * hr * 0.45 * side);
-          c.closePath(); c.fill(); c.stroke();
-        } else if (acc === 'ears') {
-          c.fillStyle = '#ffc9c9'; c.strokeStyle = 'rgba(0,0,0,0.3)'; c.lineWidth = 2;
-          c.beginPath(); c.arc(bx + px * hr * 0.2 * side, by + py * hr * 0.2 * side, hr * 0.38, 0, TAU); c.fill(); c.stroke();
-        } else {
-          const tx = bx - cx * hr * 0.5 + px * hr * 0.5 * side, ty = by - cy * hr * 0.5 + py * hr * 0.5 * side;
-          c.strokeStyle = '#343a40'; c.lineWidth = Math.max(2, hr * 0.1);
-          c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
-          c.fillStyle = '#ff6b6b'; c.beginPath(); c.arc(tx, ty, hr * 0.18, 0, TAU); c.fill();
-        }
-      }
-    }
-    if (!behind && acc === 'leaf') {
-      const bx = h.x - cx * hr * 0.55, by = h.y - cy * hr * 0.55;
-      c.fillStyle = '#2f9e44';
-      c.beginPath(); c.ellipse(bx + px * hr * 0.25, by + py * hr * 0.25, hr * 0.38, hr * 0.18, Math.atan2(py, px) + 0.5, 0, TAU); c.fill();
-      c.beginPath(); c.ellipse(bx - px * hr * 0.25, by - py * hr * 0.25, hr * 0.38, hr * 0.18, Math.atan2(py, px) - 0.5, 0, TAU); c.fill();
-    }
-    if (!behind && (acc === 'crown' || acc === 'bosscrown')) {
-      const s = hr * (acc === 'bosscrown' ? 1.1 : 0.8), x = h.x, y = h.y - hr * 0.95;
-      c.fillStyle = '#ffd43b'; c.strokeStyle = '#a16207'; c.lineWidth = 2;
+  // 등 무늬: 마름모 / 얼룩 / 줄 / 점
+  function drawPattern(c, pts, rad, skin) {
+    const n = pts.length, pat = skin.pat;
+    if (pat === 'plain' || pat === 'bands') return;
+    const ang = (i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)]; return Math.atan2(a.y - b.y, a.x - b.x); };
+    if (pat === 'stripe') {
+      c.strokeStyle = skin.p1; c.lineCap = 'round';
       c.beginPath();
-      c.moveTo(x - s * 0.6, y + s * 0.25); c.lineTo(x - s * 0.6, y - s * 0.3); c.lineTo(x - s * 0.3, y);
-      c.lineTo(x, y - s * 0.45); c.lineTo(x + s * 0.3, y); c.lineTo(x + s * 0.6, y - s * 0.3); c.lineTo(x + s * 0.6, y + s * 0.25);
-      c.closePath(); c.fill(); c.stroke();
-      c.fillStyle = '#ff6b6b'; c.beginPath(); c.arc(x, y + s * 0.02, s * 0.1, 0, TAU); c.fill();
+      for (let i = 3; i < n - 1; i++) { const p = pts[i]; if (i === 3) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y); }
+      c.lineWidth = rad[Math.floor(n / 3)] * 0.32; c.stroke();
+      return;
     }
+    if (skin.glowPat) { c.save(); c.shadowColor = skin.p1; c.shadowBlur = 12; }
+    const step = pat === 'spots' ? 3 : 5;
+    for (let i = 4; i < n - 3; i += step) {
+      const p = pts[i], a = ang(i), rr = rad[i];
+      c.save();
+      c.translate(p.x, p.y); c.rotate(a);
+      if (pat === 'diamond') {
+        c.fillStyle = skin.p2;
+        c.beginPath(); c.moveTo(rr * 0.95, 0); c.lineTo(0, rr * 0.72); c.lineTo(-rr * 0.95, 0); c.lineTo(0, -rr * 0.72); c.closePath(); c.fill();
+        c.fillStyle = skin.p1;
+        c.beginPath(); c.moveTo(rr * 0.75, 0); c.lineTo(0, rr * 0.55); c.lineTo(-rr * 0.75, 0); c.lineTo(0, -rr * 0.55); c.closePath(); c.fill();
+      } else if (pat === 'blotch') {
+        const side = Math.floor(i / step) % 2 ? 1 : -1;
+        c.fillStyle = skin.p2;
+        c.beginPath(); c.ellipse(0, side * rr * 0.12, rr * 0.62, rr * 0.5, side * 0.3, 0, TAU); c.fill();
+        c.fillStyle = skin.p1;
+        c.beginPath(); c.ellipse(0, side * rr * 0.12, rr * 0.48, rr * 0.37, side * 0.3, 0, TAU); c.fill();
+      } else {
+        c.fillStyle = skin.p1;
+        c.globalAlpha = 0.85;
+        c.beginPath(); c.ellipse(0, 0, rr * 0.22, rr * 0.13, 0, 0, TAU); c.fill();
+        c.globalAlpha = 1;
+      }
+      c.restore();
+    }
+    if (skin.glowPat) c.restore();
+  }
+
+  // 삼각형 머리, 세로 동공 눈, 콧구멍, 혀
+  function drawHead(c, pts, r, skin, dir, o) {
+    const h = pts[0], hr = r * 1.15;
+    const col = segColor(skin, 0), rgb = toRgb(col);
+    c.save();
+    c.translate(h.x, h.y); c.rotate(dir);
+    if (skin.hood) {
+      const hc = toRgb(segColor(skin, 4));
+      const g = c.createRadialGradient(-hr * 0.9, -hr * 0.5, hr * 0.2, -hr * 0.8, 0, hr * 2);
+      g.addColorStop(0, shadeRgb(hc, 0.25)); g.addColorStop(1, shadeRgb(hc, -0.45));
+      c.fillStyle = g;
+      c.beginPath(); c.ellipse(-hr * 0.85, 0, hr * 1.0, hr * 1.75, 0, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 2; c.stroke();
+      c.fillStyle = 'rgba(240,230,190,0.55)';
+      for (const s of [-1, 1]) { c.beginPath(); c.ellipse(-hr * 1.1, s * hr * 0.8, hr * 0.28, hr * 0.18, 0, 0, TAU); c.fill(); }
+    }
+    // 혀
+    if ((T * 0.8 + (o.seed || 0) * 0.37) % 2.4 < 0.3 || o.latch) {
+      const tl = hr * (o.latch ? 0.7 : 1.1), bx = hr * 1.5;
+      c.strokeStyle = '#d6264b'; c.lineWidth = Math.max(1.5, hr * 0.09); c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(bx, 0); c.lineTo(bx + tl, 0);
+      c.lineTo(bx + tl + hr * 0.3, -hr * 0.18);
+      c.moveTo(bx + tl, 0); c.lineTo(bx + tl + hr * 0.3, hr * 0.18);
+      c.stroke();
+    }
+    // 머리 모양
+    const W = hr;
+    c.beginPath();
+    c.moveTo(-hr * 0.55, -W * 0.72);
+    c.bezierCurveTo(-hr * 0.1, -W * 1.08, hr * 0.55, -W * 1.02, hr * 1.05, -W * 0.55);
+    c.quadraticCurveTo(hr * 1.62, -W * 0.25, hr * 1.62, 0);
+    c.quadraticCurveTo(hr * 1.62, W * 0.25, hr * 1.05, W * 0.55);
+    c.bezierCurveTo(hr * 0.55, W * 1.02, -hr * 0.1, W * 1.08, -hr * 0.55, W * 0.72);
+    c.closePath();
+    const g = c.createRadialGradient(hr * 0.3, -W * 0.45, hr * 0.1, hr * 0.3, 0, hr * 1.5);
+    g.addColorStop(0, shadeRgb(rgb, skin.shine ? 0.6 : 0.32));
+    g.addColorStop(0.45, col);
+    g.addColorStop(1, shadeRgb(rgb, -0.5));
+    c.fillStyle = g; c.fill();
+    c.strokeStyle = shadeRgb(rgb, -0.6); c.lineWidth = Math.max(1.5, hr * 0.06); c.stroke();
+    // 머리 비늘판
+    c.strokeStyle = 'rgba(0,0,0,0.22)'; c.lineWidth = Math.max(1, hr * 0.04);
+    c.beginPath();
+    c.moveTo(hr * 1.2, 0); c.lineTo(hr * 0.35, 0);
+    c.moveTo(hr * 0.35, 0); c.lineTo(-hr * 0.2, -W * 0.38);
+    c.moveTo(hr * 0.35, 0); c.lineTo(-hr * 0.2, W * 0.38);
+    c.moveTo(hr * 0.75, -W * 0.38); c.lineTo(hr * 0.75, W * 0.38);
+    c.stroke();
+    if (skin.pat === 'diamond' || skin.pat === 'blotch') {
+      c.fillStyle = skin.p1;
+      c.globalAlpha = 0.7;
+      c.beginPath(); c.moveTo(hr * 0.6, 0); c.lineTo(-hr * 0.45, -W * 0.5); c.lineTo(-hr * 0.3, 0); c.lineTo(-hr * 0.45, W * 0.5); c.closePath(); c.fill();
+      c.globalAlpha = 1;
+    }
+    // 콧구멍
+    c.fillStyle = 'rgba(0,0,0,0.6)';
+    for (const s of [-1, 1]) { c.beginPath(); c.ellipse(hr * 1.38, s * W * 0.17, hr * 0.06, hr * 0.035, 0, 0, TAU); c.fill(); }
+    // 눈
+    const ec = skin.eye || '#e0b028';
+    for (const s of [-1, 1]) {
+      const ex = hr * 0.62, ey = s * W * 0.6, er = hr * 0.21;
+      c.fillStyle = 'rgba(0,0,0,0.45)';
+      c.beginPath(); c.ellipse(ex, ey, er * 1.3, er * 1.12, 0, 0, TAU); c.fill();
+      if (skin.eyeGlow) { c.save(); c.shadowColor = ec; c.shadowBlur = 14; }
+      const eg = c.createRadialGradient(ex - er * 0.3, ey - er * 0.3, er * 0.1, ex, ey, er);
+      eg.addColorStop(0, '#fff3c4'); eg.addColorStop(0.5, ec); eg.addColorStop(1, shadeRgb(toRgb(ec), -0.5));
+      c.fillStyle = eg;
+      c.beginPath(); c.ellipse(ex, ey, er * 1.1, er * 0.95, 0, 0, TAU); c.fill();
+      if (skin.eyeGlow) c.restore();
+      c.fillStyle = '#0b0b0b';
+      c.beginPath(); c.ellipse(ex + er * 0.08, ey, er * 0.7, er * 0.17, 0, 0, TAU); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.85)';
+      c.beginPath(); c.arc(ex - er * 0.35, ey - s * er * 0.35, er * 0.18, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.55)'; c.lineWidth = Math.max(1.5, hr * 0.07);
+      c.beginPath();
+      if (s < 0) c.ellipse(ex, ey, er * 1.15, er * 1.0, 0, Math.PI * 1.05, Math.PI * 1.95);
+      else c.ellipse(ex, ey, er * 1.15, er * 1.0, 0, Math.PI * 0.05, Math.PI * 0.95);
+      c.stroke();
+    }
+    c.restore();
   }
 
   const ORB_COLORS = ['rgb(255,224,102)', 'rgb(102,217,232)', 'rgb(255,135,190)', 'rgb(140,233,154)', 'rgb(177,151,252)'];
@@ -890,11 +946,11 @@
       } else if (ev.e === 'bump' && ev.a === myId) {
         shake = Math.max(shake, 0.12); beep(200, 0.06, 'square', 0.04);
       } else if (ev.e === 'skin' && ev.id === myId) {
-        const s = unlockRandomSkin();
+        game.gifts = (game.gifts || 0) + 1;
         const p = posOf(myId);
-        if (p) burst(p.x, p.y, '#ff6b9d', 20);
+        if (p) { pang(p.x, p.y, 20); floatText(p.x, p.y - 40, '🎁 선물상자!', '#ff8fb8'); }
         beep(660, 0.15, 'triangle', 0.09); setTimeout(() => beep(990, 0.25, 'triangle', 0.09), 140);
-        toast(s ? `🎁 새로운 뱀 「${s.name}」을(를) 얻었어요!` : '🎁 모든 뱀을 모았어요! 🪙 +30', 2400);
+        toast(`🎁 선물상자 ${game.gifts}개! 경기가 끝나면 열어요`, 1800);
       }
     }
   }
@@ -915,7 +971,7 @@
     cam.x += (target.x - cam.x) * k;
     cam.y += (target.y - cam.y) * k;
     const base = clamp(Math.min(VW, VH) / 700, 0.6, 1.25);
-    const z = base * Math.pow(26 / E.widthOf(level), 0.7);
+    const z = base * 0.9 * Math.pow(26 / E.widthOf(level), 0.7);
     cam.z += (z - cam.z) * (1 - Math.pow(0.15, dt));
   }
 
@@ -1143,22 +1199,22 @@
      ========================================================= */
   const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
     '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부', '구름이', '번개'];
-  const GROW_TIME = 90, DUEL_TIME = 30, STAGE_BOTS = 20;
+  const GROW_TIME = 90, DUEL_TIME = 30, STAGE_BOTS = 26;
   const stagePower = (n) => 20 * Math.pow(1.3, n - 1);
-  const bossLevel = (n) => Math.round(stagePower(n) * 4);
+  const bossLevel = (n) => Math.round(stagePower(n) * 5);
 
   function startStage() {
     const stage = save.stage;
     const P = stagePower(stage);
     const fv = Math.max(1, Math.round(P / 60));
-    const world = new E.World({ radius: 1700, foodTarget: 300, foodValue: fv, skinEvery: 35, itemTarget: 12 });
+    const world = new E.World({ radius: 2600, foodTarget: 650, foodValue: fv, skinEvery: 18, giftMax: 2 });
     const player = world.addSnake({
       name: '나', skin: save.skin, level: startLevel(), isHuman: true, x: 0, y: 0,
       speed: 290 * (1 + 0.04 * save.up.speed), foodMul: 1 + 0.1 * save.up.food,
     });
     game = {
       mode: 'stage', stage, P, fv, world, player, phase: 'grow', time: GROW_TIME, elapsed: 0,
-      coins: 0, botT: 0, boss: null, ending: 0, endInfo: null, myId: player.id, killer: 0,
+      coins: 0, botT: 0, boss: null, ending: 0, endInfo: null, myId: player.id, killer: 0, gifts: 0,
     };
     for (let i = 0; i < STAGE_BOTS; i++) spawnStageBot();
     world.takeDelta();
@@ -1192,7 +1248,6 @@
     w.clearFoods();
     w.foodTarget = 40;
     w.skinEvery = 0;
-    w.itemTarget = 3;
     const p = g.player;
     p.x = -420; p.y = 0; p.dir = 0; p.want = 0; p.latch = 0; p.bounceT = 0;
     w.resetTrail(p);
@@ -1285,7 +1340,49 @@
     $('rCoin').textContent = `🪙 +${earned}`;
     $('rMain').textContent = win ? '다음 스테이지 ▶' : '다시 도전 ↻';
     resultAction = startStage;
-    show('result');
+    openGifts(g.gifts || 0, () => show('result'));
+  }
+
+  function openGifts(count, done) {
+    if (count <= 0) { done(); return; }
+    let left = count;
+    const next = () => {
+      if (left <= 0) { done(); return; }
+      const picks = rollGift();
+      $('giftTitle').textContent = count > 1 ? `선물상자 열기 (${count - left + 1}/${count})` : '선물상자 열기';
+      $('gifts').innerHTML = picks.map((s) => {
+        const own = save.skins.includes(s.id), R = RARITY[s.rare];
+        return `<button class="gcard" data-id="${s.id}" style="border-color:${R.col}"><canvas width="200" height="140"></canvas>
+          ${esc(s.name)}<br><span class="rar" style="background:${R.col}">${R.nm}</span>
+          <span class="own">${own ? '이미 있음 → 🪙 +30' : '✨ NEW'}</span></button>`;
+      }).join('');
+      $('gifts').querySelectorAll('.gcard').forEach((b) => previewSnake(b.querySelector('canvas'), skinOf(b.dataset.id), 200, 140));
+      show('giftOv');
+      beep(520, 0.1, 'triangle', 0.07); setTimeout(() => beep(780, 0.12, 'triangle', 0.07), 120);
+      $('gifts').onclick = (e) => {
+        const b = e.target.closest('.gcard');
+        if (!b) return;
+        $('gifts').onclick = null;
+        const s = skinOf(b.dataset.id);
+        if (save.skins.includes(s.id)) { save.coins += 30; toast(`「${s.name}」은(는) 이미 있어서 🪙 30을 받았어요`, 1800); }
+        else { save.skins.push(s.id); toast(`🎉 「${s.name}」 획득! 뱀 고르기에서 바꿀 수 있어요`, 2000); }
+        persist();
+        beep(880, 0.15, 'triangle', 0.09); setTimeout(() => beep(1320, 0.2, 'triangle', 0.08), 120);
+        left--;
+        setTimeout(next, 450);
+      };
+    };
+    next();
+  }
+
+  function previewSnake(cvs, skin, W, H) {
+    const c = cvs.getContext('2d');
+    c.clearRect(0, 0, W, H);
+    const pts = [];
+    const len = Math.floor(W / 9);
+    for (let i = 0; i < len; i++) pts.push({ x: W * 0.78 - i * 7.5, y: H * 0.5 + Math.sin(i * 0.38) * H * 0.18 });
+    const dir = Math.atan2(pts[0].y - pts[1].y, pts[0].x - pts[1].x);
+    drawSnake(c, pts, Math.min(30, H * 0.22), skin, dir, {});
   }
 
   /* =========================================================
@@ -1360,7 +1457,7 @@
     m.foods.forEach((f) => foods.set(f[0], { id: f[0], x: f[1], y: f[2], v: f[3], k: f[4] }));
     game = {
       mode: 'online', R: m.R, myId: m.you, metas, foods, snaps: [], off: null, tm: m.tm / 10,
-      kills: 0, killer: 0, priv: m.priv, lastSent: 0, lastAng: null, view: null, best: 5,
+      kills: 0, killer: 0, priv: m.priv, lastSent: 0, lastAng: null, view: null, best: 5, gifts: 0,
     };
     pushSnap(Date.now(), m.sn);
     parts = []; floats = [];
@@ -1473,13 +1570,13 @@
       $('rMain').textContent = '한 판 더 ⚡';
       resultAction = () => { hideAll(); netSend({ t: 'quick' }); toast('상대를 찾는 중…', 1500); };
     }
-    show('result');
+    openGifts(g.gifts || 0, () => show('result'));
   }
 
   /* =========================================================
      화면 전환
      ========================================================= */
-  const OVERLAYS = ['menu', 'skinsOv', 'onlineOv', 'roomOv', 'result', 'pause'];
+  const OVERLAYS = ['menu', 'skinsOv', 'onlineOv', 'roomOv', 'result', 'pause', 'giftOv'];
   function hideAll() { OVERLAYS.forEach((id) => $(id).classList.add('hidden')); }
   function show(id) { hideAll(); $(id).classList.remove('hidden'); }
   function showHud(on) { $('hud').classList.toggle('hidden', !on); if (on) hideAll(); }
@@ -1533,31 +1630,29 @@
     const c = $('logoCv').getContext('2d');
     c.clearRect(0, 0, 440, 140);
     const pts = [];
-    for (let i = 0; i < 26; i++) pts.push({ x: 370 - i * 12, y: 70 + Math.sin(i * 0.45) * 26 });
-    drawSnake(c, pts, 34, skinOf(save.skin), 0, {});
+    for (let i = 0; i < 34; i++) pts.push({ x: 380 - i * 9.5, y: 70 + Math.sin(i * 0.32) * 26 });
+    drawSnake(c, pts, 34, skinOf(save.skin), Math.atan2(pts[0].y - pts[1].y, pts[0].x - pts[1].x), {});
   }
 
   function renderSkins() {
-    $('skinCount').textContent = `모은 뱀 ${save.skins.length} / ${SKINS.length} · 🎁 선물상자를 먹으면 새로운 뱀이 열려요`;
+    $('skinCount').textContent = `모은 뱀 ${save.skins.length} / ${SKINS.length} · 🎁 선물상자를 먹으면 새로운 뱀을 고를 수 있어요`;
     $('skins').innerHTML = SKINS.map((s) => {
-      const own = save.skins.includes(s.id);
+      const own = save.skins.includes(s.id), R = RARITY[s.rare];
       return `<button class="skin ${own ? '' : 'locked'} ${save.skin === s.id ? 'sel' : ''}" data-id="${s.id}">
-        <canvas width="200" height="108"></canvas>${own ? esc(s.name) : '🔒 ???'}</button>`;
+        <canvas width="200" height="108"></canvas>${own ? esc(s.name) : '🔒 ???'}<span class="rar" style="color:${R.col}">${R.nm}</span></button>`;
     }).join('');
     $('skins').querySelectorAll('.skin').forEach((b) => {
       const s = skinOf(b.dataset.id), own = save.skins.includes(s.id);
-      const c = b.querySelector('canvas').getContext('2d');
-      const pts = [];
-      for (let i = 0; i < 14; i++) pts.push({ x: 160 - i * 9, y: 54 + Math.sin(i * 0.6) * 16 });
-      if (own) drawSnake(c, pts, 26, s, 0, {});
-      else { c.globalAlpha = 0.5; drawSnake(c, pts, 26, { colors: ['#495057', '#343a40'], band: 2, out: '#212529' }, 0, {}); }
+      const cvs = b.querySelector('canvas');
+      if (own) previewSnake(cvs, s, 200, 108);
+      else { cvs.getContext('2d').globalAlpha = 0.45; previewSnake(cvs, { base: '#3a3f47', pat: 'plain', eye: '#5c636a' }, 200, 108); }
     });
   }
 
   $('skins').addEventListener('click', (e) => {
     const b = e.target.closest('.skin');
     if (!b) return;
-    if (!save.skins.includes(b.dataset.id)) { toast('🎁 경기장의 선물상자를 먹으면 열려요!', 1600); return; }
+    if (!save.skins.includes(b.dataset.id)) { toast('🎁 경기장의 선물상자를 먹으면 얻을 수 있어요!', 1600); return; }
     save.skin = b.dataset.id; persist(); renderSkins();
     beep(600, 0.08, 'triangle', 0.06);
   });
@@ -1653,7 +1748,7 @@
   let last = performance.now();
   let demo = null;
   function makeDemo() {
-    const w = new E.World({ radius: 1100, foodTarget: 160, itemTarget: 8 });
+    const w = new E.World({ radius: 1100, foodTarget: 160 });
     for (let i = 0; i < 12; i++) {
       const p = w.spawnPoint(300);
       w.addSnake({ isBot: true, x: p.x, y: p.y, level: rand(2, 40), skin: SKINS[i * 2 % SKINS.length].id, name: BOT_NAMES[i], aggro: 0.3 });

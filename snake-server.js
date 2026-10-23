@@ -8,12 +8,12 @@ const Engine = require('./public/snake-battle/engine.js');
 const MATCH_TIME = 120;
 const TICK = 1 / 30;
 const MAX_HUMANS = 8;
-const TOTAL_SNAKES = 16;
+const TOTAL_SNAKES = 20;
 const START_LEVEL = 5;
 const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
   '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부'];
-const SKIN_IDS = ['basic', 'sunny', 'berry', 'rainbow', 'bee', 'zebra', 'tiger', 'ocean', 'galaxy', 'candy',
-  'lava', 'ice', 'gold', 'mint', 'robot', 'dragon', 'melon', 'cotton', 'night', 'choco'];
+const SKIN_IDS = ['tree', 'garter', 'corn', 'field', 'sand', 'racer', 'python', 'coral', 'milk', 'rattle',
+  'seakrait', 'emerald', 'cobra', 'mamba', 'albino', 'viper', 'gold', 'crystal', 'lava', 'nebula'];
 
 const rooms = new Map();
 let cidSeq = 1;
@@ -84,7 +84,7 @@ class Room {
   }
 
   start() {
-    this.world = new Engine.World({ radius: 2000, foodTarget: 340, foodValue: 1, skinEvery: 30, itemTarget: 14 });
+    this.world = new Engine.World({ radius: 2800, foodTarget: 700, foodValue: 1, skinEvery: 20, giftMax: 3 });
     this.state = 'play';
     this.tm = MATCH_TIME;
     this.tick = 0;
@@ -196,7 +196,7 @@ module.exports = function attachSnakeServer(server) {
   const wss = new WebSocketServer({ server, path: '/snake-ws' });
 
   wss.on('connection', (ws) => {
-    const c = { ws, cid: cidSeq++, name: '플레이어', skin: 'basic', room: null, sid: 0, best: 0, alive: true };
+    const c = { ws, cid: cidSeq++, name: '플레이어', skin: 'tree', room: null, sid: 0, best: 0, alive: true };
     send(ws, { t: 'welcome', cid: c.cid });
     ws.on('pong', () => { c.alive = true; });
 

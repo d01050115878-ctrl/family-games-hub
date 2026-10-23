@@ -64,7 +64,8 @@
     this.foodTarget = opt.foodTarget || 200;
     this.foodValue = opt.foodValue || 1;
     this.skinEvery = opt.skinEvery || 0;
-    this.skinT = this.skinEvery * 0.5;
+    this.skinT = Math.min(6, this.skinEvery * 0.3);
+    this.giftMax = opt.giftMax || 1;
     this.itemTarget = opt.itemTarget || 0;
     this.itemT = 0;
     this.items = 0;
@@ -215,9 +216,9 @@
       }
     }
     if (this.skinEvery > 0) {
-      let has = false;
-      for (const f of this.foods.values()) if (f.k === 1) { has = true; break; }
-      if (!has) {
+      let gifts = 0;
+      for (const f of this.foods.values()) if (f.k === 1) gifts++;
+      if (gifts < this.giftMax) {
         this.skinT -= dt;
         if (this.skinT <= 0) {
           this.skinT = this.skinEvery;
@@ -374,10 +375,6 @@
       const dd = Math.hypot(x, y);
       if (dd > lim) { x *= lim / dd; y *= lim / dd; }
       this.addFood(x, y, v, 0, ox, oy);
-    }
-    if (Math.random() < 0.5) {
-      const a = rand(0, TAU);
-      this.addFood(B.x + Math.cos(a) * 90, B.y + Math.sin(a) * 90, 0, pickItem(), B.x, B.y);
     }
   };
 
