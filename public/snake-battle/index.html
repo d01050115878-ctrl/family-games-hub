@@ -116,6 +116,12 @@
   .rank div { display: flex; justify-content: space-between; background: rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 7px 12px; margin-bottom: 5px; font-size: 16px; }
   .rank div.me { background: rgba(105, 219, 124, 0.25); }
   .status { color: var(--muted); font-size: 14px; min-height: 20px; margin: 4px 0 8px; }
+  .tug { width: 230px; max-width: 70vw; height: 14px; border-radius: 999px; background: #e03131; overflow: hidden; margin: 5px auto 0;
+    border: 2px solid rgba(255, 255, 255, 0.6); }
+  .tug div { height: 100%; background: linear-gradient(90deg, #51cf66, #94d82d); }
+  #clashHint { position: absolute; left: 50%; bottom: 20%; font-size: 30px; color: #ffe066; white-space: nowrap; pointer-events: none;
+    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.7); animation: hintPulse 0.35s ease-in-out infinite alternate; }
+  @keyframes hintPulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.15); } }
   #itemBtns { position: absolute; right: 10px; bottom: 14px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
   #itemBtns button { width: 56px; height: 56px; border-radius: 50%; background: var(--panel); border: 2px solid var(--line); color: #fff;
     font-size: 24px; position: relative; }
@@ -170,6 +176,7 @@
   <div id="board"></div>
   <canvas id="mini" width="240" height="240"></canvas>
   <div id="fxBar"></div>
+  <div id="clashHint" class="hidden"></div>
   <div id="itemBtns">
     <button data-item="speed" title="스피드 부스트 (1)">⚡<b>0</b></button>
     <button data-item="magnet" title="자석 (2)">🧲<b>0</b></button>
@@ -213,7 +220,7 @@
       <li>나보다 <b>레벨이 낮은 뱀의 머리</b>를 물면 통째로 <b>꿀꺽</b>!</li>
       <li>레벨이 같거나 높으면 상대 <b>몸통을 물어서</b> 레벨을 빼앗아요. 레벨이 낮으면 튕겨나가요.</li>
       <li>나보다 큰 뱀의 머리에 부딪히면 먹혀요. 큰 뱀에게 몸통을 물리지 않게 조심!</li>
-      <li>90초 동안 성장한 뒤 <b>👑 보스와 1:1 대결</b>! 보스보다 레벨이 높아야 이길 수 있어요.</li>
+      <li>90초 동안 성장한 뒤 <b>👑 보스와 정면충돌</b>! 철로 위를 달리며 먹이를 먹고(화면을 꾹 누르면 빨라져요), 부딪히면 화면을 <b>연타</b>해서 보스를 밀어내요.</li>
       <li>레벨이 오르면 <b>진화</b>해요: 새끼 → 어린 시절 → 성체 → 가시 → 뿔 → 날개 → 고대!</li>
       <li><b>🛒 상점</b>에서 ⚡스피드 · 🧲자석 · 🛡️방패 · 🚀시작 부스트 · ❤️부활을 사서 게임 중에 써요.</li>
       <li>가끔 나오는 능력 아이템: <b>🧲 자석</b> · <b>⚡ 번개</b> · <b>🛡️ 방패</b> · <b>✨x2 두배</b> · <b>💣 먹이폭탄</b> · <b>⭐ 별</b> · <b>❄️ 얼음</b></li>
@@ -1541,6 +1548,7 @@
   const keys = new Set();
   cv.addEventListener('pointerdown', (e) => {
     if (!game) return;
+    if (game.clash && game.phase === 'clash') { clashPress(true); return; }
     input.active = true; input.id = e.pointerId;
     input.ox = input.x = e.clientX; input.oy = input.y = e.clientY;
     input.ang = null;
@@ -1555,7 +1563,10 @@
     if (d > 8) input.ang = Math.atan2(dy, dx);
     if (d > 70) { input.ox = input.x - dx / d * 70; input.oy = input.y - dy / d * 70; }
   });
-  const endPointer = (e) => { if (e.pointerId === input.id) { input.active = false; input.id = null; } };
+  const endPointer = (e) => {
+    if (game && game.clash && game.phase === 'clash') clashPress(false);
+    if (e.pointerId === input.id) { input.active = false; input.id = null; }
+  };
   cv.addEventListener('pointerup', endPointer);
   cv.addEventListener('pointercancel', endPointer);
   window.addEventListener('keydown', (e) => {
@@ -1564,7 +1575,13 @@
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(k)) { keys.add(k); e.preventDefault(); }
     if ((k === 'escape' || k === 'p') && game && game.mode === 'stage') togglePause();
   });
-  window.addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
+  window.addEventListener('keyup', (e) => {
+    keys.delete(e.key.toLowerCase());
+    if (e.key === ' ' && game && game.phase === 'clash') clashPress(false);
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === ' ' && game && game.phase === 'clash') { e.preventDefault(); if (!e.repeat || game.clash.state === 'run') clashPress(true); }
+  });
 
   function inputAngle(head) {
     let kx = 0, ky = 0;
@@ -1815,7 +1832,8 @@
     const vx0 = cam.x - VW / 2 / z - 100, vx1 = cam.x + VW / 2 / z + 100;
     const vy0 = cam.y - VH / 2 / z - 100, vy1 = cam.y + VH / 2 / z + 100;
 
-    drawArena(view.R, vx0, vx1, vy0, vy1);
+    if (view.clash) drawTrack(view, vx0, vx1);
+    else drawArena(view.R, vx0, vx1, vy0, vy1);
 
     for (const f of view.foods) {
       if (f.x < vx0 || f.x > vx1 || f.y < vy0 || f.y > vy1) continue;
@@ -1885,7 +1903,7 @@
     }
     ctx.globalAlpha = 1;
     if (input.active && input.ang !== null) drawStick();
-    drawMini(view);
+    if (!view.clash) drawMini(view);
   }
 
   const EVO_COL = ['rgba(60,64,80,0.85)', '#2f9e44', '#1971c2', '#7048e8', '#e8590c', '#c2255c', '#d4a017'];
@@ -1945,7 +1963,8 @@
     '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부', '구름이', '번개'];
   const GROW_TIME = 90, DUEL_TIME = 30, STAGE_BOTS = 36;
   const stagePower = (n) => 20 * Math.pow(1.3, n - 1);
-  const bossLevel = (n) => Math.round(stagePower(n) * 4.5);
+  // 초반 스테이지는 보스가 약하고, 15스테이지쯤부터 본래 세기
+  const bossLevel = (n) => Math.round(stagePower(n) * (2 + 2.5 * Math.min(1, (n - 1) / 14)));
 
   function startStage() {
     const stage = save.stage;
@@ -1967,6 +1986,7 @@
     cam.x = 0; cam.y = 0; cam.z = 1;
     parts = []; floats = []; rings = [];
     showHud(true);
+    $('mini').classList.remove('hidden');
     $('respawnBox').classList.add('hidden');
     $('pauseBtn').classList.remove('hidden');
     banner(`STAGE ${stage}`, `보스 Lv.${fmtN(bossLevel(stage))} 보다 커지세요!`, 2200);
@@ -1988,32 +2008,200 @@
     });
   }
 
+  // 보스전: 철로 양 끝에서 달려와 정면으로 부딪히는 대결
+  const TRACK = 2800;
+  const headR = (lv) => E.widthOf(Math.max(1, lv)) * 0.75;
   function startDuel() {
-    const g = game, w = g.world;
-    for (const s of w.snakes) if (s !== g.player) s.alive = false;
-    w.snakes = [g.player];
-    w.R = 1080;
-    w.clearFoods();
-    w.foodTarget = 40;
-    w.skinEvery = 0;
-    w.itemTarget = 0;
-    const p = g.player;
-    p.x = -500; p.y = 0; p.dir = 0; p.want = 0; p.latch = 0; p.bounceT = 0;
-    w.resetTrail(p);
-    g.boss = w.addSnake({
-      name: g.stage % 5 === 0 ? '보스 용' : g.stage % 5 === 3 ? '보스 상어' : '보스', skin: g.stage % 5 === 0 ? 'bossdragon' : g.stage % 5 === 3 ? 'bossshark' : 'boss', isBot: true, isBoss: true, x: 500, y: 0, dir: Math.PI,
-      level: bossLevel(g.stage), speed: 245, aggro: 0.95, chase: 1400, humanBias: 300,
+    const g = game;
+    const bl = bossLevel(g.stage);
+    const bossSkin = g.stage % 5 === 0 ? 'bossdragon' : g.stage % 5 === 3 ? 'bossshark' : 'boss';
+    const bossName = g.stage % 5 === 0 ? '보스 용' : g.stage % 5 === 3 ? '보스 상어' : '보스';
+    // 철로 위 먹이 (보스 레벨의 절반쯤을 둘이 나눠 먹는다) + 아이템 몇 개
+    const foods = [];
+    const n = Math.floor((TRACK - 520) / 50);
+    const orbV = Math.max(1, bl * 0.55 / n);
+    for (let i = 0; i < n; i++) foods.push({ id: i + 1, x: -TRACK / 2 + 260 + i * 50, v: orbV, k: 0 });
+    const kinds = [7, 3, 4, 7];
+    kinds.forEach((k, i) => {
+      const x = -TRACK / 2 + 500 + (i + rand(0.2, 0.8)) * ((TRACK - 1000) / kinds.length);
+      foods.push({ id: 1000 + i, x, v: 0, k });
     });
-    w.takeDelta();
-    g.phase = 'duel';
-    g.time = DUEL_TIME;
+    g.phase = 'clash';
+    g.clash = {
+      state: 'ready', count: 3.2, lastN: 0, t: 0, fxT: 0, hold: false, boost: 0, bBoost: 0.3, spdT: 0, shieldT: 0, pShield: false,
+      cx: 0, orbV, foods,
+      p: { x: -TRACK / 2 + 120, level: g.player.level, start: g.player.level },
+      b: { x: TRACK / 2 - 120, level: bl, skin: bossSkin, name: bossName },
+    };
+    g.boss = { level: bl };
     cam.x = 0; cam.y = 0;
-    banner('👑 보스 대결!', `나 Lv.${Math.floor(p.level)}  VS  보스 Lv.${Math.floor(g.boss.level)}`, 2400);
+    $('mini').classList.add('hidden');
     beep(330, 0.3, 'sawtooth', 0.06);
+    banner('👑 보스 등장!', `나 Lv.${fmtN(Math.floor(g.player.level))}  VS  ${bossName} Lv.${fmtN(bl)}`, 1500);
+  }
+
+  function clashPress(down) {
+    const c = game && game.clash;
+    if (!c) return;
+    if (c.state === 'run') c.hold = down;
+    if (down && c.state === 'push') {
+      c.boost = Math.min(1, c.boost + 0.14);
+      beep(300 + c.boost * 500, 0.04, 'square', 0.04);
+    }
+  }
+
+  function eatTrack(c) {
+    const g = game;
+    const rp = headR(c.p.level), rb = headR(c.b.level);
+    for (const f of c.foods) {
+      if (f.eaten) continue;
+      if (f.x <= c.p.x + rp * 0.5) {
+        f.eaten = true;
+        if (f.k === 0) c.p.level += f.v * g.playerOpts.foodMul;
+        else if (f.k === 7) { c.p.level *= 1.15; floatText(f.x, -60, '⭐ 레벨 쑥!', '#ffe066'); }
+        else if (f.k === 3) { c.spdT = 2.5; floatText(f.x, -60, '⚡ 가속!', '#ffe066'); }
+        else if (f.k === 4) { c.pShield = true; floatText(f.x, -60, '🛡️ 충돌 피해 감소!', '#a5d8ff'); }
+        burst(f.x, 0, f.k ? ITEM_INFO[f.k].col : '#ffe066', f.k ? 14 : 3);
+        if (f.k) beep(880, 0.1, 'triangle', 0.07); else beep(500 + Math.random() * 200, 0.03, 'sine', 0.03);
+      } else if (f.x >= c.b.x - rb * 0.5) {
+        f.eaten = true;
+        if (f.k === 0) c.b.level += f.v;
+        else if (f.k === 7) c.b.level *= 1.15;
+        burst(f.x, 0, '#b197fc', f.k ? 10 : 2);
+      }
+    }
+  }
+
+  function updateClash(dt) {
+    const g = game, c = g.clash;
+    c.t += dt;
+    if (c.state === 'ready') {
+      c.count -= dt;
+      const n = Math.ceil(c.count);
+      if (n !== c.lastN && n > 0 && n <= 3) {
+        c.lastN = n;
+        banner(String(n), '화면을 꾹 누르면 더 빨리 달려요!', 800);
+        beep(440, 0.12, 'square', 0.06);
+      }
+      if (c.count <= 0) { c.state = 'run'; banner('돌진!', '먹이를 먹으며 달려요', 700); beep(880, 0.2, 'square', 0.07); }
+      return;
+    }
+    if (c.state === 'run') {
+      if (c.spdT > 0) c.spdT -= dt;
+      const sp = 330 * (c.hold ? 1.75 : 1) * (c.spdT > 0 ? 1.5 : 1);
+      c.p.x += sp * dt;
+      c.b.x -= 310 * dt;
+      eatTrack(c);
+      g.player.level = c.p.level;
+      g.player.best = Math.max(g.player.best, c.p.level);
+      if (c.p.x + headR(c.p.level) >= c.b.x - headR(c.b.level)) {
+        c.state = 'push';
+        c.cx = (c.p.x + headR(c.p.level) + c.b.x - headR(c.b.level)) / 2;
+        shake = 0.6;
+        pang(c.cx, 0, 60);
+        banner('💥 CLASH!', '화면을 마구 눌러서 밀어내요!', 1300);
+        beep(110, 0.5, 'sawtooth', 0.1);
+      }
+      return;
+    }
+    if (c.state !== 'push') return;
+    // 정면충돌: 힘(레벨 × 연타 보너스)이 센 쪽이 밀어내고, 서로 레벨이 깎인다
+    c.boost = Math.max(0, c.boost - 1.1 * dt);
+    c.bBoost = 0.3 + 0.15 * Math.sin(c.t * 2.3);
+    if (c.shieldT > 0) c.shieldT -= dt;
+    const P = c.p.level * (1 + c.boost), B = c.b.level * (1 + c.bBoost);
+    c.p.level -= 0.22 * B * dt * (c.shieldT > 0 ? 0 : c.pShield ? 0.6 : 1);
+    c.b.level -= 0.22 * P * dt;
+    c.cx += (P - B) / (P + B) * 240 * dt;
+    c.p.x = c.cx - headR(c.p.level);
+    c.b.x = c.cx + headR(c.b.level);
+    // 부딪히는 곳에서 불꽃과 부서지는 마디 조각
+    c.fxT -= dt;
+    if (c.fxT <= 0) {
+      c.fxT = 0.04;
+      const pc = segColor(skinOf(save.skin), 1), bc = segColor(skinOf(c.b.skin), 1);
+      for (let k = 0; k < 4; k++) {
+        const a = rand(-Math.PI, Math.PI), sp = rand(200, 520);
+        parts.push({ x: c.cx, y: rand(-20, 20), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45, max: 0.45, color: ['#fff3bf', '#ffd43b', '#ff922b', pc, bc][k % 5], s: rand(5, 10) });
+      }
+    }
+    shake = Math.max(shake, 0.07);
+    g.player.level = Math.max(1, c.p.level);
+    g.boss.level = Math.max(1, c.b.level);
+    if (c.b.level <= 1) {
+      c.state = 'done';
+      pang(c.b.x, 0, 80);
+      streamTo(c.b.x, 0, g.player.id, 20, '#ffd43b');
+      endStage(true, '보스를 밀어내고 꿀꺽 삼켰어요!');
+    } else if (c.p.level <= 1) {
+      c.state = 'dead';
+      pang(c.p.x, 0, 50);
+      if (save.inv.revive > 0) {
+        g.reviveWait = 5;
+        g.deadLevel = c.p.start;
+        $('reviveSub').textContent = `보스전 시작 레벨 Lv.${fmtN(Math.floor(c.p.start))}로 다시 밀어붙여요 · 남은 부활 ❤️ ${save.inv.revive}개`;
+        $('reviveCount').textContent = '5';
+        $('reviveOv').classList.remove('hidden');
+      } else endStage(false, '보스에게 밀려서 졌어요');
+    }
+  }
+
+  function clashView() {
+    const g = game, c = g.clash;
+    const mk = (o, sign, id, me, skin, name) => {
+      const lv = Math.max(1, o.level), w = E.widthOf(lv), L = E.lengthOf(lv), sp = w * 0.45;
+      const body = [];
+      for (let d = 0; d <= L; d += sp) {
+        const x = o.x - sign * d;
+        body.push(x, d < w ? 0 : Math.sin(d * 0.012 - T * 5) * w * (c.state === 'push' ? 0.06 : 0.18));
+      }
+      return { id, x: o.x, y: 0, dir: sign > 0 ? 0 : Math.PI, level: lv, body, skin, name, me, boss: !me,
+        fx: (me && (c.shieldT > 0 || c.pShield) ? 16 : 0) | (me && (c.spdT > 0 || c.hold) && c.state === 'run' ? 8 : 0),
+        latch: c.state === 'push' };
+    };
+    return {
+      clash: true, R: TRACK, fv: c.orbV, now: T,
+      half: Math.max(E.widthOf(c.p.level), E.widthOf(c.b.level)) * 1.3 + 40,
+      foods: c.foods.filter((f) => !f.eaten).map((f) => ({ id: f.id, x: f.x, y: 0, v: f.k ? 0 : f.v, k: f.k })),
+      snakes: [mk(c.p, 1, g.player.id, true, save.skin, '나'), mk(c.b, -1, -7, false, c.b.skin, c.b.name)],
+    };
+  }
+
+  function clashCamera(dt) {
+    const c = game.clash;
+    const mid = (c.p.x + c.b.x) / 2;
+    const wmax = E.widthOf(Math.max(c.p.level, c.b.level));
+    const span = Math.max(800, (c.b.x - c.p.x) + 600 + wmax * 8);
+    const z = clamp(Math.min(VW / span, VH / (wmax * 10 + 300)), 0.1, 1.1);
+    const k = 1 - Math.pow(0.002, dt);
+    cam.x += (mid - cam.x) * k;
+    cam.y += (0 - cam.y) * k;
+    cam.z += (z - cam.z) * (1 - Math.pow(0.05, dt));
+  }
+
+  // 보스전 철로
+  function drawTrack(view, vx0, vx1) {
+    const half = view.half, L = view.R / 2;
+    ctx.fillStyle = 'rgba(28,32,78,0.7)';
+    ctx.fillRect(-L, -half, L * 2, half * 2);
+    ctx.fillStyle = 'rgba(150,160,220,0.18)';
+    const step = Math.max(60, half * 0.5);
+    for (let x = Math.max(-L, Math.floor(vx0 / step) * step); x < Math.min(L, vx1); x += step) ctx.fillRect(x, -half, step * 0.22, half * 2);
+    for (const y of [-half, half]) {
+      ctx.strokeStyle = 'rgba(102,217,232,0.45)'; ctx.lineWidth = 16;
+      ctx.beginPath(); ctx.moveTo(-L, y); ctx.lineTo(L, y); ctx.stroke();
+      ctx.strokeStyle = '#e3fafc'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(-L, y); ctx.lineTo(L, y); ctx.stroke();
+    }
+    for (const x of [-L, L]) {
+      ctx.fillStyle = 'rgba(190,75,219,0.6)';
+      ctx.fillRect(x - 12, -half - 20, 24, half * 2 + 40);
+    }
   }
 
   function stageView() {
     const g = game, w = g.world;
+    if (g.phase === 'clash') return clashView();
     return {
       R: w.R, fv: g.fv, now: w.time, foods: Array.from(w.foods.values()),
       snakes: w.snakes.map((s) => ({
@@ -2034,11 +2222,11 @@
     }
     if (g.ending > 0) {
       g.ending -= dt;
-      w.step(dt);
-      w.takeDelta();
+      if (g.phase !== 'clash') { w.step(dt); w.takeDelta(); }
       if (g.ending <= 0) showStageResult();
       return;
     }
+    if (g.phase === 'clash') { updateClash(dt); return; }
     const ang = inputAngle(g.player);
     if (ang !== null) g.player.want = ang;
     let left = dt;
@@ -2070,12 +2258,6 @@
         if (w.snakes.filter((s) => s.isBot && !s.dying).length < STAGE_BOTS) spawnStageBot();
       }
       if (g.time <= 0) startDuel();
-    } else {
-      if (!g.boss.alive || g.boss.dying) return endStage(true, '보스를 꿀꺽 삼켰어요!');
-      if (g.time <= 0) {
-        if (g.player.level > g.boss.level) endStage(true, '시간 종료! 레벨이 더 높아서 승리!');
-        else endStage(false, '시간 종료! 보스의 레벨이 더 높아요');
-      }
     }
   }
 
@@ -2083,6 +2265,7 @@
     const g = game, w = g.world;
     g.reviveWait = 0;
     $('reviveOv').classList.add('hidden');
+    if (g.phase === 'clash') return endStage(false, '보스에게 밀려서 졌어요');
     const k = w.get(g.killer);
     endStage(false, k && k.isBoss ? '보스에게 꿀꺽 먹혔어요' : `${k ? k.name : '다른 뱀'}에게 꿀꺽 먹혔어요`);
   }
@@ -2091,7 +2274,18 @@
     const g = game, w = g.world;
     if (!g || g.reviveWait <= 0 || save.inv.revive <= 0) return;
     save.inv.revive--; persist();
-    const p = g.phase === 'duel' ? w.randPoint(300) : w.spawnPoint(900);
+    if (g.phase === 'clash') {
+      // 보스전 부활: 보스전 시작 레벨로 회복하고 3초 동안 피해를 받지 않는다
+      const c = g.clash;
+      c.p.level = c.p.start; c.shieldT = 3; c.state = 'push';
+      g.reviveWait = 0;
+      $('reviveOv').classList.add('hidden');
+      banner('❤️ 부활!', '3초 동안 피해를 받지 않아요. 연타!', 1500);
+      beep(660, 0.15, 'triangle', 0.09); setTimeout(() => beep(990, 0.25, 'triangle', 0.09), 140);
+      renderItemBtns();
+      return;
+    }
+    const p = w.spawnPoint(900);
     const np = w.addSnake(Object.assign({ level: g.deadLevel, x: p.x, y: p.y }, g.playerOpts));
     np.fx[4] = 3;
     np.best = Math.max(np.best, g.player.best);
@@ -2525,7 +2719,14 @@
     const it = shopItem(id);
     if (!it || !it.k) return;
     if ((save.inv[id] || 0) <= 0) { toast(`${it.ico} ${it.nm}이(가) 없어요. 상점에서 살 수 있어요`, 1500); return; }
-    if (game.mode === 'stage') {
+    if (game.mode === 'stage' && game.phase === 'clash') {
+      const c = game.clash;
+      if (!['run', 'push'].includes(c.state) || game.reviveWait > 0) return;
+      if (id === 'speed') { if (c.state === 'run') c.spdT = 4; else c.boost = 1; }
+      else if (id === 'shield') c.shieldT = Math.max(c.shieldT, 4);
+      else if (id === 'magnet') { for (const f of c.foods) if (!f.eaten && f.x < c.p.x + 700) f.x = Math.min(f.x, c.p.x); }
+      floatText(c.p.x, -80, `${it.ico} ${it.nm}!`, '#ffe066');
+    } else if (game.mode === 'stage') {
       const p = game.player;
       if (!p.alive || p.dying || game.reviveWait > 0) return;
       p.fx[it.k] = Math.max(p.fx[it.k] || 0, it.dur);
@@ -2591,13 +2792,31 @@
     if (hudT > 0) return;
     hudT = 0.2;
     const g = game;
+    const hint = $('clashHint');
+    if (g.mode === 'stage' && g.phase === 'clash') {
+      const c = g.clash;
+      $('hStage').textContent = `👑 STAGE ${g.stage} 보스전`;
+      $('hTime').textContent = '⚔️';
+      $('hTime').classList.remove('warn');
+      $('hCoin').textContent = `🪙 ${save.coins + g.coins}`;
+      const P = Math.max(1, c.p.level) * (1 + c.boost), B = Math.max(1, c.b.level) * (1 + c.bBoost);
+      const pct = c.state === 'push' ? P / (P + B) * 100 : c.p.level / (c.p.level + c.b.level) * 100;
+      $('hGoal').innerHTML = `나 <b class="me">Lv.${fmtN(Math.floor(Math.max(1, c.p.level)))}</b> VS ${c.b.name} <b>Lv.${fmtN(Math.floor(Math.max(1, c.b.level)))}</b>
+        <div class="tug"><div style="width:${pct.toFixed(1)}%"></div></div>`;
+      hint.textContent = c.state === 'run' ? '꾹 누르면 빨라져요 ▶▶' : c.state === 'push' ? '연타!! 👆👆👆' : '';
+      hint.classList.toggle('hidden', !hint.textContent);
+      $('board').innerHTML = '';
+      $('fxBar').innerHTML = (c.pShield ? '<span>🛡️ 충돌 피해 감소</span>' : '') + (c.shieldT > 0 ? `<span>❤️ 무적 ${Math.ceil(c.shieldT)}초</span>` : '');
+      return;
+    }
+    hint.classList.add('hidden');
     if (g.mode === 'stage') {
-      $('hStage').textContent = g.phase === 'grow' ? `STAGE ${g.stage}` : '👑 보스전';
+      $('hStage').textContent = `STAGE ${g.stage}`;
       $('hTime').textContent = fmtTime(g.time);
       $('hTime').classList.toggle('warn', g.time <= 10);
       $('hCoin').textContent = `🪙 ${save.coins + g.coins}`;
-      const me = Math.floor(g.player.level), b = g.phase === 'grow' ? bossLevel(g.stage) : Math.floor(g.boss.level);
-      $('hGoal').innerHTML = `👑 보스 <b>Lv.${b}</b> · 나 <b class="me">Lv.${me}</b>`;
+      const me = Math.floor(g.player.level), b = bossLevel(g.stage);
+      $('hGoal').innerHTML = `👑 보스 <b>Lv.${fmtN(b)}</b> · 나 <b class="me">Lv.${fmtN(me)}</b>`;
     } else {
       $('hStage').textContent = '🌐 온라인';
       $('hTime').textContent = fmtTime(g.tm);
@@ -2658,7 +2877,8 @@
       if (!paused) { updateStage(dt); updateFx(dt); }
       if (game) {
         view = stageView();
-        moveCamera(game.player, game.player.level, dt);
+        if (game.phase === 'clash') clashCamera(dt);
+        else moveCamera(game.player, game.player.level, dt);
         updateHud(dt, view);
       }
     } else if (game && game.mode === 'online') {
