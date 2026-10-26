@@ -70,8 +70,10 @@
   const MAX_LEVEL = 9999;
   // 몸 앞쪽 이 비율까지는 머리로 친다 (여기에 부딪혀야 먹고 먹힌다)
   const HEAD_ZONE = 0.15;
-  // 몸통을 먹었을 때: 먹은 양 중 얻는 비율, 같은 뱀을 다시 물 수 있을 때까지의 시간
-  const BITE_GAIN = 0.8, BITE_COOL = 0.5;
+  // 몸통을 먹었을 때: 먹은 양 중 얻는 비율, 물린 뱀이 다시 물리지 않는 시간
+  const BITE_GAIN = 0.8, BITE_COOL = 2;
+  // 물린 뱀은 잠깐 빠르게 도망치고, 문 뱀은 먹느라 잠깐 느려진다 (머리와 남은 몸이 바로 떨어지게)
+  const ESCAPE_TIME = 0.9, ESCAPE_SPEED = 1.6, CHEW_TIME = 0.45, CHEW_SPEED = 0.45;
 
   // 머리부터 꼬리 방향으로 경로를 일정 간격으로 샘플링 (평탄 배열 [x0,y0,x1,y1,...])
   function samplePath(trail, total, spacing) {
@@ -235,6 +237,9 @@
     for (const s of live) {
       for (const k in s.fx) if (s.fx[k] > 0) s.fx[k] -= dt;
       if (s.biteT > 0) s.biteT -= dt;
+      if (s.escT > 0) s.escT -= dt;
+      if (s.chewT > 0) s.chewT -= dt;
+      if (s.skipT > 0) s.skipT -= dt;
       if (s.isBot) {
         s.think -= dt;
         if (s.think <= 0) { this.think(s); s.think = rand(0.12, 0.24); }
@@ -275,7 +280,7 @@
       s.dir += clamp(d, -m, m);
     }
     const sp = s.speed * (s.latch ? 0.8 : 1) * (s.bounceT > 0 ? 0.75 : 1) *
-      (s.fx[3] > 0 ? 1.6 : 1) * (s.fx.slow > 0 ? 0.45 : 1);
+      (s.fx[3] > 0 ? 1.6 : 1) * (s.fx.slow > 0 ? 0.45 : 1) * (s.escT > 0 ? ESCAPE_SPEED : 1) * (s.chewT > 0 ? CHEW_SPEED : 1);
     s.x += Math.cos(s.dir) * sp * dt;
     s.y += Math.sin(s.dir) * sp * dt;
     const w = widthOf(s.level);
@@ -380,7 +385,9 @@
         const la = Math.floor(A.level), lb = Math.floor(B.level);
         if (hit >= neck) {
           // 몸통·꼬리: 내가 더 크면 물린 자리부터 꼬리까지 꿀꺽 (잠깐 동안은 연달아 먹히지 않는다)
-          if (la > lb && !(B.fx[4] > 0)) { if (!(B.biteT > 0)) this.bite(A, B, hit); }
+          // 막 물린 뱀의 몸통은 잠깐 그냥 지나간다 (꼬리만 계속 쫓아가며 물지 못하게)
+          if (B.biteT > 0) continue;
+          if (la > lb && !(B.fx[4] > 0)) this.bite(A, B, hit);
           else this.bounce(A, hx, hy);
           continue;
         }
@@ -408,6 +415,12 @@
     }
     B.level -= lost;
     B.biteT = BITE_COOL;
+    B.escT = ESCAPE_TIME;
+    A.chewT = CHEW_TIME;
+    // 컴퓨터 뱀은 방금 문 뱀을 한동안 다시 쫓지 않는다
+    A.skipId = B.id; A.skipT = 4;
+    // 물린 뱀이 컴퓨터면 문 뱀 반대쪽으로 달아난다
+    if (B.isBot) { B.want = Math.atan2(B.y - A.y, B.x - A.x); B.think = ESCAPE_TIME; }
     B.body = samplePath(tr, lengthOf(B.level), widthOf(B.level) * 0.45);
     this.grow(A, lost * BITE_GAIN);
     // 화면에서 뚝 떨어져 나갔다가 입으로 빨려 들어갈 토막 모양 (점 수를 줄여서 보낸다)
@@ -488,14 +501,15 @@
       const d = Math.hypot(o.x - s.x, o.y - s.y);
       if (d > 1200 * sc) continue;
       const ol = Math.floor(o.level);
+      const skip = s.skipT > 0 && s.skipId === o.id;
       if (ol > me && d < 200 * sc + w * 4 + widthOf(o.level) * 2 && d < td) { threat = o; td = d; }
-      if (me > ol && d < s.chase * sc) {
+      if (me > ol && d < s.chase * sc && !skip) {
         const v = o.level * 15 - d + (o.isHuman ? s.humanBias : 0);
         // 머리를 노릴 때는 가는 방향을 앞질러 간다
         if (v > ts) { ts = v; target = { x: o.x + Math.cos(o.dir) * 60 * sc, y: o.y + Math.sin(o.dir) * 60 * sc }; }
         // 몸통 가운데를 물어도 반쯤 먹을 수 있다
         const b = o.body;
-        if (b.length > 8) {
+        if (b.length > 8 && !(o.biteT > 0)) {
           const k = (b.length >> 2) * 2, bd = Math.hypot(b[k] - s.x, b[k + 1] - s.y);
           const bv = o.level * 9 - bd + (o.isHuman ? s.humanBias : 0);
           if (bv > ts) { ts = bv; target = { x: b[k], y: b[k + 1] }; }
