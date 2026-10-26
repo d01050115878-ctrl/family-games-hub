@@ -1,7 +1,7 @@
 /* =========================================================
    꿀꺽 뱀 대결 - 게임 엔진 (브라우저 / 서버 공용)
    - 머리끼리 부딪히면 레벨이 높은 뱀이 낮은 뱀을 통째로 삼킨다
-   - 큰 뱀이 작은 뱀의 몸통·꼬리를 물면 물린 자리부터 꼬리까지 먹힌다
+   - 큰 뱀이 작은 뱀의 몸통·꼬리를 물면 머리만 남고 몸 전체가 떨어져 먹힌다 (먹으면 다시 자란다)
    - 작은 뱀이 큰 뱀 몸통에 부딪히거나 레벨이 같으면 튕겨나간다
    ========================================================= */
 (function (root, factory) {
@@ -72,8 +72,13 @@
   const HEAD_ZONE = 0.15;
   // 몸통을 먹었을 때: 먹은 양 중 얻는 비율, 남은 몸통이 다시 물리지 않는 시간 (머리는 언제든 먹힐 수 있다)
   const BITE_GAIN = 0.8, BITE_COOL = 2;
-  // 몸이 먹힌 뱀은 한동안 느려진다 (많이 먹힐수록 더 느림) → 남은 머리를 잡아먹히기 쉬워진다
-  const LIMP_TIME = 2.5, LIMP_MAX = 0.4;
+  // 몸통·꼬리를 물리면 머리만 남기고 몸 전체가 떨어져 나간다: 레벨은 BITE_LOSS 비율만큼 줄고,
+  // 머리만 남은 뱀은 다시 먹으면서 꼬리가 자라난다 (레벨의 1/REGROW 만큼 먹으면 원래 길이)
+  const BITE_LOSS = 0.4, REGROW = 3;
+  // 머리만 남은 뱀은 한동안 느려서 머리를 잡아먹히기 쉽다
+  const LIMP_TIME = 2.5, LIMP_SPEED = 0.75;
+  // 실제 몸 길이: 레벨 길이 × 다시 자란 비율
+  const bodyLen = (s) => lengthOf(s.level) * (s.trim === undefined ? 1 : s.trim);
 
   // 머리부터 꼬리 방향으로 경로를 일정 간격으로 샘플링 (평탄 배열 [x0,y0,x1,y1,...])
   function samplePath(trail, total, spacing) {
@@ -278,7 +283,7 @@
       s.dir += clamp(d, -m, m);
     }
     const sp = s.speed * (s.latch ? 0.8 : 1) * (s.bounceT > 0 ? 0.75 : 1) *
-      (s.fx[3] > 0 ? 1.6 : 1) * (s.fx.slow > 0 ? 0.45 : 1) * (s.limpT > 0 ? s.limp : 1);
+      (s.fx[3] > 0 ? 1.6 : 1) * (s.fx.slow > 0 ? 0.45 : 1) * (s.limpT > 0 ? LIMP_SPEED : 1);
     s.x += Math.cos(s.dir) * sp * dt;
     s.y += Math.sin(s.dir) * sp * dt;
     const w = widthOf(s.level);
@@ -292,13 +297,13 @@
     if (!prev || Math.hypot(s.x - prev[0], s.y - prev[1]) >= stepOf(s.level)) tr.push([s.x, s.y]);
     else tr[n - 1] = [s.x, s.y];
     // 길이를 넘는 오래된 경로 잘라내기
-    const L = lengthOf(s.level) + 20;
+    const L = bodyLen(s) + 20;
     let acc = 0;
     for (let i = tr.length - 1; i > 0; i--) {
       acc += Math.hypot(tr[i][0] - tr[i - 1][0], tr[i][1] - tr[i - 1][1]);
       if (acc > L) { if (i > 1) tr.splice(0, i - 1); break; }
     }
-    s.body = samplePath(tr, lengthOf(s.level), w * 0.45);
+    s.body = samplePath(tr, bodyLen(s), w * 0.45);
   };
 
   W.eat = function (s) {
@@ -348,12 +353,14 @@
   };
 
   W.grow = function (s, v) {
+    // 머리만 남았던 뱀은 먹은 만큼 꼬리가 다시 자란다
+    if (s.trim < 1) s.trim = Math.min(1, s.trim + v / Math.max(1, s.level) * REGROW);
     s.level = Math.min(MAX_LEVEL, s.level + v);
     if (s.level > s.best) s.best = s.level;
   };
 
   // Snake Clash 규칙: 머리(머리와 목 부분)끼리 부딪히면 레벨이 높은 쪽이 낮은 쪽을 통째로 꿀꺽!
-  // 큰 뱀이 작은 뱀의 몸통·꼬리를 물면 그 자리부터 꼬리까지 먹는다. 작은 뱀이 큰 뱀 몸통에 박으면 튕겨나간다.
+  // 큰 뱀이 작은 뱀의 몸통·꼬리를 물면 머리만 남기고 몸 전체를 먹는다. 작은 뱀이 큰 뱀 몸통에 박으면 튕겨나간다.
   // 레벨이 같거나 방패가 있으면 튕겨나간다.
   W.collide = function (live) {
     for (const A of live) A.latch = 0;
@@ -364,7 +371,7 @@
         if (A.dying) break;
         if (B === A || B.dying) continue;
         const rB = widthOf(B.level) / 2;
-        const reach = lengthOf(B.level) + rA + rB + 20;
+        const reach = bodyLen(B) + rA + rB + 20;
         if (Math.abs(B.x - A.x) > reach || Math.abs(B.y - A.y) > reach) continue;
         const pts = B.body, n = pts.length >> 1;
         // 머리부터 목까지(몸 앞쪽 HEAD_ZONE 비율)는 머리로 친다
@@ -385,7 +392,7 @@
           // 몸통·꼬리: 내가 더 크면 물린 자리부터 꼬리까지 꿀꺽 (잠깐 동안은 연달아 먹히지 않는다)
           // 막 물린 뱀의 몸통은 잠깐 그냥 지나간다 (꼬리만 계속 쫓아가며 물지 못하게)
           if (B.biteT > 0) continue;
-          if (la > lb && !(B.fx[4] > 0)) this.bite(A, B, hit);
+          if (la > lb && !(B.fx[4] > 0)) this.bite(A, B);
           else this.bounce(A, hx, hy);
           continue;
         }
@@ -397,34 +404,36 @@
   };
 
   // 물린 자리 뒤쪽(꼬리까지)을 삼킨다. 머리 쪽만 남아 계속 움직인다
-  W.bite = function (A, B, j) {
-    const b = B.body, n = b.length >> 1;
-    j = Math.min(j, n - 3);
-    // 먹힌 몸 비율만큼 레벨이 줄어든다 (남은 몸은 움직이면서 레벨 길이만큼 다시 자란다)
-    const lv = B.level, keep = j / n, keepLen = lengthOf(lv) * keep;
-    const lost = Math.min(lv - 1, lv * (1 - keep));
+  // 몸통·꼬리를 물렸다: 물린 곳과 상관없이 머리만 남고 몸 전체가 떨어져 나가 문 뱀에게 먹힌다
+  W.bite = function (A, B) {
+    const b = B.body, lv = B.level, w = widthOf(lv);
+    // 머리(앞쪽 3점, 약 1칸) 뒤부터 꼬리까지가 떨어져 나간다
+    const j = Math.min(3, (b.length >> 1) - 2);
+    if (j < 1) return;
+    const lost = Math.min(lv - 1, lv * BITE_LOSS);
     if (lost <= 0) return;
-    const piece = b.slice(2 * j);
+    const piece = b.slice(2 * (j - 1));
+    B.level -= lost;
+    const headLen = w * 0.45 * (j - 1);
+    B.trim = Math.min(1, headLen / lengthOf(B.level));
     const tr = B.trail;
     let acc = 0;
     for (let i = tr.length - 1; i > 0; i--) {
       acc += Math.hypot(tr[i][0] - tr[i - 1][0], tr[i][1] - tr[i - 1][1]);
-      if (acc >= keepLen) { tr.splice(0, i - 1); break; }
+      if (acc >= headLen) { tr.splice(0, i - 1); break; }
     }
-    B.level -= lost;
     B.biteT = BITE_COOL;
     B.limpT = LIMP_TIME;
-    B.limp = 1 - LIMP_MAX * (1 - keep);
     // 물린 뱀이 컴퓨터면 문 뱀 반대쪽으로 달아난다
     if (B.isBot) { B.want = Math.atan2(B.y - A.y, B.x - A.x); B.think = 0.6; }
-    B.body = samplePath(tr, lengthOf(B.level), widthOf(B.level) * 0.45);
+    B.body = samplePath(tr, bodyLen(B), widthOf(B.level) * 0.45);
     this.grow(A, lost * BITE_GAIN);
-    // 화면에서 뚝 떨어져 나갔다가 입으로 빨려 들어갈 토막 모양 (점 수를 줄여서 보낸다)
+    // 화면에서 뚝 떨어져 나갔다가 입으로 빨려 들어갈 몸 모양 (점 수를 줄여서 보낸다)
     const segs = piece.length >> 1, st = Math.max(1, Math.ceil(segs / 24)) * 2, p = [];
     for (let i = 0; i < piece.length; i += st) p.push(Math.round(piece[i]), Math.round(piece[i + 1]));
     if ((piece.length - 2) % st) p.push(Math.round(piece[piece.length - 2]), Math.round(piece[piece.length - 1]));
     this.events.push({ e: 'part', a: A.id, b: B.id, x: Math.round(piece[0]), y: Math.round(piece[1]),
-      w: Math.round(widthOf(lv) * 10) / 10, keep: Math.round(keep * 100) / 100, n: Math.round(lost * BITE_GAIN * 10) / 10, p });
+      w: Math.round(w * 10) / 10, keep: Math.round((j - 1) / (b.length >> 1) * 100) / 100, n: Math.round(lost * BITE_GAIN * 10) / 10, p });
   };
 
   W.swallow = function (A, B) {
