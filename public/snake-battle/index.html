@@ -247,9 +247,9 @@
     <ul class="how hidden" id="how">
       <li>화면을 <b>드래그</b>(PC는 마우스/방향키)해서 뱀을 움직여요.</li>
       <li>노란 먹이를 먹으면 <b>레벨</b>이 오르고 뱀이 커져요.</li>
-      <li>나보다 <b>레벨이 낮은 뱀의 머리</b>를 물면 통째로 <b>꿀꺽</b>!</li>
-      <li>레벨이 같거나 높으면 상대 <b>몸통을 물어서</b> 레벨을 빼앗아요. 레벨이 낮으면 튕겨나가요.</li>
-      <li>나보다 큰 뱀의 머리에 부딪히면 먹혀요. 큰 뱀에게 몸통을 물리지 않게 조심!</li>
+      <li>나보다 <b>레벨이 낮은 뱀</b>에 부딪히면 (머리든 몸통이든) 통째로 <b>꿀꺽</b>!</li>
+      <li>나보다 <b>레벨이 높은 뱀</b>에 부딪히면 내가 먹혀요. 큰 뱀은 피하세요!</li>
+      <li>레벨이 같으면 서로 튕겨나가요.</li>
       <li>90초 동안 성장한 뒤 <b>👑 보스와 정면충돌</b>! 철로 위를 달리며 먹이를 먹고(화면을 꾹 누르면 빨라져요), 부딪히면 화면을 <b>연타</b>해서 보스를 밀어내요.</li>
       <li>레벨이 오르면 <b>진화</b>해요: 새끼 → 어린 시절 → 성체 → 가시 → 뿔 → 날개 → 고대!</li>
       <li><b>🛒 상점</b>에서 ⚡스피드 · 🧲자석 · 🛡️방패 · 🚀시작 부스트 · ❤️부활을 사서 게임 중에 써요.</li>
@@ -1916,52 +1916,6 @@
           beep(140, 0.4, 'sawtooth', 0.07);
           game.killer = ev.a;
         }
-      } else if (ev.e === 'bite') {
-        // 물린 자리에서 상대 몸통 조각이 뜯겨 나가 빙글빙글 돌며 문 뱀의 입으로 들어간다
-        const vic = headPos.get(ev.b);
-        const vskin = skinOf(vic ? vic.skin : 'tree');
-        const vr = E.widthOf(vic ? vic.level : 5) * 0.5;
-        for (let k = 0; k < 2; k++) {
-          const a = rand(0, TAU), sp = rand(120, 260) * FXS;
-          parts.push({ chunk: true, skin: vskin, col: segColor(vskin, randInt(0, 12)), x: ev.x + rand(-vr, vr) * 0.4, y: ev.y + rand(-vr, vr) * 0.4,
-            vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: vr * rand(0.55, 0.8), rot: rand(0, TAU), spin: rand(-12, 12), life: 0.8, max: 0.8, s: 14, tid: ev.a });
-        }
-        burst(ev.x, ev.y, segColor(vskin, 1), 5);
-        burst(ev.x, ev.y, '#ff6b6b', 3);
-        if (Math.random() < 0.35) splat(ev.x, ev.y, vr * 0.9, segColor(vskin, 1), 2);
-        marks.push({ x: ev.x, y: ev.y, r: vr * 1.1, life: 0.5, rot: rand(0, TAU) });
-        if (marks.length > 40) marks.shift();
-        if (ev.a === myId || ev.b === myId) beep(90 + Math.random() * 40, 0.05, 'sawtooth', 0.06);
-        pulses.set(ev.a, 1); hurts.set(ev.b, 1);
-        const key = ev.a + '-' + ev.b, acc = biteAcc.get(key) || { a: ev.a, b: ev.b, n: 0, l: 0, t: 0 };
-        acc.n += ev.n || 0; acc.l += ev.l || 0;
-        biteAcc.set(key, acc);
-        if (ev.a === myId) { shake = Math.max(shake, 0.06); setTimeout(() => beep(260, 0.04, 'square', 0.04), 40); }
-        if (ev.b === myId) { shake = Math.max(shake, 0.18); beep(170, 0.07, 'sawtooth', 0.05); }
-      } else if (ev.e === 'cut') {
-        // 몸통이 뚝 끊겨 나간다: 잘린 토막은 꿈틀대며 튕겨 나가고, 머리 쪽만 계속 달린다
-        const vic = headPos.get(ev.b);
-        const vskin = skinOf(vic ? vic.skin : 'tree');
-        const flat = ev.p || [];
-        if (flat.length >= 4) {
-          const pts = resample(flat, ev.w * 0.3);
-          const full = Math.round(pts.length / Math.max(0.05, 1 - (ev.keep || 0)));
-          flingPieces(pts, 0, ev.w, vskin, Math.max(4, Math.floor(full * 0.42)), full - pts.length, 1, 3);
-        }
-        cutAt.set(ev.b, T);
-        splat(ev.x, ev.y, ev.w * 1.3, segColor(vskin, 1), 3);
-        burst(ev.x, ev.y, '#e03131', 10);
-        burst(ev.x, ev.y, segColor(vskin, 1), 8);
-        rings.push({ x: ev.x, y: ev.y, r: ev.w * 0.3, max: ev.w * 1.8, life: 0.35, lw: FXS });
-        marks.push({ x: ev.x, y: ev.y, r: ev.w * 0.55, life: 0.7, rot: rand(0, TAU) });
-        if (marks.length > 40) marks.shift();
-        floatText(ev.x, ev.y - ev.w, '싹둑!', '#ffa8a8');
-        pulses.set(ev.a, 1.2); hurts.set(ev.b, 1.4);
-        const key = ev.a + '-' + ev.b, acc = biteAcc.get(key) || { a: ev.a, b: ev.b, n: 0, l: 0, t: 0 };
-        acc.n += ev.n || 0; acc.l += ev.l || 0;
-        biteAcc.set(key, acc);
-        if (ev.a === myId) { shake = Math.max(shake, 0.16); beep(330, 0.08, 'square', 0.06); setTimeout(() => beep(620, 0.1, 'triangle', 0.06), 60); }
-        if (ev.b === myId) { shake = Math.max(shake, 0.35); beep(120, 0.18, 'sawtooth', 0.07); toast('✂️ 몸통이 잘렸어요!', 900); }
       } else if (ev.e === 'item') {
         const info = ITEM_INFO[ev.k];
         burst(ev.x, ev.y, info.col, 14);
@@ -2198,7 +2152,7 @@
      view = { R, snakes:[{id,x,y,dir,level,body(flat),spacing,skin,name,me,boss,latch,dying}], foods, fv }
      ========================================================= */
   /* ---------- 우주 배경 ---------- */
-  // 별 타일 (반복해서 깔고 시차 스크롤)
+  // 별 타일 (반복해서 깔고 시차 스크롤) - 먹이와 헷갈리지 않게 작고 흐리게
   function makeStarTile(size, count, maxR, seed) {
     const cvs = document.createElement('canvas');
     cvs.width = cvs.height = size;
@@ -2206,7 +2160,7 @@
     let x = seed;
     const rnd = () => { x = (x * 16807) % 2147483647; return x / 2147483647; };
     for (let i = 0; i < count; i++) {
-      const r = 0.4 + rnd() * maxR, a = 0.35 + rnd() * 0.65;
+      const r = 0.3 + rnd() * maxR, a = 0.15 + rnd() * 0.35;
       const hue = rnd();
       c.fillStyle = hue < 0.15 ? `rgba(160,200,255,${a})` : hue < 0.25 ? `rgba(255,210,170,${a})` : `rgba(255,255,255,${a})`;
       c.beginPath(); c.arc(rnd() * size, rnd() * size, r, 0, TAU); c.fill();
@@ -2214,9 +2168,9 @@
     return cvs;
   }
   const STAR_LAYERS = [
-    { tile: makeStarTile(512, 220, 0.9, 7), k: 0.15 },
-    { tile: makeStarTile(640, 90, 1.5, 99), k: 0.35 },
-    { tile: makeStarTile(900, 40, 2.2, 1234), k: 0.6 },
+    { tile: makeStarTile(512, 180, 0.6, 7), k: 0.15 },
+    { tile: makeStarTile(640, 70, 0.9, 99), k: 0.35 },
+    { tile: makeStarTile(900, 30, 1.2, 1234), k: 0.6 },
   ];
   const NEBULAE = [
     { x: -1600, y: -900, r: 1500, c: 'rgba(132,94,247,0.28)' },
@@ -2630,7 +2584,7 @@
       if (f.x <= c.p.x + rp * 0.5) {
         f.eaten = true;
         if (f.k === 0) c.p.level += f.v * g.playerOpts.foodMul;
-        else if (f.k === 7) { c.p.level *= 1.15; floatText(f.x, -60, '⭐ 레벨 쑥!', '#ffe066'); }
+        else if (f.k === 7) { c.p.level += E.STAR_FOODS * g.fv * g.playerOpts.foodMul; floatText(f.x, -60, '⭐ 레벨 쑥!', '#ffe066'); }
         else if (f.k === 3) { c.spdT = 2.5; floatText(f.x, -60, '⚡ 가속!', '#ffe066'); }
         else if (f.k === 4) { c.pShield = true; floatText(f.x, -60, '🛡️ 충돌 피해 감소!', '#a5d8ff'); }
         burst(f.x, 0, f.k ? ITEM_INFO[f.k].col : '#ffe066', f.k ? 14 : 3);
@@ -2638,7 +2592,7 @@
       } else if (f.x >= c.b.x - rb * 0.5) {
         f.eaten = true;
         if (f.k === 0) c.b.level += f.v;
-        else if (f.k === 7) c.b.level *= 1.15;
+        else if (f.k === 7) c.b.level += E.STAR_FOODS * g.fv;
         burst(f.x, 0, '#b197fc', f.k ? 10 : 2);
       }
     }

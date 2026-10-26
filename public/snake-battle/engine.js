@@ -1,8 +1,7 @@
 /* =========================================================
    꿀꺽 뱀 대결 - 게임 엔진 (브라우저 / 서버 공용)
-   - 레벨이 높은 뱀이 낮은 뱀의 머리를 물면 통째로 삼킨다
-   - 레벨이 같거나 높으면 상대 몸통을 물어 레벨을 빨아온다
-   - 레벨이 낮은 쪽이 몸통에 부딪히면 튕겨나간다
+   - 두 뱀이 닿으면(머리·몸통 어디든) 레벨이 높은 뱀이 낮은 뱀을 통째로 삼킨다
+   - 레벨이 같으면 서로 튕겨나간다
    ========================================================= */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -50,13 +49,13 @@
   const TRAIL_STEP = 5;
   // 굵은 뱀은 경로 점 간격도 넓힌다 (점 개수를 적당히 유지)
   const stepOf = (L) => Math.max(TRAIL_STEP, widthOf(L) * 0.2);
-  // 몸통이 끊기면 잘린 길이 비율 × CUT_LOSS 만큼 레벨을 잃는다
-  const CUT_LOSS = 0.5, CUT_COOL = 0.9;
   // 먹이 종류: 0 먹이, 1 선물상자(스킨), 2~8 아이템
   const ITEM = { SKIN: 1, MAGNET: 2, SPEED: 3, SHIELD: 4, DOUBLE: 5, BOMB: 6, STAR: 7, ICE: 8 };
   const ITEM_TIME = { 2: 10, 3: 6, 4: 8, 5: 10 };
   const ITEM_WEIGHTS = [[2, 3], [3, 3], [4, 2], [5, 2], [6, 2], [7, 2], [8, 1.5]];
   const MAGNET_RANGE = 230;
+  // 별: 먹이 몇 개 분량만큼 고정으로 자란다 (현재 레벨에 비례하지 않음)
+  const STAR_FOODS = 10;
   function pickItem() {
     let t = 0;
     for (const [, w] of ITEM_WEIGHTS) t += w;
@@ -180,7 +179,7 @@
       speed: o.speed || 210, foodMul: o.foodMul || 1,
       isBot: !!o.isBot, isBoss: !!o.isBoss, isHuman: !!o.isHuman,
       aggro: o.aggro !== undefined ? o.aggro : 0.6, chase: o.chase || 480, humanBias: o.humanBias || 0,
-      think: rand(0, 0.3), bounceT: 0, latch: 0, dying: null, alive: true, fxT: 0, cutT: 0,
+      think: rand(0, 0.3), bounceT: 0, latch: 0, dying: null, alive: true,
       fx: { 2: 0, 3: 0, 4: 0, 5: 0, slow: 0 },
       trail: [], body: [], kills: 0,
     };
@@ -228,7 +227,6 @@
     const live = this.snakes.filter((s) => s.alive && !s.dying);
     for (const s of live) {
       for (const k in s.fx) if (s.fx[k] > 0) s.fx[k] -= dt;
-      if (s.cutT > 0) s.cutT -= dt;
       if (s.isBot) {
         s.think -= dt;
         if (s.think <= 0) { this.think(s); s.think = rand(0.12, 0.24); }
@@ -236,7 +234,7 @@
       this.move(s, dt);
     }
     for (const s of live) this.eat(s);
-    this.collide(live, dt);
+    this.collide(live);
     for (const s of this.snakes) if (s.dying) this.updateDying(s, dt);
     this.snakes = this.snakes.filter((s) => s.alive);
     while (this.orbs < this.foodTarget) this.spawnFood();
@@ -293,7 +291,9 @@
   };
 
   W.eat = function (s) {
-    const r = widthOf(s.level) * 0.5 + 14, r2 = r * r;
+    // 입 반경(r0) 안은 바로 먹고, 머리 주변 흡입 반경(r) 안의 먹이·아이템은 빨려 들어온다
+    const w = widthOf(s.level), r0 = w * 0.5 + 14, r02 = r0 * r0;
+    const r = w * 1.3 + 30 * this.sc, r2 = r * r;
     const mr = s.fx[2] > 0 ? r + MAGNET_RANGE * this.sc : 0, mr2 = mr * mr;
     const dbl = s.fx[5] > 0 ? 2 : 1;
     for (const f of this.foods.values()) {
@@ -308,8 +308,8 @@
         this.grow(s, f.v * s.foodMul * dbl);
         // 사람이 먹을 때만 효과음용 이벤트 (m: 0 보통, 1 큰 먹이, 2 아주 큰 먹이)
         if (s.isHuman) this.events.push({ e: 'fd', a: s.id, m: f.v >= this.foodValue * 8 ? 2 : f.v >= this.foodValue * 3 ? 1 : 0 });
-        if (d2 > r2) this.events.push({ e: 'mg', a: s.id, x: Math.round(f.x), y: Math.round(f.y) });
       }
+      if (d2 > r02 && (s.isHuman || d2 > r2)) this.events.push({ e: 'mg', a: s.id, x: Math.round(f.x), y: Math.round(f.y) });
       this.removeFood(f.id);
     }
   };
@@ -326,7 +326,7 @@
         this.addFood(x, y, this.foodValue * (Math.random() < 0.3 ? 3 : 1), 0, f.x, f.y);
       }
     } else if (k === ITEM.STAR) {
-      this.grow(s, Math.max(5 * this.foodValue, s.level * 0.15));
+      this.grow(s, STAR_FOODS * this.foodValue * s.foodMul);
     } else if (k === ITEM.ICE) {
       for (const o of this.snakes) {
         if (o === s || !o.alive || o.dying) continue;
@@ -341,7 +341,9 @@
     if (s.level > s.best) s.best = s.level;
   };
 
-  W.collide = function (live, dt) {
+  // Snake Clash 규칙: 머리가 상대 뱀(머리든 몸통이든)에 닿으면 레벨이 높은 쪽이 낮은 쪽을 통째로 꿀꺽!
+  // 레벨이 같으면 서로 튕겨나간다. 방패가 있으면 먹히지 않고 튕겨나간다.
+  W.collide = function (live) {
     for (const A of live) A.latch = 0;
     for (const A of live) {
       if (A.dying) continue;
@@ -352,93 +354,29 @@
         const rB = widthOf(B.level) / 2;
         const reach = lengthOf(B.level) + rA + rB + 20;
         if (Math.abs(B.x - A.x) > reach || Math.abs(B.y - A.y) > reach) continue;
-        // 머리끼리
-        if (Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * 0.85) {
-          const diff = A.level - B.level;
-          if (diff >= 1 && !(B.fx[4] > 0)) this.swallow(A, B, false);
-          else if (diff <= -1 && !(A.fx[4] > 0)) this.swallow(B, A, false);
-          else { this.bounce(A, B.x, B.y); this.bounce(B, A.x, A.y); }
-          continue;
-        }
-        // 내 머리 → 상대 몸통
-        const pts = B.body, lim = rA + rB * 0.8, lim2 = lim * lim;
-        for (let k = 4; k < pts.length; k += 2) {
-          const dx = pts[k] - A.x, dy = pts[k + 1] - A.y;
-          if (dx * dx + dy * dy < lim2) {
-            if (A.level >= B.level && !(B.fx[4] > 0)) {
-              // 처음 물면 몸통이 뚝 끊겨 나가고, 그 뒤로는 붙어서 빨아먹는다
-              if (B.cutT > 0 || !this.cut(A, B, k)) { A.latch = B.id; this.drain(A, B, dt, pts[k], pts[k + 1]); }
-            }
-            else this.bounce(A, pts[k], pts[k + 1]);
-            break;
+        // 머리끼리 먼저, 아니면 내 머리 → 상대 몸통
+        const head = Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * 0.85;
+        let hx = B.x, hy = B.y, hit = head;
+        if (!head) {
+          const pts = B.body, lim = rA + rB * 0.8, lim2 = lim * lim;
+          for (let k = 4; k < pts.length; k += 2) {
+            const dx = pts[k] - A.x, dy = pts[k + 1] - A.y;
+            if (dx * dx + dy * dy < lim2) { hx = pts[k]; hy = pts[k + 1]; hit = true; break; }
           }
         }
+        if (!hit) continue;
+        const la = Math.floor(A.level), lb = Math.floor(B.level);
+        if (la > lb && !(B.fx[4] > 0)) this.swallow(A, B);
+        else if (lb > la && !(A.fx[4] > 0)) this.swallow(B, A);
+        else { this.bounce(A, hx, hy); if (head) this.bounce(B, A.x, A.y); }
       }
     }
   };
 
-  W.drain = function (A, B, dt, x, y) {
-    const rate = Math.max(3, B.level * 0.3);
-    const d = Math.min(rate * dt, B.level - 1);
-    B.level -= d;
-    this.grow(A, d * 0.7);
-    A.biteLoss = (A.biteLoss || 0) + d;
-    A.fxT -= dt;
-    if (A.fxT <= 0) {
-      A.fxT = 0.12;
-      // n: 빼앗은 레벨(문 뱀이 얻은 양), l: 물린 뱀이 잃은 양
-      this.events.push({ e: 'bite', a: A.id, b: B.id, x: Math.round(x), y: Math.round(y),
-        n: Math.round(A.biteLoss * 0.7 * 10) / 10, l: Math.round(A.biteLoss * 10) / 10 });
-      A.biteLoss = 0;
-    }
-    if (B.level <= 1.05) this.swallow(A, B, true);
-  };
-
-  // 물린 자리 뒤쪽 몸통이 떨어져 나간다. 머리 쪽만 남아 계속 움직이고, 몸은 레벨만큼 다시 자란다
-  W.cut = function (A, B, k) {
-    const b = B.body, n = b.length >> 1, j = k >> 1;
-    if (n - j < 5) return false; // 꼬리 끝자락은 그냥 빨아먹기
-    const keep = j / n, lv = B.level, w = widthOf(lv);
-    const lost = Math.min(lv - 1.05, lv * (1 - keep) * CUT_LOSS);
-    if (lost <= 0) return false;
-    // 경로를 물린 자리까지만 남긴다
-    const tr = B.trail, L = lengthOf(lv) * keep;
-    let acc = 0;
-    for (let i = tr.length - 1; i > 0; i--) {
-      acc += Math.hypot(tr[i][0] - tr[i - 1][0], tr[i][1] - tr[i - 1][1]);
-      if (acc >= L) { tr.splice(0, i - 1); break; }
-    }
-    const piece = b.slice(k);
-    B.level -= lost;
-    B.cutT = CUT_COOL;
-    B.body = samplePath(tr, lengthOf(B.level), widthOf(B.level) * 0.45);
-    this.grow(A, lost * 0.55);
-    // 잘린 토막 자리에 먹이가 흩어진다
-    const segs = piece.length >> 1, cnt = clamp(Math.round(segs / 3), 3, 14);
-    const v = Math.max(this.foodValue, Math.round(lost * 0.3 / cnt));
-    const lim = this.R - 40;
-    for (let i = 0; i < cnt; i++) {
-      const q = Math.min(segs - 1, Math.floor(((i + 0.5) / cnt) * segs)) * 2;
-      const ox = piece[q], oy = piece[q + 1], a = rand(0, TAU), d = rand(20, 110) * this.sc;
-      let x = ox + Math.cos(a) * d, y = oy + Math.sin(a) * d;
-      const dd = Math.hypot(x, y);
-      if (dd > lim) { x *= lim / dd; y *= lim / dd; }
-      this.addFood(x, y, v, 0, ox, oy);
-    }
-    // 화면에 날려 보낼 토막 모양 (점 수를 줄여서 보낸다)
-    const st = Math.max(1, Math.ceil(segs / 28)) * 2, p = [];
-    for (let i = 0; i < piece.length; i += st) p.push(Math.round(piece[i]), Math.round(piece[i + 1]));
-    if ((piece.length - 2) % st) p.push(Math.round(piece[piece.length - 2]), Math.round(piece[piece.length - 1]));
-    this.events.push({ e: 'cut', a: A.id, b: B.id, x: Math.round(b[k]), y: Math.round(b[k + 1]), w: Math.round(w * 10) / 10,
-      keep: Math.round(keep * 100) / 100, n: Math.round(lost * 0.55 * 10) / 10, l: Math.round(lost * 10) / 10, p });
-    if (B.level <= 1.05) this.swallow(A, B, true);
-    return true;
-  };
-
-  W.swallow = function (A, B, drained) {
+  W.swallow = function (A, B) {
     if (A.dying || B.dying) return;
     const lv = B.level;
-    this.grow(A, lv * (drained ? 0.6 : 0.4));
+    this.grow(A, lv * 0.5);
     A.kills++;
     B.dying = { by: A.id, t: 0, body0: B.body.slice() };
     this.popBody(B, lv);
@@ -499,18 +437,27 @@
   W.think = function (s) {
     const w = widthOf(s.level), sc = this.sc;
     let threat = null, td = Infinity, target = null, ts = -Infinity;
+    const me = Math.floor(s.level);
     for (const o of this.snakes) {
       if (o === s || !o.alive || o.dying) continue;
       const d = Math.hypot(o.x - s.x, o.y - s.y);
-      if (d > 1200 * sc) continue;
-      if (o.level >= s.level + 1 && d < 200 * sc + w * 4 + widthOf(o.level) * 2 && d < td) { threat = o; td = d; }
-      if (s.level >= o.level + 1 && d < s.chase * sc) {
-        const v = o.level * 15 - d + (o.isHuman ? s.humanBias : 0);
-        if (v > ts) { ts = v; target = { x: o.x + Math.cos(o.dir) * 60 * sc, y: o.y + Math.sin(o.dir) * 60 * sc }; }
-      } else if (s.level >= o.level && d < s.chase * sc * 0.8 && o.body.length > 8) {
-        const b = o.body, k = Math.min(b.length - 2, (b.length >> 2) * 2);
-        const v = o.level * 8 - d * 1.2 + (o.isHuman ? s.humanBias : 0);
-        if (v > ts) { ts = v; target = { x: b[k], y: b[k + 1] }; }
+      if (d > 1200 * sc + lengthOf(o.level)) continue;
+      // 상대 몸에서 내 머리와 가장 가까운 점
+      const b = o.body;
+      let nx = o.x, ny = o.y, nd = d;
+      for (let k = 2; k < b.length; k += 4) {
+        const dd = Math.hypot(b[k] - s.x, b[k + 1] - s.y);
+        if (dd < nd) { nd = dd; nx = b[k]; ny = b[k + 1]; }
+      }
+      const ol = Math.floor(o.level);
+      if (ol > me && nd < 160 * sc + w * 3 + widthOf(o.level) * 1.5 && nd < td) { threat = { x: nx, y: ny }; td = nd; }
+      if (me > ol && nd < s.chase * sc) {
+        const v = o.level * 15 - nd + (o.isHuman ? s.humanBias : 0);
+        if (v > ts) {
+          ts = v;
+          // 머리 쪽을 노릴 때는 가는 방향을 앞질러 간다
+          target = nx === o.x && ny === o.y ? { x: o.x + Math.cos(o.dir) * 60 * sc, y: o.y + Math.sin(o.dir) * 60 * sc } : { x: nx, y: ny };
+        }
       }
     }
     if (threat) {
@@ -558,5 +505,5 @@
     return r;
   };
 
-  return { World, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE, DIE_TIME, SKIN_TIERS, SKIN_TIER, SKIN_MAX_LV, skinBonus };
+  return { World, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE, STAR_FOODS, DIE_TIME, SKIN_TIERS, SKIN_TIER, SKIN_MAX_LV, skinBonus };
 });
