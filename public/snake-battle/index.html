@@ -247,9 +247,9 @@
     <ul class="how hidden" id="how">
       <li>화면을 <b>드래그</b>(PC는 마우스/방향키)해서 뱀을 움직여요.</li>
       <li>노란 먹이를 먹으면 <b>레벨</b>이 오르고 뱀이 커져요.</li>
-      <li>나보다 <b>레벨이 낮은 뱀</b>에 부딪히면 (머리든 몸통이든) 통째로 <b>꿀꺽</b>!</li>
-      <li>나보다 <b>레벨이 높은 뱀</b>에 부딪히면 내가 먹혀요. 큰 뱀은 피하세요!</li>
-      <li>레벨이 같으면 서로 튕겨나가요.</li>
+      <li>나보다 <b>레벨이 낮은 뱀의 머리</b>에 부딪히면 통째로 <b>꿀꺽</b>!</li>
+      <li>나보다 <b>레벨이 높은 뱀의 머리</b>에 부딪히면 내가 먹혀요. 큰 뱀의 머리는 피하세요!</li>
+      <li>몸통·꼬리에 부딪히거나 레벨이 같으면 튕겨나가요.</li>
       <li>90초 동안 성장한 뒤 <b>👑 보스와 정면충돌</b>! 철로 위를 달리며 먹이를 먹고(화면을 꾹 누르면 빨라져요), 부딪히면 화면을 <b>연타</b>해서 보스를 밀어내요.</li>
       <li>레벨이 오르면 <b>진화</b>해요: 새끼 → 어린 시절 → 성체 → 가시 → 뿔 → 날개 → 고대!</li>
       <li><b>🛒 상점</b>에서 ⚡스피드 · 🧲자석 · 🛡️방패 · 🚀시작 부스트 · ❤️부활을 사서 게임 중에 써요.</li>
@@ -2445,7 +2445,7 @@
   // 경기장 배율: 뱀 굵기가 1스테이지의 몇 배인지
   const stageScale = (n) => Math.max(1, E.widthOf(stagePower(n)) / E.widthOf(20));
   // 초반은 상대를 많이, 30스테이지 이후로는 조금씩 줄여서 화면이 북적이지 않게
-  const stageBots = (n) => Math.round(n <= 30 ? 48 : 48 - 16 * Math.min(1, (n - 30) / 30));
+  const stageBots = (n) => Math.round(n <= 30 ? 70 : 70 - 20 * Math.min(1, (n - 30) / 30));
   // 초반 스테이지는 보스가 약하고, 15스테이지쯤부터 본래 세기
   const bossLevel = (n) => Math.round(stagePower(n) * (2 + 2.5 * Math.min(1, (n - 1) / 14)));
 
@@ -2524,7 +2524,7 @@
     const g = game, w = g.world;
     const cap = g.P * (0.12 + 0.75 * Math.min(1, g.elapsed / GROW_TIME));
     const level = Math.max(1, cap * (0.15 + 0.85 * Math.pow(Math.random(), 1.4)));
-    const p = w.spawnPoint(700 * g.sc, g.player);
+    const p = w.spawnPoint(450 * g.sc, g.player);
     const used = new Set(w.snakes.map((s) => s.name));
     const names = BOT_NAMES.filter((n) => !used.has(n));
     w.addSnake({
@@ -2780,8 +2780,10 @@
     if (g.phase === 'grow') {
       g.botT -= dt;
       if (g.botT <= 0) {
-        g.botT = 1.2;
-        if (w.snakes.filter((s) => s.isBot && !s.dying).length < g.bots) spawnStageBot();
+        g.botT = 0.4;
+        // 먹혀서 줄어든 만큼 바로바로 채운다 (한 번에 최대 3마리)
+        const lack = g.bots - w.snakes.filter((s) => s.isBot && !s.dying).length;
+        for (let i = 0; i < Math.min(3, lack); i++) spawnStageBot();
       }
       if (g.time <= 0) startDuel();
     }

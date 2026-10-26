@@ -8,7 +8,7 @@ const Engine = require('./public/snake-battle/engine.js');
 const MATCH_TIME = 120;
 const TICK = 1 / 30;
 const MAX_HUMANS = 8;
-const TOTAL_SNAKES = 28;
+const TOTAL_SNAKES = 40;
 const START_LEVEL = 5;
 const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
   '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부'];

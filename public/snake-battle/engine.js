@@ -1,7 +1,7 @@
 /* =========================================================
    꿀꺽 뱀 대결 - 게임 엔진 (브라우저 / 서버 공용)
-   - 두 뱀이 닿으면(머리·몸통 어디든) 레벨이 높은 뱀이 낮은 뱀을 통째로 삼킨다
-   - 레벨이 같으면 서로 튕겨나간다
+   - 머리끼리 부딪히면 레벨이 높은 뱀이 낮은 뱀을 통째로 삼킨다
+   - 몸통·꼬리에 부딪히거나 레벨이 같으면 튕겨나간다
    ========================================================= */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -65,6 +65,8 @@
   }
   // 먹힌 뱀이 머리부터 상대 입속으로 다 빨려 들어가는 시간
   const DIE_TIME = 0.9;
+  // 몸 앞쪽 이 비율까지는 머리로 친다 (여기에 부딪혀야 먹고 먹힌다)
+  const HEAD_ZONE = 0.15;
 
   // 머리부터 꼬리 방향으로 경로를 일정 간격으로 샘플링 (평탄 배열 [x0,y0,x1,y1,...])
   function samplePath(trail, total, spacing) {
@@ -341,8 +343,8 @@
     if (s.level > s.best) s.best = s.level;
   };
 
-  // Snake Clash 규칙: 머리가 상대 뱀(머리든 몸통이든)에 닿으면 레벨이 높은 쪽이 낮은 쪽을 통째로 꿀꺽!
-  // 레벨이 같으면 서로 튕겨나간다. 방패가 있으면 먹히지 않고 튕겨나간다.
+  // Snake Clash 규칙: 머리(머리와 목 부분)끼리 부딪히면 레벨이 높은 쪽이 낮은 쪽을 통째로 꿀꺽!
+  // 몸통·꼬리에 머리를 박으면 먹지도 먹히지도 않고 튕겨나간다. 레벨이 같거나 방패가 있으면 튕겨나간다.
   W.collide = function (live) {
     for (const A of live) A.latch = 0;
     for (const A of live) {
@@ -354,21 +356,25 @@
         const rB = widthOf(B.level) / 2;
         const reach = lengthOf(B.level) + rA + rB + 20;
         if (Math.abs(B.x - A.x) > reach || Math.abs(B.y - A.y) > reach) continue;
-        // 머리끼리 먼저, 아니면 내 머리 → 상대 몸통
-        const head = Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * 0.85;
-        let hx = B.x, hy = B.y, hit = head;
-        if (!head) {
-          const pts = B.body, lim = rA + rB * 0.8, lim2 = lim * lim;
-          for (let k = 4; k < pts.length; k += 2) {
-            const dx = pts[k] - A.x, dy = pts[k + 1] - A.y;
-            if (dx * dx + dy * dy < lim2) { hx = pts[k]; hy = pts[k + 1]; hit = true; break; }
+        const pts = B.body, n = pts.length >> 1;
+        // 머리부터 목까지(몸 앞쪽 HEAD_ZONE 비율)는 머리로 친다
+        const neck = Math.max(3, Math.ceil(n * HEAD_ZONE));
+        let hit = -1;
+        if (Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * 0.95) hit = 0;
+        else {
+          const lim = rA + rB * 0.8, lim2 = lim * lim;
+          for (let j = 2; j < n; j++) {
+            const dx = pts[2 * j] - A.x, dy = pts[2 * j + 1] - A.y;
+            if (dx * dx + dy * dy < lim2) { hit = j; break; }
           }
         }
-        if (!hit) continue;
+        if (hit < 0) continue;
+        const hx = pts[2 * hit], hy = pts[2 * hit + 1];
+        if (hit >= neck) { this.bounce(A, hx, hy); continue; }
         const la = Math.floor(A.level), lb = Math.floor(B.level);
         if (la > lb && !(B.fx[4] > 0)) this.swallow(A, B);
         else if (lb > la && !(A.fx[4] > 0)) this.swallow(B, A);
-        else { this.bounce(A, hx, hy); if (head) this.bounce(B, A.x, A.y); }
+        else { this.bounce(A, B.x, B.y); this.bounce(B, A.x, A.y); }
       }
     }
   };
@@ -441,23 +447,13 @@
     for (const o of this.snakes) {
       if (o === s || !o.alive || o.dying) continue;
       const d = Math.hypot(o.x - s.x, o.y - s.y);
-      if (d > 1200 * sc + lengthOf(o.level)) continue;
-      // 상대 몸에서 내 머리와 가장 가까운 점
-      const b = o.body;
-      let nx = o.x, ny = o.y, nd = d;
-      for (let k = 2; k < b.length; k += 4) {
-        const dd = Math.hypot(b[k] - s.x, b[k + 1] - s.y);
-        if (dd < nd) { nd = dd; nx = b[k]; ny = b[k + 1]; }
-      }
+      if (d > 1200 * sc) continue;
       const ol = Math.floor(o.level);
-      if (ol > me && nd < 160 * sc + w * 3 + widthOf(o.level) * 1.5 && nd < td) { threat = { x: nx, y: ny }; td = nd; }
-      if (me > ol && nd < s.chase * sc) {
-        const v = o.level * 15 - nd + (o.isHuman ? s.humanBias : 0);
-        if (v > ts) {
-          ts = v;
-          // 머리 쪽을 노릴 때는 가는 방향을 앞질러 간다
-          target = nx === o.x && ny === o.y ? { x: o.x + Math.cos(o.dir) * 60 * sc, y: o.y + Math.sin(o.dir) * 60 * sc } : { x: nx, y: ny };
-        }
+      if (ol > me && d < 200 * sc + w * 4 + widthOf(o.level) * 2 && d < td) { threat = o; td = d; }
+      if (me > ol && d < s.chase * sc) {
+        const v = o.level * 15 - d + (o.isHuman ? s.humanBias : 0);
+        // 머리를 노릴 때는 가는 방향을 앞질러 간다
+        if (v > ts) { ts = v; target = { x: o.x + Math.cos(o.dir) * 60 * sc, y: o.y + Math.sin(o.dir) * 60 * sc }; }
       }
     }
     if (threat) {
