@@ -249,7 +249,8 @@
       <li>노란 먹이를 먹으면 <b>레벨</b>이 오르고 뱀이 커져요.</li>
       <li>나보다 <b>레벨이 낮은 뱀의 머리</b>에 부딪히면 통째로 <b>꿀꺽</b>!</li>
       <li>나보다 <b>레벨이 높은 뱀의 머리</b>에 부딪히면 내가 먹혀요. 큰 뱀의 머리는 피하세요!</li>
-      <li>몸통·꼬리에 부딪히거나 레벨이 같으면 튕겨나가요.</li>
+      <li>나보다 작은 뱀의 <b>몸통·꼬리</b>를 물면 물린 곳부터 꼬리까지 냠냠 먹어요. 작은 뱀이 큰 뱀 몸통에 부딪히면 튕겨나가요.</li>
+      <li>레벨이 같으면 서로 튕겨나가요.</li>
       <li>90초 동안 성장한 뒤 <b>👑 보스와 정면충돌</b>! 철로 위를 달리며 먹이를 먹고(화면을 꾹 누르면 빨라져요), 부딪히면 화면을 <b>연타</b>해서 보스를 밀어내요.</li>
       <li>레벨이 오르면 <b>진화</b>해요: 새끼 → 어린 시절 → 성체 → 가시 → 뿔 → 날개 → 고대!</li>
       <li><b>🛒 상점</b>에서 ⚡스피드 · 🧲자석 · 🛡️방패 · 🚀시작 부스트 · ❤️부활을 사서 게임 중에 써요.</li>
@@ -1916,6 +1917,23 @@
           beep(140, 0.4, 'sawtooth', 0.07);
           game.killer = ev.a;
         }
+      } else if (ev.e === 'part') {
+        // 큰 뱀이 몸통·꼬리를 물었다: 물린 자리부터 꼬리까지 토막토막 입으로 후루룩 빨려 들어간다
+        const vic = headPos.get(ev.b), vskin = skinOf(vic ? vic.skin : 'tree');
+        const pts = ev.p || [], cnt = pts.length >> 1, vr = ev.w * 0.5;
+        for (let i = 0; i < cnt; i++) {
+          const life = 0.5 + 0.035 * i;
+          parts.push({ chunk: true, skin: vskin, col: segColor(vskin, i + 3), x: pts[2 * i], y: pts[2 * i + 1],
+            vx: rand(-40, 40) * FXS, vy: rand(-40, 40) * FXS, r: vr * (0.95 - 0.5 * i / Math.max(1, cnt)), rot: rand(0, TAU), spin: rand(-6, 6),
+            life, max: life, s: 14, tid: ev.a });
+        }
+        burst(ev.x, ev.y, segColor(vskin, 1), 8);
+        splat(ev.x, ev.y, vr * 1.4, segColor(vskin, 1), 2.5);
+        pulses.set(ev.a, 1.2); hurts.set(ev.b, 1.2);
+        const eh = headPos.get(ev.a);
+        if (eh && ev.n > 0) { floatText(eh.x, eh.y - 40, '+' + fmtN(ev.n), '#8ce99a'); floats[floats.length - 1].big = true; }
+        if (ev.a === myId) { shake = Math.max(shake, 0.12); beep(420, 0.1, 'triangle', 0.07); setTimeout(() => beep(620, 0.1, 'triangle', 0.06), 60); }
+        if (ev.b === myId) { shake = Math.max(shake, 0.3); beep(140, 0.18, 'sawtooth', 0.07); }
       } else if (ev.e === 'item') {
         const info = ITEM_INFO[ev.k];
         burst(ev.x, ev.y, info.col, 14);
