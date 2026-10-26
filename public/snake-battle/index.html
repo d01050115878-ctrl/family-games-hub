@@ -147,6 +147,20 @@
   .skininfo .lvup { margin-top: 6px; padding: 7px 12px; border-radius: 12px; background: var(--gold); color: #3b2a00; font-size: 14px; }
   .skininfo .lvup.cant { background: rgba(255, 255, 255, 0.18); color: var(--muted); }
   .skin .slv { display: block; font-size: 11px; color: var(--gold); }
+  .xpbar { height: 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.14); overflow: hidden; margin: 4px 0 2px; }
+  .xpbar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #74c0fc, #b197fc); transition: width 0.6s ease; }
+  .skininfo .form { color: #e5dbff; font-size: 12px; }
+  .forms { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; margin: -4px 0 10px; }
+  .forms div { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); border-radius: 10px; padding: 2px 0 3px; font-size: 10px; color: var(--muted); }
+  .forms div.on { border-color: #b197fc; color: #fff; background: rgba(177, 151, 252, 0.16); }
+  .forms div.lock canvas { opacity: 0.55; filter: grayscale(0.6); }
+  .forms canvas { width: 100%; height: 34px; display: block; }
+  .rexp { background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line); border-radius: 14px; padding: 8px 12px; margin: 0 0 10px; text-align: left; font-size: 13px; }
+  .rexp .up { color: var(--gold); }
+  .evo-cv { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 12px; }
+  .evo-cv canvas { width: 42%; height: auto; background: rgba(255, 255, 255, 0.06); border-radius: 14px; }
+  .evo-cv canvas.new { animation: evoGlow 1.2s ease-in-out infinite alternate; }
+  @keyframes evoGlow { from { box-shadow: 0 0 6px rgba(177, 151, 252, 0.4); } to { box-shadow: 0 0 22px rgba(255, 224, 102, 0.8); } }
 
   #toast { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; padding: 10px 20px; border-radius: 16px;
     background: rgba(16, 36, 28, 0.9); border: 1px solid var(--line); pointer-events: none; opacity: 0; transition: opacity 0.3s;
@@ -238,6 +252,7 @@
     <h2>🎨 캐릭터</h2>
     <p class="sub" id="skinCount">🎁 선물상자를 먹으면 새로운 캐릭터가 열려요</p>
     <div class="skininfo" id="skinInfo"></div>
+    <div class="forms" id="skinForms"></div>
     <div class="skins" id="skins"></div>
     <button class="btn" id="skinDone">완료</button>
   </div>
@@ -279,10 +294,22 @@
     <div class="res-emoji" id="rEmoji">🏆</div>
     <h1 id="rTitle">스테이지 클리어!</h1>
     <p class="sub" id="rSub"></p>
+    <div class="rexp" id="rExp"></div>
     <div class="rank" id="rRank"></div>
     <div class="res-coin" id="rCoin">🪙 +0</div>
     <button class="btn" id="rMain">다음 스테이지 ▶</button>
     <button class="ghost" id="rMenu">🏠 메뉴 · 강화하기</button>
+  </div>
+</div>
+
+<!-- 캐릭터 진화 -->
+<div id="evoOv" class="overlay hidden">
+  <div class="card">
+    <h2>✨ 진화!</h2>
+    <p class="sub" id="evoSub"></p>
+    <div class="evo-cv"><canvas id="evoA" width="220" height="132"></canvas>▶<canvas id="evoB" class="new" width="220" height="132"></canvas></div>
+    <p class="sub" id="evoDesc"></p>
+    <button class="btn" id="evoOk">멋져요!</button>
   </div>
 </div>
 
@@ -377,6 +404,12 @@
     { id: 'bluerace', name: '블루 레이서', head: 'slim', base: '#3d7cc9', pat: 'plain', gloss: true },
     { id: 'rosy', name: '로지 보아', base: '#c98f8a', pat: 'stripe', p1: '#8a4b5a' },
     { id: 'blueshark', name: '청새리상어', kind: 'shark', base: '#3f78c8', belly: '#e8f1fb', eye: '#0b0b0b' },
+    { id: 'water', name: '물뱀', head: 'slim', pat: 'bands', bands: ['#5b6b4a', '#5b6b4a', '#2f3a24'] },
+    { id: 'ribbon', name: '리본뱀', head: 'slim', base: '#3b2f24', pat: 'stripe', p1: '#e9a23b' },
+    { id: 'gopher', name: '고퍼뱀', base: '#c9b27a', pat: 'blotch', p1: '#4a3a20', p2: '#2e2412' },
+    { id: 'vine', name: '덩굴뱀', head: 'slim', base: '#7cc04a', pat: 'plain', eye: '#f2e05a', gloss: true },
+    { id: 'nurse', name: '수염상어', kind: 'shark', base: '#9c7d55', belly: '#e8dcc6' },
+    { id: 'gardeneel', name: '정원장어', kind: 'eel', base: '#e8e2cf', pat: 'spots', p1: '#2a2a2a', spot: 0.18, fin: '#cfc6ae' },
     // ---------- 레어 ----------
     { id: 'python', name: '그물무늬 비단뱀', base: '#b8954e', pat: 'diamond', p1: '#3d2f1d', p2: '#efe0b0' },
     { id: 'coral', name: '산호뱀', head: 'slim', pat: 'bands', bands: ['#c92a2a', '#c92a2a', '#c92a2a', '#151515', '#f2c94c', '#151515'] },
@@ -394,6 +427,12 @@
     { id: 'tigershark', name: '뱀상어', kind: 'shark', base: '#7f8570', belly: '#e9e7d8', pat: 'tiger', p1: '#43473a' },
     { id: 'hammer', name: '귀상어', kind: 'shark', base: '#7d8d9b', belly: '#eef2f5', hammer: true },
     { id: 'moray', name: '곰치', kind: 'eel', base: '#6b6a2a', pat: 'spots', p1: '#2a2a10', spot: 0.35, fin: '#57561f' },
+    { id: 'redtail', name: '붉은꼬리 보아', base: '#c9b79a', pat: 'blotch', p1: '#8a2a1e', p2: '#4a1a10' },
+    { id: 'mangrove', name: '맹그로브뱀', head: 'slim', pat: 'bands', bands: ['#1a1a1a', '#1a1a1a', '#1a1a1a', '#f2d23a'], gloss: true },
+    { id: 'sunbeam', name: '햇살뱀', base: '#3a2e2a', pat: 'plain', gloss: true, iridescent: true },
+    { id: 'carpet', name: '카펫 파이톤', base: '#a88a3a', pat: 'diamond', p1: '#3a2a12', p2: '#e8d48a' },
+    { id: 'mako', name: '청상아리', kind: 'shark', base: '#2f4f8a', belly: '#eef3fb' },
+    { id: 'ribboneel', name: '리본장어', kind: 'eel', base: '#1f5fd6', pat: 'plain', fin: '#f2d23a', eye: '#f2d23a' },
     // ---------- 에픽 ----------
     { id: 'cobra', name: '킹코브라', pat: 'bands', bands: ['#4b4630', '#4b4630', '#4b4630', '#2a2718'], hood: true, eye: '#d9a520' },
     { id: 'mamba', name: '블랙맘바', head: 'slim', base: '#545a58', pat: 'plain', eye: '#8b8b6a', gloss: true, mouth: true },
@@ -409,6 +448,16 @@
     { id: 'greatwhite', name: '백상아리', kind: 'shark', base: '#66737f', belly: '#f4f6f8' },
     { id: 'whaleshark', name: '고래상어', kind: 'shark', base: '#344a66', belly: '#e6edf5', pat: 'spots', p1: '#e8eef5', spot: 0.16 },
     { id: 'electric', name: '전기뱀장어', kind: 'eel', base: '#3a3426', pat: 'plain', fin: '#5a503a', zap: '#7ef9ff', eye: '#7ef9ff' },
+    { id: 'boomslang', name: '붐슬랑', head: 'slim', base: '#4caf50', pat: 'plain', shine: true, eye: '#2b2b2b', mouth: true },
+    { id: 'rhino', name: '코뿔소 살무사', head: 'viper', base: '#3b6fa8', pat: 'diamond', p1: '#1b2a44', p2: '#c94a3a', eyeHorns: true },
+    { id: 'spitcobra', name: '침뱉는 코브라', base: '#c9561e', pat: 'plain', hood: true, eye: '#ffd43b' },
+    { id: 'amethyst', name: '자수정 비단뱀', base: '#8e5bd1', pat: 'blotch', p1: '#d0b3ff', p2: '#4a2a80', shine: true, eye: '#f3d9fa' },
+    { id: 'thresher', name: '환도상어', kind: 'shark', base: '#5a4a7a', belly: '#efe9f7' },
+    { id: 'bushmaster', name: '부시마스터', head: 'viper', base: '#b8743a', pat: 'diamond', p1: '#2a1a0e', p2: '#e8c48a', eye: '#e8b923' },
+    { id: 'krait', name: '반다 크레이트', head: 'slim', pat: 'bands', bands: ['#f2c230', '#f2c230', '#141414', '#141414'], gloss: true },
+    { id: 'opal', name: '오팔 뱀', base: '#dfe9f2', pat: 'spots', p1: '#9be7ff', iridescent: true, shine: true, eye: '#ff8fb8' },
+    { id: 'goblinshark', name: '마귀상어', kind: 'shark', base: '#c99aa0', belly: '#f6e7e9' },
+    { id: 'lanterneel', name: '초롱 장어', kind: 'eel', base: '#1a1530', pat: 'spots', p1: '#ffd43b', spot: 0.18, glowPat: true, fin: '#3a2f5a', eye: '#ffd43b', eyeGlow: true },
     // ---------- 전설 ----------
     { id: 'gold', name: '황금 비단뱀', base: '#e2b43c', pat: 'blotch', p1: '#9a6b12', p2: '#5c3d05', shine: true },
     { id: 'crystal', name: '수정 뱀', base: '#9fd8ef', pat: 'spots', p1: '#ffffff', shine: true, eye: '#4dabf7' },
@@ -428,6 +477,17 @@
       dragon: { mane: '#fff3bf', horn: '#fffaf0', glow: 'rgba(255,212,59,0.38)', belly: '#ffe8a3' } },
     { id: 'jadedragon', name: '청룡', kind: 'dragon', base: '#1c8a6b', eye: '#ffe066', eyeGlow: true,
       dragon: { mane: '#9ff0d2', horn: '#f1f8e9', glow: 'rgba(99,230,190,0.32)', belly: '#bff2dd' } },
+    { id: 'aurora', name: '오로라 뱀', base: '#0f3a3a', pat: 'spots', p1: '#63e6be', glowPat: true, stars: true, eye: '#63e6be', eyeGlow: true },
+    { id: 'sakuradragon', name: '벚꽃 용', kind: 'dragon', base: '#e88aa8', eye: '#fff0f6', eyeGlow: true, shine: true,
+      dragon: { mane: '#ffe3ec', horn: '#fffaf0', glow: 'rgba(255,170,200,0.35)', belly: '#ffd6e5' } },
+    { id: 'leviathan', name: '리바이어던', kind: 'eel', base: '#123a5a', pat: 'plain', fin: '#2a7ab8', zap: '#4dabf7', eye: '#74c0fc', eyeGlow: true, shine: true },
+    { id: 'solar', name: '태양 뱀', base: '#ff8a1a', pat: 'blotch', p1: '#ffd43b', p2: '#c92a2a', glowPat: true, shine: true, eye: '#fff3bf', eyeGlow: true },
+    { id: 'abyss', name: '심연 뱀', head: 'slim', base: '#05070f', pat: 'spots', p1: '#4dd4ff', glowPat: true, stars: true, eye: '#4dd4ff', eyeGlow: true },
+    { id: 'moondragon', name: '달빛 용', kind: 'dragon', base: '#c9d1e8', eye: '#7048e8', eyeGlow: true, shine: true,
+      dragon: { mane: '#ffffff', horn: '#e9ecef', glow: 'rgba(200,210,255,0.4)', belly: '#eef1ff' } },
+    { id: 'poisondragon', name: '독룡', kind: 'dragon', base: '#4f7d16', eye: '#e8ff3a', eyeGlow: true,
+      dragon: { mane: '#b8ff3a', horn: '#e8f5c8', glow: 'rgba(170,255,60,0.33)', belly: '#c8e88a' } },
+    { id: 'ghostshark', name: '유령 상어', kind: 'shark', base: '#8fa8c8', belly: '#eef4ff', eye: '#a5f3ff', eyeGlow: true, shine: true },
   ];
   const RARITY = {
     1: { nm: '일반', col: '#adb5bd', maxLv: 20 },
@@ -631,6 +691,7 @@
       inv: Object.assign({ speed: 1, magnet: 1, shield: 0, boost: 0, revive: 1 }, s.inv || {}),
       autoBoost: s.autoBoost !== false,
       skinLv: s.skinLv || {},
+      skinXp: s.skinXp || {},
     };
   }
   let save = loadSave();
@@ -644,6 +705,47 @@
   const skinCost = (id) => Math.round(40 * SKIN_COST_MUL[skinOf(id).rare || 1] * Math.pow(1.17, skinLv(id) - 1) / 10) * 10;
   const startLevel = () => 1 + save.up.start * 3 + skinBonus(save.skin).start;
   const foodMulOf = () => 1 + 0.1 * save.up.food + skinBonus(save.skin).food / 100;
+
+  // RPG식 경험치: 장착한 캐릭터가 경기를 할 때마다 경험치를 얻고, 다 차면 레벨업
+  const maxLvOf = (id) => RARITY[skinOf(id).rare || 1].maxLv;
+  const xpNeed = (lv) => Math.round(20 * Math.pow(lv, 1.25) / 5) * 5;
+  const skinXp = (id) => save.skinXp[id] || 0;
+  // 진화 단계: 최대 레벨의 20% · 40% · 60% · 80% · 100% 에서 모습이 바뀐다
+  const FORMS = [
+    { r: 0, nm: '기본', ds: '평범한 모습' },
+    { r: 0.2, nm: '빛나는 비늘', ds: '비늘이 반짝반짝 빛나요' },
+    { r: 0.4, nm: '문양 각성', ds: '등에 빛나는 문양이 새겨져요' },
+    { r: 0.6, nm: '가시 돌기', ds: '등을 따라 가시가 돋아나요' },
+    { r: 0.8, nm: '오라 각성', ds: '몸 주위로 기운이 일렁여요' },
+    { r: 1, nm: '초월', ds: '날개와 빛의 관이 생겨요' },
+  ];
+  const formLv = (id, k) => (k ? Math.max(2, Math.ceil(FORMS[k].r * maxLvOf(id))) : 1);
+  function formOf(id, lv) {
+    if (lv === undefined) lv = skinLv(id);
+    let k = 0;
+    for (let i = 1; i < FORMS.length; i++) if (lv >= formLv(id, i)) k = i;
+    return k;
+  }
+  // 레벨을 바로 올린다 (코인 레벨업 · 중복 획득)
+  function addSkinLv(id, n) {
+    const from = skinLv(id), to = Math.min(maxLvOf(id), from + n);
+    save.skinLv[id] = to;
+    save.skinXp[id] = to >= maxLvOf(id) ? 0 : Math.min(skinXp(id), xpNeed(to) - 1);
+    return { id, from, to, formFrom: formOf(id, from), formTo: formOf(id, to) };
+  }
+  function grantXp(id, amount) {
+    const from = skinLv(id), max = maxLvOf(id);
+    let lv = from, xp = skinXp(id) + amount;
+    while (lv < max && xp >= xpNeed(lv)) { xp -= xpNeed(lv); lv++; }
+    if (lv >= max) xp = 0;
+    save.skinLv[id] = lv; save.skinXp[id] = xp;
+    return { id, gained: amount, from, to: lv, formFrom: formOf(id, from), formTo: formOf(id, lv) };
+  }
+  function xpBarHtml(id) {
+    const lv = skinLv(id), isMax = lv >= maxLvOf(id);
+    const pct = isMax ? 100 : Math.floor(skinXp(id) / xpNeed(lv) * 100);
+    return `<div class="xpbar"><i style="width:${pct}%"></i></div><div style="font-size:11px;color:var(--muted)">${isMax ? 'EXP MAX' : `EXP ${skinXp(id)} / ${xpNeed(lv)}`}</div>`;
+  }
 
   // 상점 아이템 (k: 엔진 효과 번호, dur: 지속 시간)
   const SHOP = [
@@ -838,12 +940,14 @@
   const LIGHT = { x: -0.55, y: -0.83 };
 
   // o: { wave, seed, evo, latch, boss, pulse, hurt, magnet, speed, shield, dbl, slow }
+  const HEAD_SCALE = 1.7;
   function drawSnake(c, pts, w, skin, dir, o) {
     let n = pts.length;
     if (n < 2) return;
     o = o || {};
     const kind = skin.kind || 'snake';
     const evo = o.evo === undefined ? 2 : o.evo;
+    const form = o.form || 0, acc = form ? accentOf(skin) : null;
     // 문 뱀은 잠깐 부풀고, 물린 뱀은 움찔 줄어든다
     w *= 1 + (o.pulse || 0) * 0.35 - (o.hurt || 0) * 0.2;
     const r = w / 2;
@@ -866,9 +970,11 @@
     const tail = Math.max(4, Math.floor(n * (dr ? 0.5 : kind === 'shark' ? 0.62 : 0.42)));
     for (let i = 0; i < n; i++) {
       const k = n - 1 - i;
-      let v = k < tail ? r * ((kind === 'shark' ? 0.2 : 0.12) + (kind === 'shark' ? 0.8 : 0.88) * Math.pow(k / tail, 0.75)) : r;
+      let v = k < tail && !o.cut ? r * ((kind === 'shark' ? 0.2 : 0.12) + (kind === 'shark' ? 0.8 : 0.88) * Math.pow(k / tail, 0.75)) : r;
       if (kind === 'shark') v *= 1 + 0.18 * Math.max(0, 1 - i / (n * 0.35));
-      else if (i < 5) v *= 0.8 + i * 0.04;
+      else if (i < 3) v *= 0.9 + i * 0.035;
+      // 꿀꺽 삼킨 덩어리가 목에서 꼬리 쪽으로 불룩하게 내려간다
+      if (o.bulgeA) { const dz = (i - o.bulgeP * (n - 1)) / 3.2; v *= 1 + o.bulgeA * Math.exp(-dz * dz); }
       if (evo === 0) v *= 0.92;
       rad[i] = v;
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)];
@@ -876,7 +982,7 @@
     }
     // 효과 오라 (아이템·용·고대 진화)
     const aura = o.speed ? 'rgba(255,214,90,0.25)' : o.dbl ? 'rgba(218,119,242,0.28)' : o.slow ? 'rgba(130,210,255,0.32)'
-      : dr ? dr.glow : evo >= 6 ? 'rgba(255,236,153,0.25)' : evo >= 5 ? 'rgba(165,216,255,0.16)' : null;
+      : dr ? dr.glow : evo >= 6 ? 'rgba(255,236,153,0.25)' : form >= 4 ? rgbaOf(acc, 0.3) : evo >= 5 ? 'rgba(165,216,255,0.16)' : null;
     if (aura) {
       c.strokeStyle = aura;
       c.lineCap = 'round'; c.lineJoin = 'round';
@@ -896,6 +1002,7 @@
     if (dr) for (const f of [0.2, 0.55]) drawLegs(c, pts, rad, ang, Math.floor(n * f), skin);
     if (kind === 'shark') drawPectoral(c, pts, rad, ang, skin, Math.floor(n * 0.16), 1);
     if (evo >= 5) drawWings(c, pts, rad, ang, skin, evo);
+    else if (form >= 5) drawWings(c, pts, rad, ang, skin, 5, acc);
     if (kind === 'shark') drawTailFin(c, pts, rad, ang, skin);
     // 테두리 (우주 배경과 구분)
     c.fillStyle = shadeRgb(toRgb(segColor(skin, 2)), -0.72);
@@ -911,6 +1018,7 @@
       c.drawImage(tube(mottle(segColor(skin, i), i), skin), -rr, -rr, rr * 2, rr * 2);
     }
     c.setTransform(m);
+    if (o.cut) drawCut(c, pts[n - 1], rad[n - 1], ang[n - 1]);
     // 무늬: 새끼는 무늬가 없고, 어릴 때는 흐릿하다
     if (evo >= 1) {
       c.globalAlpha = evo === 1 ? 0.55 : 1;
@@ -926,7 +1034,9 @@
     if (dr) drawMane(c, pts, rad, ang, skin);
     if (kind === 'eel') drawEelFin(c, pts, rad, ang, skin);
     if (kind === 'shark') { drawDorsal(c, pts, rad, ang, skin, Math.floor(n * 0.28), 1); if (skin.scars) drawScars(c, pts, rad, ang); }
-    if (evo >= 3) drawSpikes(c, pts, rad, ang, skin, kind, evo);
+    if (form >= 2) drawRunes(c, pts, rad, ang, acc, form);
+    if (evo >= 3) drawSpikes(c, pts, rad, ang, skin, kind, evo, form >= 3 ? acc : null);
+    else if (form >= 3) drawSpikes(c, pts, rad, ang, skin, kind, 3, acc);
     // 방울뱀 꼬리
     if (skin.rattle) {
       for (let i = n - 1, k = 0; i >= Math.max(1, n - 7); i--, k++) {
@@ -939,7 +1049,7 @@
     }
     // 화면 고정 조명에 맞춘 등줄기 반사광 (뿔 진화부터는 금속처럼 더 반짝임)
     c.lineCap = 'round'; c.lineJoin = 'round';
-    const spec = (skin.shine ? 1.9 : skin.gloss || kind === 'shark' ? 1.5 : 1) * (evo >= 4 ? 1.4 : 1);
+    const spec = (skin.shine ? 1.9 : skin.gloss || kind === 'shark' ? 1.5 : 1) * (evo >= 4 ? 1.4 : 1) * (form >= 1 ? 1.45 : 1);
     for (const [lw, a, off] of [[0.42, 0.08, 0.3], [0.16, 0.22, 0.42], [0.06, 0.4, 0.46]]) {
       c.strokeStyle = `rgba(255,255,255,${Math.min(0.8, a * spec)})`;
       c.lineWidth = r * lw;
@@ -958,6 +1068,7 @@
       }
     }
     if (skin.zap) drawZap(c, pts, rad, skin);
+    if (form >= 4) drawSparkles(c, pts, rad, acc, form);
     // 물린 뱀: 빨갛게 번쩍
     if (o.hurt) {
       c.strokeStyle = `rgba(255,60,60,${0.45 * o.hurt})`; c.lineWidth = r * 2.1;
@@ -965,15 +1076,18 @@
       for (let i = 0; i < n; i += 2) { const p = pts[i]; if (!i) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y); }
       c.stroke();
     }
-    // 머리
-    if (dr) drawDragonHead(c, pts, r, skin, dir, o);
-    else if (kind === 'shark') drawSharkHead(c, pts, r, skin, dir, o);
-    else if (kind === 'eel') drawEelHead(c, pts, r, skin, dir, o);
-    else drawHead(c, pts, r, skin, dir, o, skin.head || 'normal');
-    if (evo >= 4 && !dr) drawHeadHorns(c, pts[0], r, dir, skin, evo);
-    if (evo >= 6) drawCrownGlow(c, pts[0], r, skin);
+    // 머리 (몸보다 큼직하게 그린다. 충돌 판정은 그대로)
+    const hr = r * HEAD_SCALE;
+    if (dr) drawDragonHead(c, pts, hr, skin, dir, o);
+    else if (kind === 'shark') drawSharkHead(c, pts, hr, skin, dir, o);
+    else if (kind === 'eel') drawEelHead(c, pts, hr, skin, dir, o);
+    else drawHead(c, pts, hr, skin, dir, o, skin.head || 'normal');
+    if (o.gape > 0.02) drawGape(c, pts[0], hr, dir, o.gape);
+    if (evo >= 4 && !dr) drawHeadHorns(c, pts[0], hr, dir, skin, evo);
+    if (evo >= 6) drawCrownGlow(c, pts[0], hr, skin);
+    else if (form >= 5) drawCrownGlow(c, pts[0], hr, skin, acc);
     if (o.shield) {
-      const h = pts[0], sr = r * 2.6 + Math.sin(T * 8) * 3;
+      const h = pts[0], sr = hr * 2.3 + Math.sin(T * 8) * 3;
       const g = c.createRadialGradient(h.x, h.y, sr * 0.55, h.x, h.y, sr);
       g.addColorStop(0, 'rgba(77,171,247,0)'); g.addColorStop(1, 'rgba(116,192,252,0.45)');
       c.fillStyle = g; c.beginPath(); c.arc(h.x, h.y, sr, 0, TAU); c.fill();
@@ -983,7 +1097,7 @@
       const h = pts[0];
       c.strokeStyle = 'rgba(255,107,107,0.35)'; c.lineWidth = 3;
       c.setLineDash([14, 12]); c.lineDashOffset = -T * 60;
-      c.beginPath(); c.arc(h.x, h.y, r + E.MAGNET_RANGE, 0, TAU); c.stroke();
+      c.beginPath(); c.arc(h.x, h.y, r + E.MAGNET_RANGE * WSC, 0, TAU); c.stroke();
       c.setLineDash([]);
     }
   }
@@ -1036,9 +1150,62 @@
   }
 
   // 가시 진화: 등을 따라 솟은 가시 (상어는 작은 지느러미 줄)
-  function drawSpikes(c, pts, rad, ang, skin, kind, evo) {
+  // 잘린 단면 (빨간 살 + 하얀 뼈)
+  function drawCut(c, p, rr, a) {
+    c.save(); c.translate(p.x, p.y); c.rotate(a);
+    c.fillStyle = '#8f1d1d';
+    c.beginPath(); c.ellipse(0, 0, rr * 0.34, rr * 0.92, 0, 0, TAU); c.fill();
+    c.fillStyle = '#e8545a';
+    c.beginPath(); c.ellipse(0, 0, rr * 0.22, rr * 0.66, 0, 0, TAU); c.fill();
+    c.fillStyle = '#f8f0e3';
+    c.beginPath(); c.arc(0, 0, Math.max(1.2, rr * 0.14), 0, TAU); c.fill();
+    c.restore();
+  }
+
+  // 캐릭터 진화 색: 용은 갈기, 빛나는 캐릭터는 빛 색, 레어 이상은 등급 색, 일반은 몸 색을 밝게
+  function accentOf(skin) {
+    if (!skin._acc) {
+      skin._acc = skin.dragon ? skin.dragon.mane : skin.zap || (skin.glowPat && skin.p1) || (skin.eyeGlow && skin.eye)
+        || (skin.rare > 1 && RARITY[skin.rare].col) || shadeRgb(toRgb(segColor(skin, 1)), 0.6);
+    }
+    return skin._acc;
+  }
+  function rgbaOf(col, a) { const v = toRgb(col); return `rgba(${v[0]},${v[1]},${v[2]},${a})`; }
+
+  // 문양 각성: 등줄기를 따라 빛나는 마름모 문양
+  function drawRunes(c, pts, rad, ang, acc, form) {
     const n = pts.length;
-    const col = kind === 'dragon' ? skin.dragon.horn : shadeRgb(toRgb(segColor(skin, 3)), evo >= 4 ? 0.25 : -0.45);
+    c.save();
+    c.shadowColor = acc; c.shadowBlur = form >= 4 ? 14 : 8;
+    c.fillStyle = acc;
+    for (let i = 3; i < n - 3; i += 4) {
+      const p = pts[i], rr = rad[i];
+      c.globalAlpha = 0.55 + 0.35 * Math.sin(T * 3 - i * 0.4);
+      c.save(); c.translate(p.x, p.y); c.rotate(ang[i]);
+      c.beginPath();
+      c.moveTo(rr * 0.32, 0); c.lineTo(0, -rr * 0.16); c.lineTo(-rr * 0.32, 0); c.lineTo(0, rr * 0.16);
+      c.closePath(); c.fill();
+      c.restore();
+    }
+    c.restore();
+  }
+
+  // 오라 각성: 몸 주위를 떠도는 빛 알갱이
+  function drawSparkles(c, pts, rad, acc, form) {
+    const n = pts.length;
+    c.save();
+    c.shadowColor = acc; c.shadowBlur = 10; c.fillStyle = acc;
+    for (let i = 2; i < n; i += 5) {
+      const p = pts[i], t = T * 2 + i * 1.7, d = rad[i] * (1.3 + 0.4 * Math.sin(t * 1.3));
+      c.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(t));
+      c.beginPath(); c.arc(p.x + Math.cos(t) * d, p.y + Math.sin(t) * d, Math.max(1.5, rad[i] * (form >= 5 ? 0.13 : 0.1)), 0, TAU); c.fill();
+    }
+    c.restore();
+  }
+
+  function drawSpikes(c, pts, rad, ang, skin, kind, evo, accCol) {
+    const n = pts.length;
+    const col = accCol || (kind === 'dragon' ? skin.dragon.horn : shadeRgb(toRgb(segColor(skin, 3)), evo >= 4 ? 0.25 : -0.45));
     c.fillStyle = col; c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 1;
     const step = kind === 'shark' ? 5 : 3;
     for (let i = 4; i < n - 4; i += step) {
@@ -1052,11 +1219,11 @@
   }
 
   // 날개 진화: 목 뒤로 펼쳐지는 반투명 날개막
-  function drawWings(c, pts, rad, ang, skin, evo) {
+  function drawWings(c, pts, rad, ang, skin, evo, accCol) {
     const i = Math.min(pts.length - 1, Math.max(2, Math.floor(pts.length * 0.12)));
     const p = pts[i], rr = rad[i], a = ang[i];
     const flap = Math.sin(T * 5) * 0.18;
-    const col = skin.dragon ? skin.dragon.mane : evo >= 6 ? '#ffe066' : shadeRgb(toRgb(segColor(skin, 2)), 0.35);
+    const col = accCol || (skin.dragon ? skin.dragon.mane : evo >= 6 ? '#ffe066' : shadeRgb(toRgb(segColor(skin, 2)), 0.35));
     c.save(); c.translate(p.x, p.y); c.rotate(a);
     for (const s of [-1, 1]) {
       c.save(); c.rotate(s * flap);
@@ -1079,10 +1246,10 @@
   }
 
   // 고대 진화: 머리 위의 빛나는 관과 떠도는 빛
-  function drawCrownGlow(c, h, r, skin) {
+  function drawCrownGlow(c, h, r, skin, accCol) {
     c.save();
-    c.shadowColor = '#ffe066'; c.shadowBlur = 18;
-    c.fillStyle = 'rgba(255,224,102,0.9)';
+    c.shadowColor = accCol || '#ffe066'; c.shadowBlur = 18;
+    c.fillStyle = accCol || 'rgba(255,224,102,0.9)';
     for (let k = 0; k < 6; k++) {
       const a = T * 1.5 + k * (TAU / 6);
       c.beginPath(); c.arc(h.x + Math.cos(a) * r * 2.2, h.y + Math.sin(a) * r * 2.2, Math.max(2, r * 0.13), 0, TAU); c.fill();
@@ -1534,10 +1701,17 @@
     const p = clamp((now - f.born) / 0.45, 0, 1);
     if (p >= 1) return f;
     const e = 1 - Math.pow(1 - p, 3);
-    return { id: f.id, v: f.v, k: f.k, x: lerp(f.ox, f.x, e), y: lerp(f.oy, f.y, e) - Math.sin(p * Math.PI) * 60, pop: p };
+    return { id: f.id, v: f.v, k: f.k, x: lerp(f.ox, f.x, e), y: lerp(f.oy, f.y, e) - Math.sin(p * Math.PI) * 60 * FXS, pop: p };
   }
   function drawFood(c, f0, t, fv, now) {
     const f = foodPos(f0, now);
+    if (FXS === 1) return drawFoodAt(c, f, t, fv);
+    // 큰 경기장에서는 먹이·아이템도 크게
+    c.save(); c.translate(f.x, f.y); c.scale(FXS, FXS); c.translate(-f.x, -f.y);
+    drawFoodAt(c, f, t, fv);
+    c.restore();
+  }
+  function drawFoodAt(c, f, t, fv) {
     if (f.k === 1) {
       const bob = Math.sin(t * 4 + f.id) * 4;
       c.drawImage(glow('rgb(255,107,157)'), f.x - 38, f.y - 38 + bob, 76, 76);
@@ -1626,28 +1800,38 @@
   let parts = [], floats = [], rings = [], shake = 0, T = 0;
   const pulses = new Map(), hurts = new Map(), headPos = new Map(), biteAcc = new Map();
   let marks = [];
+  // 먹힌 뱀의 꼬리 토막 (뜯겨 나가 꿈틀대며 날아간다)
+  let severs = [];
+  // 꿀꺽 연출: 먹은 뱀 id → { t0, amp } (입 벌리기 → 목이 불룩해져 꼬리로 내려감)
+  const gulps = new Map();
+  // 바닥에 튄 물감 자국
+  let splats = [];
+  // 몸통이 끊긴 뱀: 잠깐 동안 꼬리 끝을 잘린 단면으로 그린다
+  const cutAt = new Map();
+  // 경기장 배율 (높은 스테이지에서 뱀이 커지면 경기장·먹이·효과도 같이 커진다)
+  let WSC = 1, FXS = 1;
   const fmtN = (v) => (v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e4 ? (v / 1e3).toFixed(1) + 'K' : v >= 10 || Number.isInteger(v) ? String(Math.round(v)) : v.toFixed(1));
   // 빛 알갱이가 문 뱀의 머리로 빨려 들어간다
   function streamTo(x, y, tid, n, color) {
     for (let k = 0; k < n; k++) {
       const a = rand(0, TAU), sp = rand(60, 220);
-      parts.push({ x: x + rand(-10, 10), y: y + rand(-10, 10), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.9, max: 0.9, color, s: rand(7, 11), tid });
+      parts.push({ x: x + rand(-10, 10) * FXS, y: y + rand(-10, 10) * FXS, vx: Math.cos(a) * sp * FXS, vy: Math.sin(a) * sp * FXS, life: 0.9, max: 0.9, color, s: rand(7, 11) * FXS, tid });
     }
   }
   const CONFETTI = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#da77f2', '#ff922b', '#ffffff'];
   function pang(x, y, size) {
-    rings.push({ x, y, r: 10, max: 120 + size * 2, life: 0.5 });
-    rings.push({ x, y, r: 4, max: 70 + size, life: 0.35 });
+    rings.push({ x, y, r: 10, max: (120 + size * 2) * FXS, life: 0.5, lw: FXS });
+    rings.push({ x, y, r: 4, max: (70 + size) * FXS, life: 0.35, lw: FXS });
     for (let i = 0; i < 26; i++) {
-      const a = rand(0, TAU), sp = rand(150, 420);
-      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.5, 0.9), max: 0.9, color: CONFETTI[i % CONFETTI.length], s: rand(6, 11) });
+      const a = rand(0, TAU), sp = rand(150, 420) * FXS;
+      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.5, 0.9), max: 0.9, color: CONFETTI[i % CONFETTI.length], s: rand(6, 11) * FXS });
     }
   }
 
   function burst(x, y, color, n) {
     for (let i = 0; i < n; i++) {
-      const a = rand(0, TAU), sp = rand(80, 280);
-      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.35, 0.7), max: 0.7, color, s: rand(4, 9) });
+      const a = rand(0, TAU), sp = rand(80, 280) * FXS;
+      parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: rand(0.35, 0.7), max: 0.7, color, s: rand(4, 9) * FXS });
     }
   }
   function floatText(x, y, text, color) { floats.push({ x, y, text, color, life: 1 }); }
@@ -1657,7 +1841,12 @@
       if (ev.e === 'eat') {
         pang(ev.x, ev.y, Math.min(60, Math.sqrt(ev.lv) * 4));
         streamTo(ev.x, ev.y, ev.a, 12, '#ffd43b');
-        pulses.set(ev.a, 1.4);
+        // 입을 쩍 벌리고 머리부터 후루룩 → 다 삼키면 목이 불룩
+        const vh = headPos.get(ev.b), ah = headPos.get(ev.a);
+        const vcol = segColor(skinOf(vh ? vh.skin : 'tree'), 1);
+        const vw = E.widthOf(vh ? vh.level : ev.lv), aw = E.widthOf(ah ? ah.level : ev.lv * 2);
+        gulps.set(ev.a, { t0: T, amp: clamp(0.25 + 0.6 * vw / aw, 0.25, 0.75), col: vcol, b: ev.b, w: vw, fxT: 0, done: false });
+        splat(ev.x, ev.y, vw * 1.7, vcol, 3.5);
         const eh = headPos.get(ev.a);
         if (eh) floatText(eh.x, eh.y - 40, '+' + fmtN(ev.lv * 0.4), '#8ce99a');
         floatText(ev.x, ev.y - 50, '팡!', '#ff8787');
@@ -1678,12 +1867,13 @@
         const vskin = skinOf(vic ? vic.skin : 'tree');
         const vr = E.widthOf(vic ? vic.level : 5) * 0.5;
         for (let k = 0; k < 2; k++) {
-          const a = rand(0, TAU), sp = rand(120, 260);
+          const a = rand(0, TAU), sp = rand(120, 260) * FXS;
           parts.push({ chunk: true, skin: vskin, col: segColor(vskin, randInt(0, 12)), x: ev.x + rand(-vr, vr) * 0.4, y: ev.y + rand(-vr, vr) * 0.4,
             vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: vr * rand(0.55, 0.8), rot: rand(0, TAU), spin: rand(-12, 12), life: 0.8, max: 0.8, s: 14, tid: ev.a });
         }
         burst(ev.x, ev.y, segColor(vskin, 1), 5);
         burst(ev.x, ev.y, '#ff6b6b', 3);
+        if (Math.random() < 0.35) splat(ev.x, ev.y, vr * 0.9, segColor(vskin, 1), 2);
         marks.push({ x: ev.x, y: ev.y, r: vr * 1.1, life: 0.5, rot: rand(0, TAU) });
         if (marks.length > 40) marks.shift();
         if (ev.a === myId || ev.b === myId) beep(90 + Math.random() * 40, 0.05, 'sawtooth', 0.06);
@@ -1693,6 +1883,30 @@
         biteAcc.set(key, acc);
         if (ev.a === myId) { shake = Math.max(shake, 0.06); setTimeout(() => beep(260, 0.04, 'square', 0.04), 40); }
         if (ev.b === myId) { shake = Math.max(shake, 0.18); beep(170, 0.07, 'sawtooth', 0.05); }
+      } else if (ev.e === 'cut') {
+        // 몸통이 뚝 끊겨 나간다: 잘린 토막은 꿈틀대며 튕겨 나가고, 머리 쪽만 계속 달린다
+        const vic = headPos.get(ev.b);
+        const vskin = skinOf(vic ? vic.skin : 'tree');
+        const flat = ev.p || [];
+        if (flat.length >= 4) {
+          const pts = resample(flat, ev.w * 0.3);
+          const full = Math.round(pts.length / Math.max(0.05, 1 - (ev.keep || 0)));
+          flingPieces(pts, 0, ev.w, vskin, Math.max(4, Math.floor(full * 0.42)), full - pts.length, 1, 3);
+        }
+        cutAt.set(ev.b, T);
+        splat(ev.x, ev.y, ev.w * 1.3, segColor(vskin, 1), 3);
+        burst(ev.x, ev.y, '#e03131', 10);
+        burst(ev.x, ev.y, segColor(vskin, 1), 8);
+        rings.push({ x: ev.x, y: ev.y, r: ev.w * 0.3, max: ev.w * 1.8, life: 0.35, lw: FXS });
+        marks.push({ x: ev.x, y: ev.y, r: ev.w * 0.55, life: 0.7, rot: rand(0, TAU) });
+        if (marks.length > 40) marks.shift();
+        floatText(ev.x, ev.y - ev.w, '싹둑!', '#ffa8a8');
+        pulses.set(ev.a, 1.2); hurts.set(ev.b, 1.4);
+        const key = ev.a + '-' + ev.b, acc = biteAcc.get(key) || { a: ev.a, b: ev.b, n: 0, l: 0, t: 0 };
+        acc.n += ev.n || 0; acc.l += ev.l || 0;
+        biteAcc.set(key, acc);
+        if (ev.a === myId) { shake = Math.max(shake, 0.16); beep(330, 0.08, 'square', 0.06); setTimeout(() => beep(620, 0.1, 'triangle', 0.06), 60); }
+        if (ev.b === myId) { shake = Math.max(shake, 0.35); beep(120, 0.18, 'sawtooth', 0.07); toast('✂️ 몸통이 잘렸어요!', 900); }
       } else if (ev.e === 'item') {
         const info = ITEM_INFO[ev.k];
         burst(ev.x, ev.y, info.col, 14);
@@ -1718,16 +1932,176 @@
     }
   }
 
+  // 바닥에 물감이 팍 튄다 (뱀 색깔로, 서서히 사라짐)
+  function splat(x, y, r, col, life) {
+    const blobs = [{ x: 0, y: 0, r: r * 0.75 }];
+    const n = 7 + randInt(0, 5);
+    for (let i = 0; i < n; i++) {
+      const a = rand(0, TAU), d = r * rand(0.5, 1.5);
+      blobs.push({ x: Math.cos(a) * d, y: Math.sin(a) * d, r: r * rand(0.12, 0.35) });
+      if (Math.random() < 0.5) blobs.push({ x: Math.cos(a) * d * 1.45, y: Math.sin(a) * d * 1.45, r: r * rand(0.06, 0.14) });
+    }
+    splats.push({ x, y, col, blobs, life: life || 3, max: life || 3, grow: 0 });
+    if (splats.length > 60) splats.shift();
+  }
+  function drawSplats(c, vx0, vx1, vy0, vy1) {
+    for (const p of splats) {
+      const R = p.blobs[0].r * 3;
+      if (p.x + R < vx0 || p.x - R > vx1 || p.y + R < vy0 || p.y - R > vy1) continue;
+      const k = 0.4 + 0.6 * Math.min(1, p.grow / 0.12);
+      c.globalAlpha = 0.6 * clamp(p.life / 1, 0, 1);
+      c.fillStyle = p.col;
+      c.beginPath();
+      for (const b of p.blobs) { c.moveTo(p.x + b.x * k + b.r * k, p.y + b.y * k); c.arc(p.x + b.x * k, p.y + b.y * k, b.r * k, 0, TAU); }
+      c.fill();
+    }
+    c.globalAlpha = 1;
+  }
+
+  // 먹히는 뱀: 동글동글한 구슬 마디로 끊어져 입속으로 빨려 들어간다
+  function drawBeads(c, flat, w, skin) {
+    const pts = resample(flat, w * 0.82), n = pts.length, r = w / 2;
+    const edge = shadeRgb(toRgb(segColor(skin, 2)), -0.72);
+    for (let i = n - 1; i >= 0; i--) {
+      const p = pts[i], k = n - 1 - i;
+      // 입 쪽 구슬은 작아지고, 꼬리 쪽은 가늘게
+      const rr = r * Math.min(1, 0.45 + i * 0.18) * (k < 3 ? 0.55 + k * 0.15 : 1) * (0.94 + 0.06 * Math.sin(T * 30 + i));
+      const col = segColor(skin, i * 3), rgb = toRgb(col);
+      c.fillStyle = 'rgba(0,0,12,0.25)';
+      c.beginPath(); c.arc(p.x + rr * 0.2, p.y + rr * 0.35, rr, 0, TAU); c.fill();
+      c.fillStyle = edge;
+      c.beginPath(); c.arc(p.x, p.y, rr + 1.6, 0, TAU); c.fill();
+      const g = c.createRadialGradient(p.x + LIGHT.x * rr * 0.4, p.y + LIGHT.y * rr * 0.4, rr * 0.1, p.x, p.y, rr);
+      g.addColorStop(0, shadeRgb(rgb, 0.45)); g.addColorStop(0.55, col); g.addColorStop(1, shadeRgb(rgb, -0.35));
+      c.fillStyle = g;
+      c.beginPath(); c.arc(p.x, p.y, rr, 0, TAU); c.fill();
+      c.fillStyle = 'rgba(255,255,255,0.45)';
+      c.beginPath(); c.ellipse(p.x + LIGHT.x * rr * 0.45, p.y + LIGHT.y * rr * 0.45, rr * 0.28, rr * 0.16, Math.atan2(LIGHT.y, LIGHT.x) + 1.57, 0, TAU); c.fill();
+    }
+  }
+
+  // 먹는 순간 크게 벌린 입 (머리 위에 덧그린다)
+  function drawGape(c, h, hr, dir, open) {
+    c.save(); c.translate(h.x, h.y); c.rotate(dir);
+    const a = 0.25 + 0.55 * open, R = hr * 1.75, cx = hr * 0.15;
+    c.fillStyle = '#3a0a10';
+    c.beginPath(); c.moveTo(cx, 0); c.arc(cx, 0, R, -a, a); c.closePath(); c.fill();
+    c.fillStyle = '#c2255c';
+    c.beginPath(); c.moveTo(cx + hr * 0.2, 0); c.arc(cx, 0, R * 0.7, -a * 0.55, a * 0.55); c.closePath(); c.fill();
+    // 송곳니
+    c.fillStyle = '#fff';
+    for (const s of [-1, 1]) {
+      // 턱 가장자리를 따라 안쪽으로 뾰족하게
+      const ux = Math.cos(a), uy = s * Math.sin(a), nx = Math.sin(a), ny = -s * Math.cos(a);
+      for (const t of [0.95, 0.68]) {
+        const ex = cx + ux * R * t, ey = uy * R * t, d = hr * 0.24 * t;
+        c.beginPath();
+        c.moveTo(ex - ux * d * 0.5, ey - uy * d * 0.5);
+        c.lineTo(ex + ux * d * 0.5, ey + uy * d * 0.5);
+        c.lineTo(ex + nx * d * 1.1, ey + ny * d * 1.1);
+        c.closePath(); c.fill();
+      }
+    }
+    c.restore();
+  }
+
+  // pts[from..] 를 kMin~kMax 토막으로 끊어 튕겨 낸다
+  // tl: 꼬리가 가늘어지기 시작하는 마디 수, off: 머리부터 pts[0] 앞까지의 마디 수
+  function flingPieces(pts, from, w, skin, tl, off, kMin, kMax) {
+    const n = pts.length, r = w / 2, nn = n + off;
+    const k = clamp(Math.round((n - from) / 9), kMin, kMax), len = Math.ceil((n - from) / k);
+    for (let j = 0; j < k; j++) {
+      const i0 = from + j * len, i1 = Math.min(n, i0 + len + 1);
+      if (i1 - i0 < 2) continue;
+      const seg = [];
+      let cx = 0, cy = 0;
+      for (let i = i0; i < i1; i++) {
+        const kk = nn - 1 - (i + off);
+        seg.push({ x: pts[i].x, y: pts[i].y, r: kk < tl ? r * (0.12 + 0.88 * Math.pow(kk / tl, 0.75)) : r, col: segColor(skin, i + off) });
+        cx += pts[i].x; cy += pts[i].y;
+      }
+      cx /= seg.length; cy /= seg.length;
+      for (const q of seg) { q.x -= cx; q.y -= cy; }
+      const a = seg[0], b = seg[seg.length - 1];
+      const along = Math.atan2(b.y - a.y, b.x - a.x), side = along + (Math.random() < 0.5 ? 1 : -1) * Math.PI / 2;
+      const sp = rand(160, 340) * Math.max(1, w / 34);
+      severs.push({ x: cx, y: cy, pts: seg, skin, tip: i1 >= n, rot: 0, spin: rand(-3.5, 3.5), seed: rand(0, TAU),
+        vx: Math.cos(side) * sp + Math.cos(along) * sp * 0.6, vy: Math.sin(side) * sp + Math.sin(along) * sp * 0.6,
+        edge: shadeRgb(toRgb(segColor(skin, 2)), -0.72), life: 1.7, max: 1.7 });
+      burst(cx + a.x, cy + a.y, '#e03131', 5);
+      burst(cx + a.x, cy + a.y, a.col, 3);
+    }
+  }
+
+  function drawSevers(c) {
+    for (const p of severs) {
+      const t = clamp(p.life / p.max, 0, 1), n = p.pts.length;
+      c.globalAlpha = clamp(p.life / 0.5, 0, 1);
+      c.save(); c.translate(p.x, p.y); c.rotate(p.rot);
+      // 꿈틀꿈틀: 처음엔 세게, 점점 잦아든다
+      const pts = p.pts.map((q, i) => {
+        const a = p.pts[Math.max(0, i - 1)], b = p.pts[Math.min(n - 1, i + 1)];
+        const an = Math.atan2(b.y - a.y, b.x - a.x), off = Math.sin(T * 16 + p.seed + i * 0.7) * q.r * 0.35 * t;
+        return { x: q.x - Math.sin(an) * off, y: q.y + Math.cos(an) * off, r: q.r, col: q.col, a: an };
+      });
+      c.fillStyle = 'rgba(0,0,12,0.28)';
+      c.beginPath();
+      for (const q of pts) { c.moveTo(q.x + 6 + q.r, q.y + 10); c.arc(q.x + 6, q.y + 10, q.r, 0, TAU); }
+      c.fill();
+      c.fillStyle = p.edge;
+      c.beginPath();
+      for (const q of pts) { c.moveTo(q.x + q.r + 1.6, q.y); c.arc(q.x, q.y, q.r + 1.6, 0, TAU); }
+      c.fill();
+      for (let i = n - 1; i >= 0; i--) {
+        const q = pts[i];
+        c.save(); c.translate(q.x, q.y); c.rotate(q.a);
+        c.drawImage(tube(q.col, p.skin), -q.r, -q.r, q.r * 2, q.r * 2);
+        c.restore();
+      }
+      drawCut(c, pts[0], pts[0].r, pts[0].a);
+      if (!p.tip) drawCut(c, pts[n - 1], pts[n - 1].r, pts[n - 1].a);
+      c.restore();
+    }
+    c.globalAlpha = 1;
+  }
+
+  // 메뉴 배경(데모)에서도 돌아야 해서 updateFx와 따로 움직인다
+  function updateSevers(dt) {
+    const fr = Math.exp(-2.8 * dt);
+    for (const p of severs) {
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= fr; p.vy *= fr;
+      p.rot += p.spin * dt; p.spin *= fr; p.life -= dt;
+    }
+    severs = severs.filter((p) => p.life > 0);
+    for (const p of splats) { p.life -= dt; p.grow += dt; }
+    splats = splats.filter((p) => p.life > 0);
+    for (const [id, g] of gulps) {
+      const t = T - g.t0;
+      if (t < E.DIE_TIME) {
+        // 빨려 들어가는 동안 입가에 물감이 튄다
+        g.fxT -= dt;
+        const h = headPos.get(id);
+        if (g.fxT <= 0 && h) { g.fxT = 0.13; splat(h.x + rand(-0.4, 0.4) * g.w, h.y + rand(-0.4, 0.4) * g.w, g.w * rand(0.5, 0.9), g.col, 2); }
+      } else if (!g.done) {
+        g.done = true;
+        pulses.set(id, 1.3);
+        if (id === (game && game.myId)) { beep(180, 0.12, 'sine', 0.09); setTimeout(() => beep(120, 0.15, 'sine', 0.08), 90); }
+      }
+      if (t > E.DIE_TIME + 1.6) gulps.delete(id);
+    }
+    for (const [id, t0] of cutAt) if (T - t0 > 2) cutAt.delete(id);
+  }
+
   function updateFx(dt) {
     for (const p of parts) {
       if (p.tid) {
         const t = headPos.get(p.tid);
         if (t) {
           const dx = t.x - p.x, dy = t.y - p.y, d = Math.hypot(dx, dy) || 1;
-          p.vx = (p.vx + dx / d * 3000 * dt) * 0.9; p.vy = (p.vy + dy / d * 3000 * dt) * 0.9;
-          if (d < 18) p.life = 0;
+          p.vx = (p.vx + dx / d * 3000 * FXS * dt) * 0.9; p.vy = (p.vy + dy / d * 3000 * FXS * dt) * 0.9;
+          if (d < 18 * FXS) p.life = 0;
         }
-      } else if (p.s < 12) { p.vx *= 0.92; p.vy *= 0.92; }
+      } else if (p.s < 12 * FXS) { p.vx *= 0.92; p.vy *= 0.92; }
       p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
     }
     for (const [k, v] of pulses) { if (v - dt * 3 <= 0) pulses.delete(k); else pulses.set(k, v - dt * 3); }
@@ -1742,7 +2116,7 @@
       biteAcc.delete(key);
     }
     parts = parts.filter((p) => p.life > 0);
-    for (const f of floats) { f.y -= 50 * dt; f.life -= dt; }
+    for (const f of floats) { f.y -= 50 * FXS * dt; f.life -= dt; }
     floats = floats.filter((f) => f.life > 0);
     for (const r of rings) { r.life -= dt; r.r += (r.max - r.r) * Math.min(1, dt * 9); }
     for (const p of parts) if (p.chunk) p.rot += p.spin * dt;
@@ -1831,14 +2205,38 @@
     }
   }
 
+  // 입 벌림 정도와 목 불룩 위치: 삼키는 중이면 활짝, 작은 뱀 머리가 코앞에 있으면 살짝
+  function gulpState(s, snakes) {
+    const out = { gape: 0, p: 0, a: 0 };
+    const g = gulps.get(s.id), D = E.DIE_TIME;
+    if (g) {
+      const t = T - g.t0;
+      out.gape = t < D ? Math.min(1, t / 0.08) : Math.max(0, 1 - (t - D) / 0.15);
+      if (t > D * 0.7) {
+        const p = (t - D * 0.7) / 1.4;
+        if (p < 1) { out.p = p; out.a = g.amp * (1 - p * 0.5) * Math.min(1, (t - D * 0.7) / 0.12); }
+      }
+    }
+    if (out.gape < 0.6) {
+      const rA = E.widthOf(s.level) / 2, cs = Math.cos(s.dir), sn = Math.sin(s.dir);
+      for (const o of snakes) {
+        if (o === s || o.dying || o.level > s.level - 1) continue;
+        const dx = o.x - s.x, dy = o.y - s.y, d = Math.hypot(dx, dy), lim = (rA + E.widthOf(o.level) / 2) * 3.2;
+        if (d > lim || (dx * cs + dy * sn) < d * 0.5) continue;
+        out.gape = Math.max(out.gape, 0.6 * (1 - d / lim) + 0.15);
+      }
+    }
+    return out;
+  }
+
   function drawArena(R, vx0, vx1, vy0, vy1) {
     // 반투명한 우주 경기장 + 격자
     ctx.fillStyle = 'rgba(20,24,70,0.55)';
     ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.fill();
     ctx.save();
     ctx.beginPath(); ctx.arc(0, 0, R, 0, TAU); ctx.clip();
-    const TILE = 140;
-    ctx.strokeStyle = 'rgba(140,160,255,0.12)'; ctx.lineWidth = 2;
+    const TILE = 140 * WSC;
+    ctx.strokeStyle = 'rgba(140,160,255,0.12)'; ctx.lineWidth = 1.8 / cam.z;
     ctx.beginPath();
     for (let x = Math.floor(vx0 / TILE) * TILE; x < vx1; x += TILE) { ctx.moveTo(x, vy0); ctx.lineTo(x, vy1); }
     for (let y = Math.floor(vy0 / TILE) * TILE; y < vy1; y += TILE) { ctx.moveTo(vx0, y); ctx.lineTo(vx1, y); }
@@ -1846,12 +2244,13 @@
     ctx.restore();
     // 네온 테두리
     const pulse = 0.5 + 0.5 * Math.sin(T * 2);
-    ctx.strokeStyle = `rgba(190,75,219,${0.18 + 0.1 * pulse})`; ctx.lineWidth = 46;
-    ctx.beginPath(); ctx.arc(0, 0, R + 20, 0, TAU); ctx.stroke();
-    ctx.strokeStyle = 'rgba(102,217,232,0.45)'; ctx.lineWidth = 18;
-    ctx.beginPath(); ctx.arc(0, 0, R + 6, 0, TAU); ctx.stroke();
-    ctx.strokeStyle = '#e3fafc'; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.arc(0, 0, R + 2, 0, TAU); ctx.stroke();
+    const k = FXS;
+    ctx.strokeStyle = `rgba(190,75,219,${0.18 + 0.1 * pulse})`; ctx.lineWidth = 46 * k;
+    ctx.beginPath(); ctx.arc(0, 0, R + 20 * k, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = 'rgba(102,217,232,0.45)'; ctx.lineWidth = 18 * k;
+    ctx.beginPath(); ctx.arc(0, 0, R + 6 * k, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = '#e3fafc'; ctx.lineWidth = 4 * k;
+    ctx.beginPath(); ctx.arc(0, 0, R + 2 * k, 0, TAU); ctx.stroke();
   }
 
   function render(view) {
@@ -1859,15 +2258,18 @@
     const z = cam.z;
     drawSpace(z);
     if (!view) return;
+    WSC = view.sc || 1; FXS = Math.pow(WSC, 0.8);
     let sx = 0, sy = 0;
     if (shake > 0) { sx = rand(-6, 6); sy = rand(-6, 6); }
     ctx.setTransform(DPR * z, 0, 0, DPR * z, DPR * (VW / 2 - cam.x * z + sx), DPR * (VH / 2 - cam.y * z + sy));
-    const vx0 = cam.x - VW / 2 / z - 100, vx1 = cam.x + VW / 2 / z + 100;
-    const vy0 = cam.y - VH / 2 / z - 100, vy1 = cam.y + VH / 2 / z + 100;
+    const mg = 100 * FXS;
+    const vx0 = cam.x - VW / 2 / z - mg, vx1 = cam.x + VW / 2 / z + mg;
+    const vy0 = cam.y - VH / 2 / z - mg, vy1 = cam.y + VH / 2 / z + mg;
 
     if (view.clash) drawTrack(view, vx0, vx1);
     else drawArena(view.R, vx0, vx1, vy0, vy1);
 
+    if (!view.clash) drawSplats(ctx, vx0, vx1, vy0, vy1);
     for (const f of view.foods) {
       if (f.x < vx0 || f.x > vx1 || f.y < vy0 || f.y > vy1) continue;
       drawFood(ctx, f, T, view.fv, view.now);
@@ -1875,19 +2277,23 @@
 
     headPos.clear();
     for (const s of view.snakes) headPos.set(s.id, { x: s.x, y: s.y, skin: s.skin, level: s.level });
-    const order = view.snakes.slice().sort((a, b) => (a.me ? 1 : 0) - (b.me ? 1 : 0) || a.level - b.level);
+    // 먹히는 뱀은 먼저 그려서 먹는 뱀의 입속으로 들어가 보이게
+    const order = view.snakes.slice().sort((a, b) => (a.dying ? 0 : 1) - (b.dying ? 0 : 1) || (a.me ? 1 : 0) - (b.me ? 1 : 0) || a.level - b.level);
+    drawSevers(ctx);
     for (const s of order) {
-      const w = E.widthOf(s.level) * (s.dying ? 0.8 : 1);
-      const pts = resample(s.body, w * 0.3);
+      const w = E.widthOf(s.level);
+      if (s.dying) { drawBeads(ctx, s.body, w, skinOf(s.skin)); continue; }
+      let pts = resample(s.body, w * 0.3);
       let vis = false;
       for (let i = 0; i < pts.length; i += 4) {
         const p = pts[i];
         if (p.x > vx0 && p.x < vx1 && p.y > vy0 && p.y < vy1) { vis = true; break; }
       }
       if (!vis) continue;
-      ctx.globalAlpha = s.dying ? 0.85 : 1;
+      const gp = gulpState(s, view.snakes);
       drawSnake(ctx, pts, w, skinOf(s.skin), s.dir, {
-        wave: !s.dying, evo: evoOf(s.level), pulse: pulses.get(s.id) || 0, hurt: hurts.get(s.id) || 0,
+        gape: gp.gape, bulgeP: gp.p, bulgeA: gp.a,
+        wave: true, cut: cutAt.has(s.id) && T - cutAt.get(s.id) < 0.9, evo: evoOf(s.level), form: s.me ? formOf(save.skin) : 0, pulse: pulses.get(s.id) || 0, hurt: hurts.get(s.id) || 0,
         latch: s.latch, boss: s.boss, seed: s.id, magnet: s.fx & 4, speed: s.fx & 8, shield: s.fx & 16, dbl: s.fx & 32, slow: s.fx & 64,
       });
       ctx.globalAlpha = 1;
@@ -1895,7 +2301,7 @@
 
     for (const r of rings) {
       ctx.globalAlpha = clamp(r.life * 2.2, 0, 1);
-      ctx.strokeStyle = '#fff3bf'; ctx.lineWidth = 10 * r.life + 2;
+      ctx.strokeStyle = '#fff3bf'; ctx.lineWidth = (10 * r.life + 2) * (r.lw || 1);
       ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, TAU); ctx.stroke();
     }
     // 물린 자리의 이빨 자국
@@ -2022,35 +2428,44 @@
      ========================================================= */
   const BOT_NAMES = ['꼬물이', '뱀뱀이', '쭉쭉이', '알록이', '스르륵', '반짝이', '도톰이', '쑥쑥이', '말랑이', '콩콩이',
     '방울이', '통통이', '삐약이', '하늘이', '바다', '초코', '젤리', '쿠키', '망고', '두부', '구름이', '번개'];
-  const GROW_TIME = 90, DUEL_TIME = 30, STAGE_BOTS = 36;
-  const stagePower = (n) => 20 * Math.pow(1.3, n - 1);
+  const GROW_TIME = 90, DUEL_TIME = 30, MAX_STAGE = 100;
+  // 25스테이지까지는 가파르게, 그 뒤로는 완만하게 세진다 (100스테이지까지)
+  const stagePower = (n) => n <= 25 ? 20 * Math.pow(1.3, n - 1) : 20 * Math.pow(1.3, 24) * Math.pow(1.1, n - 25);
+  // 경기장 배율: 뱀 굵기가 1스테이지의 몇 배인지
+  const stageScale = (n) => Math.max(1, E.widthOf(stagePower(n)) / E.widthOf(20));
+  // 스테이지가 오를수록 봇 수는 조금 줄여서 화면이 북적이지 않게
+  const stageBots = (n) => Math.round(36 - 12 * Math.min(1, (n - 1) / 40));
   // 초반 스테이지는 보스가 약하고, 15스테이지쯤부터 본래 세기
   const bossLevel = (n) => Math.round(stagePower(n) * (2 + 2.5 * Math.min(1, (n - 1) / 14)));
 
   function startStage() {
-    const stage = save.stage;
-    const P = stagePower(stage);
-    const fv = Math.max(1, Math.round(P / 60));
-    const world = new E.World({ radius: 3120, foodTarget: 940, foodValue: fv, skinEvery: 18, giftMax: 2, itemTarget: 3, itemEvery: 12 });
+    const stage = Math.min(MAX_STAGE, save.stage);
+    const P = stagePower(stage), sc = stageScale(stage);
+    // 뱀이 커진 만큼 경기장을 넓히고(굵기보다 조금 더), 이동 속도도 올린다
+    const radius = Math.round(3120 * Math.pow(sc, 1.25)), spd = Math.pow(sc, 0.7);
+    // 먹이 개수는 성능 때문에 상한을 두고, 모자란 만큼 먹이 하나의 값을 키운다
+    const want = 940 * Math.pow(sc, 1.1), foodTarget = Math.round(Math.min(2600, want));
+    const fv = Math.max(1, Math.round(P / 60 * (want / foodTarget) * Math.pow(sc, -0.3)));
+    const world = new E.World({ radius, scale: sc, foodTarget, foodValue: fv, skinEvery: 18, giftMax: 2, itemTarget: 3 + Math.floor(sc / 3), itemEvery: 12 });
     let lv0 = startLevel();
     let boosted = false;
     if (save.autoBoost && save.inv.boost > 0) { save.inv.boost--; persist(); lv0 = lv0 * 2 + 10; boosted = true; }
-    const playerOpts = { name: '나', skin: save.skin, isHuman: true, speed: 261 * (1 + 0.03 * save.up.speed), foodMul: foodMulOf() };
+    const playerOpts = { name: '나', skin: save.skin, isHuman: true, speed: 261 * spd * (1 + 0.03 * save.up.speed), foodMul: foodMulOf() };
     const player = world.addSnake(Object.assign({ level: lv0, x: 0, y: 0 }, playerOpts));
     game = {
       playerOpts, lastEvo: evoOf(lv0), reviveWait: 0,
-      mode: 'stage', stage, P, fv, world, player, phase: 'grow', time: GROW_TIME, elapsed: 0,
+      mode: 'stage', stage, P, fv, sc, spd, bots: stageBots(stage), world, player, phase: 'grow', time: GROW_TIME, elapsed: 0,
       coins: 0, botT: 0, boss: null, ending: 0, endInfo: null, myId: player.id, killer: 0, gifts: 0,
     };
-    for (let i = 0; i < STAGE_BOTS; i++) spawnStageBot();
+    for (let i = 0; i < game.bots; i++) spawnStageBot();
     world.takeDelta();
     cam.x = 0; cam.y = 0; cam.z = 1;
-    parts = []; floats = []; rings = [];
+    parts = []; floats = []; rings = []; severs = []; splats = []; gulps.clear(); cutAt.clear();
     showHud(true);
     $('mini').classList.remove('hidden');
     $('respawnBox').classList.add('hidden');
     $('pauseBtn').classList.remove('hidden');
-    banner(`STAGE ${stage}`, `보스 Lv.${fmtN(bossLevel(stage))} 보다 커지세요!`, 2200);
+    banner(stage === MAX_STAGE ? `🏁 최종 STAGE ${stage}` : `STAGE ${stage}`, `보스 Lv.${fmtN(bossLevel(stage))} 보다 커지세요!`, 2200);
     if (boosted) setTimeout(() => toast(`🚀 시작 부스트! Lv.${Math.floor(lv0)}에서 시작해요`, 1800), 600);
     renderItemBtns();
   }
@@ -2059,12 +2474,12 @@
     const g = game, w = g.world;
     const cap = g.P * (0.12 + 0.75 * Math.min(1, g.elapsed / GROW_TIME));
     const level = Math.max(1, cap * (0.15 + 0.85 * Math.pow(Math.random(), 1.4)));
-    const p = w.spawnPoint(700, g.player);
+    const p = w.spawnPoint(700 * g.sc, g.player);
     const used = new Set(w.snakes.map((s) => s.name));
     const names = BOT_NAMES.filter((n) => !used.has(n));
     w.addSnake({
       name: names[randInt(0, names.length - 1)] || '뱀', skin: botSkin(),
-      isBot: true, x: p.x, y: p.y, level, speed: rand(230, 250),
+      isBot: true, x: p.x, y: p.y, level, speed: rand(230, 250) * g.spd,
       aggro: clamp(0.3 + g.stage * 0.03, 0.3, 0.85), humanBias: 60, foodMul: 0.7,
     });
   }
@@ -2078,21 +2493,21 @@
     const bossSkin = g.stage % 5 === 0 ? 'bossdragon' : g.stage % 5 === 3 ? 'bossshark' : 'boss';
     const bossName = g.stage % 5 === 0 ? '보스 용' : g.stage % 5 === 3 ? '보스 상어' : '보스';
     // 철로 위 먹이 (보스 레벨의 절반쯤을 둘이 나눠 먹는다) + 아이템 몇 개
-    const foods = [];
-    const n = Math.floor((TRACK - 520) / 50);
+    const foods = [], sc = g.sc || 1, TR = TRACK * sc;
+    const n = Math.floor((TR - 520 * sc) / (50 * sc));
     const orbV = Math.max(1, bl * 0.55 / n);
-    for (let i = 0; i < n; i++) foods.push({ id: i + 1, x: -TRACK / 2 + 260 + i * 50, v: orbV, k: 0 });
+    for (let i = 0; i < n; i++) foods.push({ id: i + 1, x: -TR / 2 + 260 * sc + i * 50 * sc, v: orbV, k: 0 });
     const kinds = [7, 3, 4, 7];
     kinds.forEach((k, i) => {
-      const x = -TRACK / 2 + 500 + (i + rand(0.2, 0.8)) * ((TRACK - 1000) / kinds.length);
+      const x = -TR / 2 + 500 * sc + (i + rand(0.2, 0.8)) * ((TR - 1000 * sc) / kinds.length);
       foods.push({ id: 1000 + i, x, v: 0, k });
     });
     g.phase = 'clash';
     g.clash = {
       state: 'ready', count: 3.2, lastN: 0, t: 0, fxT: 0, hold: false, boost: 0, bBoost: 0.3, spdT: 0, shieldT: 0, pShield: false,
-      cx: 0, orbV, foods,
-      p: { x: -TRACK / 2 + 120, level: g.player.level, start: g.player.level },
-      b: { x: TRACK / 2 - 120, level: bl, skin: bossSkin, name: bossName },
+      cx: 0, orbV, foods, track: TR, sc,
+      p: { x: -TR / 2 + 120 * sc, level: g.player.level, start: g.player.level },
+      b: { x: TR / 2 - 120 * sc, level: bl, skin: bossSkin, name: bossName },
     };
     g.boss = { level: bl };
     cam.x = 0; cam.y = 0;
@@ -2149,9 +2564,9 @@
     }
     if (c.state === 'run') {
       if (c.spdT > 0) c.spdT -= dt;
-      const sp = 330 * (c.hold ? 1.75 : 1) * (c.spdT > 0 ? 1.5 : 1);
+      const sp = 330 * c.sc * (c.hold ? 1.75 : 1) * (c.spdT > 0 ? 1.5 : 1);
       c.p.x += sp * dt;
-      c.b.x -= 310 * dt;
+      c.b.x -= 310 * c.sc * dt;
       eatTrack(c);
       g.player.level = c.p.level;
       g.player.best = Math.max(g.player.best, c.p.level);
@@ -2173,7 +2588,7 @@
     const P = c.p.level * (1 + c.boost), B = c.b.level * (1 + c.bBoost);
     c.p.level -= 0.22 * B * dt * (c.shieldT > 0 ? 0 : c.pShield ? 0.6 : 1);
     c.b.level -= 0.22 * P * dt;
-    c.cx += (P - B) / (P + B) * 240 * dt;
+    c.cx += (P - B) / (P + B) * 240 * c.sc * dt;
     c.p.x = c.cx - headR(c.p.level);
     c.b.x = c.cx + headR(c.b.level);
     // 부딪히는 곳에서 불꽃과 부서지는 마디 조각
@@ -2182,8 +2597,8 @@
       c.fxT = 0.04;
       const pc = segColor(skinOf(save.skin), 1), bc = segColor(skinOf(c.b.skin), 1);
       for (let k = 0; k < 4; k++) {
-        const a = rand(-Math.PI, Math.PI), sp = rand(200, 520);
-        parts.push({ x: c.cx, y: rand(-20, 20), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45, max: 0.45, color: ['#fff3bf', '#ffd43b', '#ff922b', pc, bc][k % 5], s: rand(5, 10) });
+        const a = rand(-Math.PI, Math.PI), sp = rand(200, 520) * FXS;
+        parts.push({ x: c.cx, y: rand(-20, 20) * FXS, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.45, max: 0.45, color: ['#fff3bf', '#ffd43b', '#ff922b', pc, bc][k % 5], s: rand(5, 10) * FXS });
       }
     }
     shake = Math.max(shake, 0.07);
@@ -2221,8 +2636,8 @@
         latch: c.state === 'push' };
     };
     return {
-      clash: true, R: TRACK, fv: c.orbV, now: T,
-      half: Math.max(E.widthOf(c.p.level), E.widthOf(c.b.level)) * 1.3 + 40,
+      clash: true, R: c.track, sc: c.sc, fv: c.orbV, now: T,
+      half: Math.max(E.widthOf(c.p.level), E.widthOf(c.b.level)) * 1.3 + 40 * c.sc,
       foods: c.foods.filter((f) => !f.eaten).map((f) => ({ id: f.id, x: f.x, y: 0, v: f.k ? 0 : f.v, k: f.k })),
       snakes: [mk(c.p, 1, g.player.id, true, save.skin, '나'), mk(c.b, -1, -7, false, c.b.skin, c.b.name)],
     };
@@ -2232,8 +2647,8 @@
     const c = game.clash;
     const mid = (c.p.x + c.b.x) / 2;
     const wmax = E.widthOf(Math.max(c.p.level, c.b.level));
-    const span = Math.max(800, (c.b.x - c.p.x) + 600 + wmax * 8);
-    const z = clamp(Math.min(VW / span, VH / (wmax * 10 + 300)), 0.1, 1.1);
+    const span = Math.max(800 * c.sc, (c.b.x - c.p.x) + 600 * c.sc + wmax * 8);
+    const z = clamp(Math.min(VW / span, VH / (wmax * 10 + 300 * c.sc)), 0.005, 1.1);
     const k = 1 - Math.pow(0.002, dt);
     cam.x += (mid - cam.x) * k;
     cam.y += (0 - cam.y) * k;
@@ -2249,14 +2664,14 @@
     const step = Math.max(60, half * 0.5);
     for (let x = Math.max(-L, Math.floor(vx0 / step) * step); x < Math.min(L, vx1); x += step) ctx.fillRect(x, -half, step * 0.22, half * 2);
     for (const y of [-half, half]) {
-      ctx.strokeStyle = 'rgba(102,217,232,0.45)'; ctx.lineWidth = 16;
+      ctx.strokeStyle = 'rgba(102,217,232,0.45)'; ctx.lineWidth = 16 * FXS;
       ctx.beginPath(); ctx.moveTo(-L, y); ctx.lineTo(L, y); ctx.stroke();
-      ctx.strokeStyle = '#e3fafc'; ctx.lineWidth = 4;
+      ctx.strokeStyle = '#e3fafc'; ctx.lineWidth = 4 * FXS;
       ctx.beginPath(); ctx.moveTo(-L, y); ctx.lineTo(L, y); ctx.stroke();
     }
     for (const x of [-L, L]) {
       ctx.fillStyle = 'rgba(190,75,219,0.6)';
-      ctx.fillRect(x - 12, -half - 20, 24, half * 2 + 40);
+      ctx.fillRect(x - 12 * FXS, -half - 20 * FXS, 24 * FXS, half * 2 + 40 * FXS);
     }
   }
 
@@ -2264,7 +2679,7 @@
     const g = game, w = g.world;
     if (g.phase === 'clash') return clashView();
     return {
-      R: w.R, fv: g.fv, now: w.time, foods: Array.from(w.foods.values()),
+      R: w.R, sc: g.sc, fv: g.fv, now: w.time, foods: Array.from(w.foods.values()),
       snakes: w.snakes.map((s) => ({
         id: s.id, x: s.x, y: s.y, dir: s.dir, level: s.level, body: s.body, skin: s.skin,
         name: s.name, me: s === g.player, boss: s.isBoss, latch: !!s.latch, dying: !!s.dying, fx: w.flags(s),
@@ -2316,7 +2731,7 @@
       g.botT -= dt;
       if (g.botT <= 0) {
         g.botT = 1.2;
-        if (w.snakes.filter((s) => s.isBot && !s.dying).length < STAGE_BOTS) spawnStageBot();
+        if (w.snakes.filter((s) => s.isBot && !s.dying).length < g.bots) spawnStageBot();
       }
       if (g.time <= 0) startDuel();
     }
@@ -2372,18 +2787,47 @@
     let earned = g.coins + Math.floor(g.player.best / 10);
     if (win) earned += 25 + g.stage * 10;
     save.coins += earned;
-    if (win) save.stage = g.stage + 1;
+    const allClear = win && g.stage >= MAX_STAGE;
+    if (win) save.stage = Math.min(MAX_STAGE, g.stage + 1);
+    const xp = grantXp(save.skin, 30 + Math.floor(Math.sqrt(g.player.best) * 5) + (win ? 50 + g.stage * 10 : 0));
     persist();
     game = null;
     showHud(false);
     $('rEmoji').textContent = win ? '🏆' : '😵';
-    $('rTitle').textContent = win ? `STAGE ${g.stage} 클리어!` : '아쉬워요!';
+    $('rTitle').textContent = allClear ? `🎉 STAGE ${MAX_STAGE} 올클리어!` : win ? `STAGE ${g.stage} 클리어!` : '아쉬워요!';
     $('rSub').textContent = `${msg} · 최고 Lv.${Math.floor(g.player.best)}`;
     $('rRank').innerHTML = '';
     $('rCoin').textContent = `🪙 +${earned}`;
-    $('rMain').textContent = win ? '다음 스테이지 ▶' : '다시 도전 ↻';
+    $('rMain').textContent = allClear ? `STAGE ${MAX_STAGE} 다시 ↻` : win ? '다음 스테이지 ▶' : '다시 도전 ↻';
     resultAction = startStage;
-    openGifts(g.gifts || 0, () => show('result'));
+    showXpResult(xp);
+    openGifts(g.gifts || 0, () => showEvolution(xp, () => show('result')));
+  }
+
+  function showXpResult(xp) {
+    const s = skinOf(xp.id);
+    $('rExp').innerHTML = `${esc(s.name)} <b>EXP +${xp.gained}</b>`
+      + (xp.to > xp.from ? ` · <span class="up">⬆️ Lv.${xp.from} → Lv.${xp.to}!</span>` : ` · Lv.${xp.to}`)
+      + xpBarHtml(xp.id);
+    if (xp.to > xp.from) setTimeout(() => { beep(880, 0.12, 'triangle', 0.08); setTimeout(() => beep(1320, 0.18, 'triangle', 0.08), 110); }, 300);
+  }
+
+  // 진화 연출: 이전 모습 → 새 모습 (진화 단계가 바뀌었을 때만)
+  function showEvolution(r, done) {
+    if (!r || r.formTo <= r.formFrom) { done(); return; }
+    const s = skinOf(r.id), f = FORMS[r.formTo];
+    $('evoSub').textContent = `「${s.name}」 Lv.${r.to} — ${FORMS[r.formFrom].nm} → ${f.nm}`;
+    $('evoDesc').textContent = `✨ ${f.ds}! 게임에서도 이 모습으로 등장해요`;
+    previewSnake($('evoA'), s, 220, 132, 2, r.formFrom);
+    show('evoOv');
+    const anim = () => {
+      if ($('evoOv').classList.contains('hidden')) return;
+      previewSnake($('evoB'), s, 220, 132, 2, r.formTo);
+      requestAnimationFrame(anim);
+    };
+    anim();
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, i === 3 ? 0.3 : 0.12, 'triangle', 0.08), i * 130));
+    $('evoOk').onclick = () => { $('evoOk').onclick = null; done(); };
   }
 
   function openGifts(count, done) {
@@ -2397,9 +2841,12 @@
         const own = save.skins.includes(s.id), R = RARITY[s.rare];
         return `<button class="gcard" data-id="${s.id}" style="border-color:${R.col}"><canvas width="200" height="140"></canvas>
           ${esc(s.name)}<br><span class="rar" style="background:${R.col}">${R.nm}</span>
-          <span class="own">${own ? (skinLv(s.id) < R.maxLv ? `이미 있음 → Lv.${skinLv(s.id) + 1}로 레벨업!` : '최대 레벨 → 🪙 +50') : '✨ NEW'}</span></button>`;
+          <span class="own">${own ? (skinLv(s.id) < R.maxLv ? `보유 중 ⬆️ Lv.${skinLv(s.id)} → ${skinLv(s.id) + 1}` : '최대 레벨 → 🪙 +50') : '✨ NEW'}</span></button>`;
       }).join('');
-      $('gifts').querySelectorAll('.gcard').forEach((b) => previewSnake(b.querySelector('canvas'), skinOf(b.dataset.id), 200, 140));
+      $('gifts').querySelectorAll('.gcard').forEach((b) => {
+        const id = b.dataset.id;
+        previewSnake(b.querySelector('canvas'), skinOf(id), 200, 140, 2, save.skins.includes(id) ? formOf(id) : 0);
+      });
       show('giftOv');
       beep(520, 0.1, 'triangle', 0.07); setTimeout(() => beep(780, 0.12, 'triangle', 0.07), 120);
       $('gifts').onclick = (e) => {
@@ -2407,27 +2854,30 @@
         if (!b) return;
         $('gifts').onclick = null;
         const s = skinOf(b.dataset.id);
+        let evo = null;
+        // 이미 가진 캐릭터는 중복 지급하지 않고 레벨을 올려준다
         if (save.skins.includes(s.id)) {
-          if (skinLv(s.id) < RARITY[s.rare].maxLv) { save.skinLv[s.id] = skinLv(s.id) + 1; toast(`⬆️ 「${s.name}」 Lv.${skinLv(s.id)}!`, 1800); }
+          const lv = skinLv(s.id);
+          if (lv < RARITY[s.rare].maxLv) { evo = addSkinLv(s.id, 1); toast(`⬆️ 「${s.name}」 중복 획득! Lv.${lv} → Lv.${lv + 1}`, 1800); }
           else { save.coins += 50; toast(`「${s.name}」은(는) 최대 레벨이라 🪙 50을 받았어요`, 1800); }
         } else { save.skins.push(s.id); toast(`🎉 「${s.name}」 획득! 캐릭터 메뉴에서 바꿀 수 있어요`, 2000); }
         persist();
         beep(880, 0.15, 'triangle', 0.09); setTimeout(() => beep(1320, 0.2, 'triangle', 0.08), 120);
         left--;
-        setTimeout(next, 450);
+        setTimeout(() => showEvolution(evo, next), 450);
       };
     };
     next();
   }
 
-  function previewSnake(cvs, skin, W, H, evo) {
+  function previewSnake(cvs, skin, W, H, evo, form) {
     const c = cvs.getContext('2d');
     c.clearRect(0, 0, W, H);
     const pts = [];
     const len = Math.floor(W / 9);
     for (let i = 0; i < len; i++) pts.push({ x: W * 0.78 - i * 7.5, y: H * 0.5 + Math.sin(i * 0.38) * H * 0.18 });
     const dir = Math.atan2(pts[0].y - pts[1].y, pts[0].x - pts[1].x);
-    drawSnake(c, pts, Math.min(30, H * 0.22), skin, dir, { evo: evo === undefined ? 2 : evo });
+    drawSnake(c, pts, Math.min(30, H * (form >= 5 ? 0.17 : 0.22)), skin, dir, { evo: evo === undefined ? 2 : evo, form });
   }
 
   /* =========================================================
@@ -2505,7 +2955,7 @@
       kills: 0, killer: 0, priv: m.priv, lastSent: 0, lastAng: null, view: null, best: 5, gifts: 0, lastEvo: -1,
     };
     pushSnap(Date.now(), m.sn);
-    parts = []; floats = [];
+    parts = []; floats = []; severs = []; splats = []; gulps.clear(); cutAt.clear();
     const me = m.sn.find((s) => s[0] === m.you);
     if (me) { cam.x = me[1]; cam.y = me[2]; }
     showHud(true);
@@ -2606,7 +3056,10 @@
     const myRank = m.rank.findIndex((r) => r.cid === net.cid);
     const place = myRank + 1;
     const earned = place === 1 ? 40 : place === 2 ? 25 : place === 3 ? 18 : 8 + Math.min(20, g.kills * 2);
-    save.coins += earned; persist();
+    save.coins += earned;
+    const xp = grantXp(save.skin, 30 + Math.floor(Math.sqrt(g.best) * 5) + g.kills * 8 + (place === 1 ? 80 : place === 2 ? 50 : place === 3 ? 30 : 0));
+    persist();
+    showXpResult(xp);
     $('rEmoji').textContent = place === 1 ? '🏆' : place > 0 && place <= 3 ? '🥈' : '🐍';
     $('rTitle').textContent = place === 1 ? '우승!' : place > 0 ? `${place}등!` : '경기 종료';
     $('rSub').textContent = `최고 Lv.${Math.floor(g.best)} · 꿀꺽 ${g.kills}마리`;
@@ -2620,13 +3073,13 @@
       $('rMain').textContent = '한 판 더 ⚡';
       resultAction = () => { hideAll(); netSend({ t: 'quick' }); toast('상대를 찾는 중…', 1500); };
     }
-    openGifts(g.gifts || 0, () => show('result'));
+    openGifts(g.gifts || 0, () => showEvolution(xp, () => show('result')));
   }
 
   /* =========================================================
      화면 전환
      ========================================================= */
-  const OVERLAYS = ['menu', 'skinsOv', 'onlineOv', 'roomOv', 'result', 'pause', 'giftOv', 'shopOv', 'reviveOv'];
+  const OVERLAYS = ['menu', 'skinsOv', 'onlineOv', 'roomOv', 'result', 'pause', 'giftOv', 'shopOv', 'reviveOv', 'evoOv'];
   function hideAll() { OVERLAYS.forEach((id) => $(id).classList.add('hidden')); }
   function show(id) { hideAll(); $(id).classList.remove('hidden'); }
   function showHud(on) { $('hud').classList.toggle('hidden', !on); if (on) hideAll(); }
@@ -2661,7 +3114,7 @@
   }
 
   function renderMenu() {
-    $('mStage').textContent = `STAGE ${save.stage}`;
+    $('mStage').textContent = `STAGE ${Math.min(MAX_STAGE, save.stage)} / ${MAX_STAGE}`;
     $('mCoin').textContent = `🪙 ${save.coins}`;
     $('mStart').textContent = `시작 Lv ${fmtN(startLevel())}`;
     $('soundBtn').textContent = save.sound ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐';
@@ -2681,7 +3134,7 @@
     c.clearRect(0, 0, 440, 140);
     const pts = [];
     for (let i = 0; i < 34; i++) pts.push({ x: 380 - i * 9.5, y: 70 + Math.sin(i * 0.32) * 26 });
-    drawSnake(c, pts, 30, skinOf(save.skin), Math.atan2(pts[0].y - pts[1].y, pts[0].x - pts[1].x), { evo: 4 });
+    drawSnake(c, pts, 30, skinOf(save.skin), Math.atan2(pts[0].y - pts[1].y, pts[0].x - pts[1].x), { evo: 4, form: formOf(save.skin) });
   }
 
   function renderSkins() {
@@ -2695,24 +3148,31 @@
     $('skins').querySelectorAll('.skin').forEach((b) => {
       const s = skinOf(b.dataset.id), own = save.skins.includes(s.id);
       const cvs = b.querySelector('canvas');
-      if (own) previewSnake(cvs, s, 200, 108);
+      if (own) previewSnake(cvs, s, 200, 108, 2, formOf(s.id));
       else { cvs.getContext('2d').globalAlpha = 0.45; previewSnake(cvs, { base: '#3a3f47', pat: 'plain', eye: '#5c636a' }, 200, 108); }
     });
   }
 
   function renderSkinInfo() {
     const s = skinOf(save.skin), R = RARITY[s.rare], lv = skinLv(s.id), b = skinBonus(s.id);
-    const isMax = lv >= R.maxLv, cost = skinCost(s.id);
+    const isMax = lv >= R.maxLv, cost = skinCost(s.id), fm = formOf(s.id);
     $('skinInfo').innerHTML = `<canvas width="260" height="156"></canvas><div>
       <div class="nm">${esc(s.name)} <span style="color:${R.col};font-size:13px">${R.nm} ${KIND_NM[s.kind]}</span></div>
-      <div class="meta">Lv.${lv} / ${R.maxLv}<br>보너스: 시작 레벨 +${b.start} · 먹이 +${b.food}%</div>
+      <div class="meta">Lv.${lv} / ${R.maxLv} · <span class="form">진화: ${FORMS[fm].nm}</span>${xpBarHtml(s.id)}
+        보너스: 시작 레벨 +${b.start} · 먹이 +${b.food}%<br>${fm < FORMS.length - 1 ? `다음 진화: Lv.${formLv(s.id, fm + 1)} 「${FORMS[fm + 1].nm}」` : '👑 최종 진화 완료!'}</div>
       <button class="lvup ${isMax || save.coins < cost ? 'cant' : ''}" id="skinLvUp">${isMax ? '최대 레벨' : '⬆️ 레벨업 🪙 ' + cost}</button></div>`;
-    previewSnake($('skinInfo').querySelector('canvas'), s, 260, 156, 4);
+    previewSnake($('skinInfo').querySelector('canvas'), s, 260, 156, 4, fm);
+    // 진화 단계 미리보기 (아직 못 간 단계는 흐리게)
+    $('skinForms').innerHTML = FORMS.map((f, k) => `<div class="${k === fm ? 'on' : k > fm ? 'lock' : ''}"><canvas width="120" height="68"></canvas>
+      ${k ? 'Lv.' + formLv(s.id, k) : '기본'}</div>`).join('');
+    $('skinForms').querySelectorAll('canvas').forEach((cv, k) => previewSnake(cv, s, 120, 68, 2, k));
     $('skinLvUp').onclick = () => {
       if (isMax) return;
       if (save.coins < cost) { toast('코인이 부족해요 🪙', 1200); return; }
-      save.coins -= cost; save.skinLv[s.id] = lv + 1; persist();
+      save.coins -= cost;
+      const r = addSkinLv(s.id, 1); persist();
       renderSkins();
+      showEvolution(r, () => { renderSkins(); show('skinsOv'); });
       toast(`⬆️ 「${s.name}」 Lv.${lv + 1}! 시작 레벨·먹이 효율이 올랐어요`, 1600);
       beep(880, 0.12, 'triangle', 0.08); setTimeout(() => beep(1320, 0.15, 'triangle', 0.08), 100);
     };
@@ -2964,6 +3424,7 @@
         snakes: demo.snakes.map((s) => ({ id: s.id, x: s.x, y: s.y, dir: s.dir, level: s.level, body: s.body, skin: s.skin, name: s.name, latch: !!s.latch, dying: !!s.dying, fx: demo.flags(s) })) };
     }
     if (game && view) checkEvolve(view);
+    if (!paused) updateSevers(dt);
     render(view);
     requestAnimationFrame(loop);
   }
