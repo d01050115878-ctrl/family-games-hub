@@ -408,11 +408,12 @@
     B.biteT = BITE_COOL;
     B.body = samplePath(tr, lengthOf(B.level), widthOf(B.level) * 0.45);
     this.grow(A, lost * BITE_GAIN);
-    // 화면에서 입으로 빨려 들어갈 토막 모양 (점 수를 줄여서 보낸다)
+    // 화면에서 뚝 떨어져 나갔다가 입으로 빨려 들어갈 토막 모양 (점 수를 줄여서 보낸다)
     const segs = piece.length >> 1, st = Math.max(1, Math.ceil(segs / 24)) * 2, p = [];
     for (let i = 0; i < piece.length; i += st) p.push(Math.round(piece[i]), Math.round(piece[i + 1]));
+    if ((piece.length - 2) % st) p.push(Math.round(piece[piece.length - 2]), Math.round(piece[piece.length - 1]));
     this.events.push({ e: 'part', a: A.id, b: B.id, x: Math.round(piece[0]), y: Math.round(piece[1]),
-      w: Math.round(widthOf(lv) * 10) / 10, n: Math.round(lost * BITE_GAIN * 10) / 10, p });
+      w: Math.round(widthOf(lv) * 10) / 10, keep: Math.round(keep * 100) / 100, n: Math.round(lost * BITE_GAIN * 10) / 10, p });
   };
 
   W.swallow = function (A, B) {
