@@ -66,6 +66,8 @@
   }
   // 먹힌 뱀이 머리부터 상대 입속으로 다 빨려 들어가는 시간
   const DIE_TIME = 0.9;
+  // 레벨 상한 (원작처럼 숫자가 끝없이 커지지 않게)
+  const MAX_LEVEL = 9999;
   // 몸 앞쪽 이 비율까지는 머리로 친다 (여기에 부딪혀야 먹고 먹힌다)
   const HEAD_ZONE = 0.15;
   // 몸통을 먹었을 때: 먹은 양 중 얻는 비율, 같은 뱀을 다시 물 수 있을 때까지의 시간
@@ -176,7 +178,7 @@
 
   W.addSnake = function (o) {
     const id = this.seq++;
-    const level = Math.max(1, o.level || 1);
+    const level = Math.min(MAX_LEVEL, Math.max(1, o.level || 1));
     const dir = o.dir !== undefined ? o.dir : rand(0, TAU);
     const s = {
       id, name: o.name || '뱀', skin: o.skin || 'basic', level, best: level,
@@ -343,7 +345,7 @@
   };
 
   W.grow = function (s, v) {
-    s.level += v;
+    s.level = Math.min(MAX_LEVEL, s.level + v);
     if (s.level > s.best) s.best = s.level;
   };
 
@@ -545,5 +547,5 @@
     return r;
   };
 
-  return { World, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE, STAR_FOODS, DIE_TIME, SKIN_TIERS, SKIN_TIER, SKIN_MAX_LV, skinBonus };
+  return { World, MAX_LEVEL, widthOf, lengthOf, samplePath, ITEM, MAGNET_RANGE, STAR_FOODS, DIE_TIME, SKIN_TIERS, SKIN_TIER, SKIN_MAX_LV, skinBonus };
 });
