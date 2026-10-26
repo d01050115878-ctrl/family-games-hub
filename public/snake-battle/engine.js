@@ -306,6 +306,8 @@
         this.applyItem(s, f);
       } else {
         this.grow(s, f.v * s.foodMul * dbl);
+        // 사람이 먹을 때만 효과음용 이벤트 (m: 0 보통, 1 큰 먹이, 2 아주 큰 먹이)
+        if (s.isHuman) this.events.push({ e: 'fd', a: s.id, m: f.v >= this.foodValue * 8 ? 2 : f.v >= this.foodValue * 3 ? 1 : 0 });
         if (d2 > r2) this.events.push({ e: 'mg', a: s.id, x: Math.round(f.x), y: Math.round(f.y) });
       }
       this.removeFood(f.id);

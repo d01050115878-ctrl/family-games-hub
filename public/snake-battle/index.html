@@ -162,6 +162,19 @@
   .evo-cv canvas.new { animation: evoGlow 1.2s ease-in-out infinite alternate; }
   @keyframes evoGlow { from { box-shadow: 0 0 6px rgba(177, 151, 252, 0.4); } to { box-shadow: 0 0 22px rgba(255, 224, 102, 0.8); } }
 
+  /* 연속 잡아먹기 콤보 */
+  #combo { position: absolute; left: 12px; top: 104px; min-width: 132px; padding: 6px 12px 8px; border-radius: 16px; text-align: left;
+    background: rgba(40, 12, 8, 0.78); border: 2px solid #ff922b; box-shadow: 0 0 18px rgba(255, 146, 43, 0.45);
+    transition: opacity 0.25s, transform 0.25s; opacity: 0; transform: scale(0.7); transform-origin: left center; }
+  #combo.show { opacity: 1; transform: scale(1); }
+  #combo.pop { animation: comboPop 0.35s ease-out; }
+  @keyframes comboPop { 0% { transform: scale(1.45); } 100% { transform: scale(1); } }
+  #combo .cn { font-size: 26px; color: #ffd43b; text-shadow: 0 2px 0 #7a2b00; line-height: 1.05; }
+  #combo .cn small { font-size: 15px; color: #fff; margin-left: 2px; }
+  #combo .cm { font-size: 14px; color: #ffc078; }
+  #combo .cb { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.15); overflow: hidden; margin-top: 4px; }
+  #combo .cb i { display: block; height: 100%; background: linear-gradient(90deg, #ff6b6b, #ffd43b); border-radius: 999px; }
+
   #toast { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; padding: 10px 20px; border-radius: 16px;
     background: rgba(16, 36, 28, 0.9); border: 1px solid var(--line); pointer-events: none; opacity: 0; transition: opacity 0.3s;
     text-align: center; max-width: 90vw; z-index: 20; }
@@ -173,6 +186,8 @@
     #board { font-size: 12px; min-width: 110px; top: 96px; }
     #mini { width: 96px; height: 96px; }
     #banner .big { font-size: 42px; }
+    #combo { top: 96px; left: 8px; min-width: 110px; padding: 4px 10px 6px; }
+    #combo .cn { font-size: 21px; }
   }
 </style>
 </head>
@@ -190,6 +205,7 @@
   <div id="board"></div>
   <canvas id="mini" width="240" height="240"></canvas>
   <div id="fxBar"></div>
+  <div id="combo"><div class="cn" id="comboN"></div><div class="cm" id="comboM"></div><div class="cb"><i id="comboBar"></i></div></div>
   <div id="clashHint" class="hidden"></div>
   <div id="itemBtns">
     <button data-item="speed" title="스피드 부스트 (1)">⚡<b>0</b></button>
@@ -799,6 +815,45 @@
       o.connect(g).connect(AC.destination);
       o.start(); o.stop(AC.currentTime + dur);
     } catch (e) { /* 오디오 미지원 */ }
+  }
+
+  // 겹쳐 울려도 되는 효과음: [주파수, 시작(초), 길이, 파형, 볼륨, 끝 주파수]
+  function sfx(notes) {
+    if (!save.sound || !audio()) return;
+    try {
+      const t0 = AC.currentTime;
+      for (const [f, at, dur, type = 'sine', vol = 0.06, f2] of notes) {
+        const o = AC.createOscillator(), g = AC.createGain(), a = t0 + at;
+        o.type = type; o.frequency.setValueAtTime(f, a);
+        if (f2) o.frequency.exponentialRampToValueAtTime(f2, a + dur);
+        g.gain.setValueAtTime(0.0001, a);
+        g.gain.linearRampToValueAtTime(vol, a + 0.008);
+        g.gain.exponentialRampToValueAtTime(0.0001, a + dur);
+        o.connect(g).connect(AC.destination);
+        o.start(a); o.stop(a + dur + 0.02);
+      }
+    } catch (e) { /* 오디오 미지원 */ }
+  }
+  // 아이템마다 다른 소리
+  const ITEM_SFX = {
+    2: [[300, 0, 0.28, 'sine', 0.07, 900], [900, 0.14, 0.16, 'triangle', 0.05, 1250]],                            // 자석: 웅~
+    3: [[220, 0, 0.22, 'sawtooth', 0.035, 1500], [1200, 0.12, 0.16, 'triangle', 0.06, 1800]],                      // 번개: 슝!
+    4: [[523, 0, 0.18, 'triangle', 0.07], [784, 0.08, 0.3, 'triangle', 0.07], [1046, 0.16, 0.3, 'sine', 0.04]],   // 방패: 띵~
+    5: [[660, 0, 0.08, 'square', 0.04], [880, 0.07, 0.08, 'square', 0.04], [1320, 0.14, 0.18, 'square', 0.04]],  // 두배: 띠리링
+    6: [[180, 0, 0.35, 'sawtooth', 0.07, 40], [90, 0, 0.45, 'sine', 0.12, 30], [1200, 0.05, 0.2, 'triangle', 0.03, 400]], // 폭탄: 쾅
+    7: [[784, 0, 0.1, 'triangle', 0.06], [988, 0.06, 0.1, 'triangle', 0.06], [1175, 0.12, 0.1, 'triangle', 0.06], [1568, 0.18, 0.25, 'triangle', 0.07]], // 별: 반짝
+    8: [[2093, 0, 0.25, 'sine', 0.04, 1568], [2637, 0.05, 0.3, 'sine', 0.03, 2093], [1760, 0.1, 0.35, 'triangle', 0.03, 1320]], // 얼음: 차르르
+  };
+  // 먹이 먹는 소리: 연달아 먹으면 음이 조금씩 올라간다
+  const foodSnd = { t: -9, chain: 0 };
+  function foodSfx(m) {
+    if (T - foodSnd.t < 0.045 && !m) return;
+    foodSnd.chain = T - foodSnd.t < 0.45 ? Math.min(16, foodSnd.chain + 1) : 0;
+    foodSnd.t = T;
+    const f = 520 * Math.pow(1.045, foodSnd.chain);
+    if (m >= 2) sfx([[f, 0, 0.09, 'sine', 0.07, f * 1.8], [f * 1.5, 0.05, 0.14, 'triangle', 0.06, f * 2.2], [f * 2, 0.11, 0.18, 'sine', 0.04]]);
+    else if (m === 1) sfx([[f, 0, 0.08, 'sine', 0.06, f * 1.7], [f * 1.5, 0.04, 0.1, 'triangle', 0.04]]);
+    else sfx([[f, 0, 0.06, 'sine', 0.045, f * 1.6]]);
   }
 
   /* ---------- 배경음악: 직접 만든 펑키 루프 (Em7 ↔ A9, 112 BPM) ---------- */
@@ -1854,7 +1909,7 @@
           floatText(ev.x, ev.y, `꿀꺽! ${nameOf(ev.b)}`, '#ffd43b');
           beep(520, 0.2, 'triangle', 0.09); setTimeout(() => beep(780, 0.18, 'square', 0.06), 70);
           shake = Math.max(shake, 0.18);
-          if (game.mode === 'stage') game.coins += 2 + Math.floor(Math.log2(ev.lv + 1));
+          if (game.mode === 'stage') addCombo(ev);
           else game.kills++;
         } else if (ev.b === myId) {
           shake = 0.45;
@@ -1912,8 +1967,10 @@
         burst(ev.x, ev.y, info.col, 14);
         if (ev.id === myId) {
           floatText(ev.x, ev.y - 30, `${info.ico} ${info.nm}!`, info.col);
-          beep(880, 0.12, 'triangle', 0.08); setTimeout(() => beep(1320, 0.12, 'triangle', 0.07), 90);
+          sfx(ITEM_SFX[ev.k] || ITEM_SFX[4]);
         }
+      } else if (ev.e === 'fd') {
+        if (ev.a === myId) foodSfx(ev.m);
       } else if (ev.e === 'mg') {
         const p = posOf(ev.a);
         if (p) {
@@ -2433,10 +2490,48 @@
   const stagePower = (n) => n <= 25 ? 20 * Math.pow(1.3, n - 1) : 20 * Math.pow(1.3, 24) * Math.pow(1.1, n - 25);
   // 경기장 배율: 뱀 굵기가 1스테이지의 몇 배인지
   const stageScale = (n) => Math.max(1, E.widthOf(stagePower(n)) / E.widthOf(20));
-  // 스테이지가 오를수록 봇 수는 조금 줄여서 화면이 북적이지 않게
-  const stageBots = (n) => Math.round(36 - 12 * Math.min(1, (n - 1) / 40));
+  // 초반은 상대를 많이, 30스테이지 이후로는 조금씩 줄여서 화면이 북적이지 않게
+  const stageBots = (n) => Math.round(n <= 30 ? 48 : 48 - 16 * Math.min(1, (n - 30) / 30));
   // 초반 스테이지는 보스가 약하고, 15스테이지쯤부터 본래 세기
   const bossLevel = (n) => Math.round(stagePower(n) * (2 + 2.5 * Math.min(1, (n - 1) / 14)));
+
+  // 연속 잡아먹기 콤보: COMBO_TIME 안에 또 먹으면 +1, 배율만큼 레벨·코인을 더 준다
+  const COMBO_TIME = 5;
+  const comboMul = (n) => Math.min(3, 1 + 0.25 * (n - 1));
+  function addCombo(ev) {
+    const g = game;
+    g.combo = g.elapsed - g.comboAt < COMBO_TIME ? g.combo + 1 : 1;
+    g.comboAt = g.elapsed;
+    g.bestCombo = Math.max(g.bestCombo, g.combo);
+    const mul = comboMul(g.combo), base = 2 + Math.floor(Math.log2(ev.lv + 1));
+    const coins = Math.round(base * mul);
+    g.coins += coins;
+    if (g.combo < 2) return;
+    // 엔진이 이미 준 레벨(먹은 뱀의 40%)에 콤보 보너스를 얹는다
+    const p = g.player, bonus = ev.lv * 0.4 * (mul - 1);
+    if (p.alive && !p.dying && bonus > 0) g.world.grow(p, bonus);
+    g.comboCoins += coins - base;
+    const el = $('combo');
+    $('comboN').innerHTML = `🔥 ${g.combo}<small>COMBO</small>`;
+    $('comboM').textContent = `레벨·코인 ×${mul.toFixed(2).replace(/\.?0+$/, '')}`;
+    el.classList.add('show');
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+    floatText(p.x, p.y - E.widthOf(p.level) - 70 * FXS, `${g.combo} COMBO! +${fmtN(bonus)}`, '#ff922b');
+    floats[floats.length - 1].big = true;
+    if (g.combo % 5 === 0) { pang(p.x, p.y, 60); banner(`🔥 ${g.combo} COMBO!`, `레벨·코인 ×${mul.toFixed(2).replace(/\.?0+$/, '')}`, 1100); }
+    // 콤보가 오를수록 높은 음
+    const f = 520 * Math.pow(1.12, Math.min(12, g.combo));
+    setTimeout(() => beep(f, 0.12, 'triangle', 0.08), 150);
+    setTimeout(() => beep(f * 1.5, 0.16, 'triangle', 0.07), 240);
+  }
+  // 콤보 게이지: 남은 시간만큼 줄어든다
+  function updateCombo() {
+    const g = game, el = $('combo');
+    if (!g || g.mode !== 'stage' || g.phase === 'clash' || g.combo < 2) { el.classList.remove('show'); return; }
+    const left = COMBO_TIME - (g.elapsed - g.comboAt);
+    if (left <= 0) { g.combo = 0; el.classList.remove('show'); return; }
+    $('comboBar').style.width = (left / COMBO_TIME * 100).toFixed(1) + '%';
+  }
 
   function startStage() {
     const stage = Math.min(MAX_STAGE, save.stage);
@@ -2456,6 +2551,7 @@
       playerOpts, lastEvo: evoOf(lv0), reviveWait: 0,
       mode: 'stage', stage, P, fv, sc, spd, bots: stageBots(stage), world, player, phase: 'grow', time: GROW_TIME, elapsed: 0,
       coins: 0, botT: 0, boss: null, ending: 0, endInfo: null, myId: player.id, killer: 0, gifts: 0,
+      combo: 0, comboAt: -99, bestCombo: 0, comboCoins: 0,
     };
     for (let i = 0; i < game.bots; i++) spawnStageBot();
     world.takeDelta();
@@ -2747,6 +2843,7 @@
   }
 
   function reviveStage() {
+    if (game) game.combo = 0;
     const g = game, w = g.world;
     if (!g || g.reviveWait <= 0 || save.inv.revive <= 0) return;
     save.inv.revive--; persist();
@@ -2795,7 +2892,8 @@
     showHud(false);
     $('rEmoji').textContent = win ? '🏆' : '😵';
     $('rTitle').textContent = allClear ? `🎉 STAGE ${MAX_STAGE} 올클리어!` : win ? `STAGE ${g.stage} 클리어!` : '아쉬워요!';
-    $('rSub').textContent = `${msg} · 최고 Lv.${Math.floor(g.player.best)}`;
+    $('rSub').textContent = `${msg} · 최고 Lv.${Math.floor(g.player.best)}`
+      + (g.bestCombo >= 2 ? ` · 🔥 최고 ${g.bestCombo}콤보 (보너스 🪙${g.comboCoins})` : '');
     $('rRank').innerHTML = '';
     $('rCoin').textContent = `🪙 +${earned}`;
     $('rMain').textContent = allClear ? `STAGE ${MAX_STAGE} 다시 ↻` : win ? '다음 스테이지 ▶' : '다시 도전 ↻';
@@ -3397,6 +3495,7 @@
     let view = null;
     if (game && game.mode === 'stage') {
       if (!paused) { updateStage(dt); updateFx(dt); }
+      updateCombo();
       if (game) {
         view = stageView();
         if (game.phase === 'clash') clashCamera(dt);
