@@ -996,7 +996,7 @@
   const LIGHT = { x: -0.55, y: -0.83 };
 
   // o: { wave, seed, evo, latch, boss, pulse, hurt, magnet, speed, shield, dbl, slow }
-  const HEAD_SCALE = 1.7;
+  const HEAD_SCALE = 2.1;
   function drawSnake(c, pts, w, skin, dir, o) {
     let n = pts.length;
     if (n < 2) return;
@@ -1024,9 +1024,11 @@
     // 두께: 목은 살짝 가늘고, 꼬리로 갈수록 뾰족하게 (상어는 앞쪽이 통통)
     const rad = new Array(n), ang = new Array(n);
     const tail = Math.max(4, Math.floor(n * (dr ? 0.5 : kind === 'shark' ? 0.62 : 0.42)));
+    // 몸이 짧을수록(머리만 남았을 때) 꼬리를 덜 뾰족하게 → 올챙이처럼 보이지 않게
+    const tip0 = kind === 'shark' ? 0.2 : 0.12, tip = tip0 + (0.8 - tip0) * clamp(1 - (n - 4) / 14, 0, 1);
     for (let i = 0; i < n; i++) {
       const k = n - 1 - i;
-      let v = k < tail && !o.cut ? r * ((kind === 'shark' ? 0.2 : 0.12) + (kind === 'shark' ? 0.8 : 0.88) * Math.pow(k / tail, 0.75)) : r;
+      let v = k < tail && !o.cut ? r * (tip + (1 - tip) * Math.pow(k / tail, 0.75)) : r;
       if (kind === 'shark') v *= 1 + 0.18 * Math.max(0, 1 - i / (n * 0.35));
       else if (i < 3) v *= 0.9 + i * 0.035;
       // 꿀꺽 삼킨 덩어리가 목에서 꼬리 쪽으로 불룩하게 내려간다

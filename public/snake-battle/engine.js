@@ -377,7 +377,8 @@
         // 머리부터 목까지(몸 앞쪽 HEAD_ZONE 비율)는 머리로 친다
         const neck = Math.max(3, Math.ceil(n * HEAD_ZONE));
         let hit = -1;
-        if (Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * 0.95) hit = 0;
+        // 화면의 머리가 몸보다 크게 그려지므로 머리끼리 판정도 넉넉하게
+        if (Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * 1.2) hit = 0;
         else {
           const lim = rA + rB * 0.8, lim2 = lim * lim;
           for (let j = 2; j < n; j++) {
