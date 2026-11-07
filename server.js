@@ -10,7 +10,12 @@ const attachMetaWorldServer = require('./metaworld-server');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(express.static(path.join(__dirname, 'public')));
+// 게임 파일을 고치면 바로 반영되도록 html·js·css는 매번 최신본을 확인하게 한다
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders(res, filePath) {
+    if (/\.(html|js|css)$/.test(filePath)) res.setHeader('Cache-Control', 'no-cache');
+  },
+}));
 app.get('/healthz', (req, res) => res.send('ok'));
 
 const server = http.createServer(app);
