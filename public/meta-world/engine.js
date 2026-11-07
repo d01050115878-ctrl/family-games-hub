@@ -193,6 +193,7 @@
     constructor(seats, opts, io) {
       this.io = io;
       this.aborted = false;
+      this.aiLevel = [0, 1, 2].includes(opts.aiLevel) ? opts.aiLevel : 1; // 컴퓨터 난이도: 0 쉬움, 1 보통, 2 어려움
       this.s = {
         players: seats.map((p, i) => ({
           id: i, name: String(p.name), isAI: !!p.isAI, color: PCOLORS[i], emoji: PEMOJI[i],
@@ -233,13 +234,35 @@
     }
 
     /* ----- 컴퓨터(또는 자리 비운 사람)의 결정 ----- */
+    reserve() { return [250, 150, 90][this.aiLevel]; } // 컴퓨터가 남겨두는 현금
+    // 쉬움 난이도: 대충 결정한다 (undefined면 보통 방식으로)
+    aiEasy(p, req) {
+      const s = this.s;
+      switch (req.kind) {
+        case 'roll': return {};
+        case 'build': {
+          if (Math.random() < 0.45) return null;
+          const t = s.tiles[req.tile];
+          const L = req.from + 1;
+          return cumCost(t, req.from, L) <= p.money - this.reserve() ? L : null;
+        }
+        case 'station': return Math.random() < 0.5 && p.money - req.price >= this.reserve();
+        case 'takeover': return Math.random() < 0.15 && p.money - req.price >= this.reserve() + 100;
+        case 'pick': return req.cands[rnd(req.cands.length)];
+        case 'cardUse': return Math.random() < 0.5 ? 'use' : 'keep';
+        case 'hand': return Math.random() < 0.5 ? 0 : null;
+        case 'defend': return req.toll > p.money ? (req.shield ? 'shield' : 'coupon') : Math.random() < 0.5 ? 'none' : (req.shield ? 'shield' : 'coupon');
+        default: return undefined;
+      }
+    }
     aiAnswer(p, req) {
+      if (this.aiLevel === 0) { const e = this.aiEasy(p, req); if (e !== undefined) return e; }
       const s = this.s;
       switch (req.kind) {
         case 'blackhole': return p.money > 400 ? 'pay' : 'roll';
         case 'build': return this.aiChooseLevel(p, s.tiles[req.tile], req.from, req.maxL);
-        case 'station': return p.money - req.price >= AI_RESERVE;
-        case 'roll': return { target: this.aiDiceTarget(p) };
+        case 'station': return p.money - req.price >= this.reserve();
+        case 'roll': return this.aiLevel === 1 && Math.random() < 0.35 ? {} : { target: this.aiDiceTarget(p) };
         case 'takeover': return this.aiWantsTakeover(p, s.tiles[req.tile], req.price);
         case 'sell': {
           const mine = s.tiles.filter((t) => t.owner === p.id).sort((a, b) => sellValue(a) - sellValue(b));
@@ -266,17 +289,17 @@
       }
     }
     aiChooseLevel(p, t, from, maxL) {
-      for (let L = maxL; L > from; L--) if (cumCost(t, from, L) <= p.money - AI_RESERVE) return L;
+      for (let L = maxL; L > from; L--) if (cumCost(t, from, L) <= p.money - this.reserve()) return L;
       if (from === -1 && levelCost(t, 0) <= p.money - 50) return 0;
       return null;
     }
     aiWantsTakeover(p, t, price) {
-      if (p.money - price < AI_RESERVE) return false;
+      if (p.money - price < this.reserve()) return false;
       if (t.type === 'city') {
         const others = this.s.tiles.filter((x) => x.type === 'city' && x.g === t.g && x !== t);
         if (others.every((x) => x.owner === p.id)) return true;
       }
-      return Math.random() < 0.65;
+      return Math.random() < [0.15, 0.65, 0.9][this.aiLevel];
     }
     // 주사위 조절: 도착했을 때 가장 좋은 칸을 노린다
     aiDiceTarget(p) {
@@ -310,10 +333,10 @@
       for (const t of this.s.tiles) {
         if (t.idx === WARP || t.idx === BLACKHOLE) continue;
         let sc = 0;
-        if (isProp(t) && t.owner === -1 && cityPrice(t) <= p.money - AI_RESERVE) sc = cityPrice(t) + 50;
+        if (isProp(t) && t.owner === -1 && cityPrice(t) <= p.money - this.reserve()) sc = cityPrice(t) + 50;
         else if (t.type === 'city' && t.owner === p.id && t.level < 4) {
           const nxt = t.level === 3 ? 4 : t.level + 1;
-          if (levelCost(t, nxt) <= p.money - AI_RESERVE) sc = cityPrice(t) + 30;
+          if (levelCost(t, nxt) <= p.money - this.reserve()) sc = cityPrice(t) + 30;
         }
         if (sc > bestScore) { bestScore = sc; best = t.idx; }
       }

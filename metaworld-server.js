@@ -31,6 +31,7 @@ class Room {
     this.hostToken = null;
     this.state = 'wait';      // wait | play
     this.maxRounds = 50;
+    this.aiLevel = 1;
     this.game = null;
     this.lastSync = null;
     this.pending = new Map();
@@ -44,7 +45,7 @@ class Room {
 
   info(forToken) {
     return {
-      t: 'room', code: this.code, state: this.state, maxRounds: this.maxRounds,
+      t: 'room', code: this.code, state: this.state, maxRounds: this.maxRounds, aiLevel: this.aiLevel,
       host: this.seatOf(this.hostToken), you: this.seatOf(forToken),
       seats: this.seats.map((s, i) => ({
         name: s.name, ai: s.ai || s.left, online: s.ai ? true : !!(s.ws && s.ws.readyState === 1),
@@ -151,7 +152,7 @@ class Room {
         send(seat.ws, { t: 'ask', id, req });
       }),
     };
-    this.game = new MW.Game(this.seats.map((s) => ({ name: s.name, isAI: s.ai })), { maxRounds: this.maxRounds }, io);
+    this.game = new MW.Game(this.seats.map((s) => ({ name: s.name, isAI: s.ai })), { maxRounds: this.maxRounds, aiLevel: this.aiLevel }, io);
     this.broadcastInfo();
     const g = this.game;
     g.run().catch((err) => console.error('[metaworld] game error', err)).then(() => {
@@ -214,6 +215,9 @@ function handle(c, m) {
       }
       break;
     }
+    case 'aiLevel':
+      if (isHost && r.state === 'wait' && [0, 1, 2].includes(Number(m.v))) { r.aiLevel = Number(m.v); r.broadcastInfo(); }
+      break;
     case 'rounds':
       if (isHost && r.state === 'wait' && [0, 20, 30, 40, 50].includes(Number(m.v))) { r.maxRounds = Number(m.v); r.broadcastInfo(); }
       break;

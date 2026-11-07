@@ -261,6 +261,8 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
     <div id="pRows"></div>
     <div class="row" style="margin:10px 0 16px"><b>라운드 제한</b>
       <select class="f" id="rounds"><option value="20">20라운드</option><option value="30">30라운드</option><option value="40">40라운드</option><option value="50" selected>50라운드</option><option value="0">무제한</option></select>
+      <b style="margin-left:6px">컴퓨터</b>
+      <select class="f" id="aiLevel"><option value="0">😊 쉬움</option><option value="1" selected>🙂 보통</option><option value="2">😈 어려움</option></select>
     </div>
     <div class="row"><button class="btn gold" id="startBtn" style="flex:1;font-size:18px">🚀 게임 시작</button><button class="btn ghost rulesOpen">📖 규칙</button></div>
   </div>
@@ -295,6 +297,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
       <span style="flex:1"></span>
       <b style="font-size:14px">라운드</b>
       <select class="f" id="lbRounds"><option value="20">20</option><option value="30">30</option><option value="40">40</option><option value="50">50</option><option value="0">무제한</option></select>
+      <select class="f" id="lbAi"><option value="0">😊 쉬움</option><option value="1">🙂 보통</option><option value="2">😈 어려움</option></select>
     </div>
     <button class="btn gold" id="lbStart" style="width:100%;font-size:18px">🚀 게임 시작</button>
   </div>
@@ -354,7 +357,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
-<script src="engine.js?v=20261107194151"></script>
+<script src="engine.js?v=20261107194358"></script>
 <script>
 'use strict';
 const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
@@ -1089,7 +1092,7 @@ function startLocal() {
   $('#setup').classList.remove('show');
   renderDie($('#d1'), 1); renderDie($('#d2'), 1);
   const io = { event: handleEvent, sleep, ask: (p, req) => showAsk(p, req) };
-  const game = new MW.Game(seats, { maxRounds: +$('#rounds').value }, io);
+  const game = new MW.Game(seats, { maxRounds: +$('#rounds').value, aiLevel: +$('#aiLevel').value }, io);
   requestAnimationFrame(() => game.run());
 }
 
@@ -1184,6 +1187,7 @@ function renderLobby() {
   $('#lbHost').style.display = isHost ? '' : 'none';
   $('#lbWait').style.display = isHost ? 'none' : '';
   $('#lbRounds').value = String(r.maxRounds);
+  $('#lbAi').value = String(r.aiLevel == null ? 1 : r.aiLevel);
   $('#addBot').disabled = r.seats.length >= 6;
   $('#lbStart').disabled = r.seats.length < 2;
   $('#lbStart').textContent = r.seats.length < 2 ? '2명 이상 모이면 시작할 수 있어요' : `🚀 ${r.seats.length}명으로 게임 시작`;
@@ -1207,6 +1211,7 @@ $('#joinBtn').onclick = () => {
 $('#joinCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#joinBtn').click(); });
 $('#addBot').onclick = () => wsSend({ t: 'addBot' });
 $('#lbRounds').onchange = () => wsSend({ t: 'rounds', v: +$('#lbRounds').value });
+$('#lbAi').onchange = () => wsSend({ t: 'aiLevel', v: +$('#lbAi').value });
 $('#lbStart').onclick = () => wsSend({ t: 'start' });
 $('#lbLeave').onclick = () => { wsSend({ t: 'leave' }); try { history.replaceState(null, '', location.pathname); } catch (e) { } };
 $('#copyLink').onclick = () => {
