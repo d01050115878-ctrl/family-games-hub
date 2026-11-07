@@ -347,7 +347,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
-<script src="engine.js?v=202611071857"></script>
+<script src="engine.js?v=202611071903"></script>
 <script>
 'use strict';
 const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
@@ -719,7 +719,7 @@ function updateTiles() {
     el.querySelector('.bd').textContent = !owned ? '' : t.type === 'city' ? LEVEL_ICONS[t.level] : TOUR_ICONS[Math.min(4, MW.stationCount(S, t.owner))];
     const x2 = owned && MW.setBonus(S, t) === 2;
     el.classList.toggle('setx2', x2);
-    el.querySelector('.tp').innerHTML = owned ? `통행 ${fmt(MW.toll(S, t))}${x2 ? '<span class="x2">×2</span>' : ''}` : fmt(MW.cityPrice(t));
+    el.querySelector('.tp').innerHTML = owned ? `통행 ${fmt(MW.toll(S, t))}${x2 ? '<span class="x2">×2</span>' : ''}` : `땅 ${fmt(MW.cityPrice(t))}`;
   });
 }
 function seatOnline(i) { return mode !== 'online' || !roomInfo || !roomInfo.seats[i] || roomInfo.seats[i].online; }
@@ -766,9 +766,9 @@ function showInfo(i) {
     const sameSet = S.tiles.filter(x => x.type === 'city' && x.g === t.g).map(x => x.name).join(' · ');
     h += `<br><small style="color:var(--muted)">세트: ${sameSet} — 모두 가지면 통행료 ×2</small>`;
     if (MW.isFestival(S, i)) h += '<br>🎉 <b>축제 도시</b> — 통행료 ×2';
-    h += '<table><tr><td>건물</td><td>건설비</td><td>통행료</td><td>인수비</td></tr>';
-    for (let L = 0; L <= 4; L++) h += `<tr><td>${LEVEL_ICONS[L].slice(-2)} ${LEVEL_NAMES[L]}</td><td>${fmt(MW.levelCost(t, L))}</td><td>+${fmt(MW.elemToll(t, L))}</td><td>${L === 4 ? '불가' : '+' + fmt(MW.levelCost(t, L) * 2)}</td></tr>`;
-    h += '</table><small style="color:var(--muted)">통행료·인수비는 지어진 건물 것을 모두 더해요.</small>';
+    h += '<table><tr><td>여기까지 지으면</td><td>건설비</td><td><b>통행료</b></td><td>인수비</td></tr>';
+    for (let L = 0; L <= 4; L++) h += `<tr><td>${LEVEL_ICONS[L].slice(-2)} ${LEVEL_NAMES[L]}</td><td>${fmt(MW.levelCost(t, L))}</td><td><b>${fmt(MW.tollAt(S, t, L))}</b></td><td>${L === 4 ? '불가' : fmt(MW.cumCost(t, -1, L) * 2)}</td></tr>`;
+    h += '</table><small style="color:var(--muted)">통행료·인수비는 그 단계까지 지은 건물 것을 모두 더한 금액이에요. (세트·축제면 ×2)</small>';
   } else if (t.type === 'station') {
     h += `<br>가격 ${fmt(t.price)} · 통행료(가진 관광지 수): ${[1, 2, 3, 4].map(c => `${TOUR_ICONS[c]}${c}곳 ${Math.round(t.toll * TOUR_MULT[c])}`).join(' / ')}<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
     h += `<br><span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · 관광지 4곳을 모두 가지면 관광지 독점 승리!`;
