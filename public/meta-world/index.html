@@ -350,7 +350,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
 <script src="engine.js"></script>
 <script>
 'use strict';
-const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_TOLLS, TOUR_ICONS } = MW;
+const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
 
 /* ================== 캐릭터 (직접 그린 차량) ================== */
 const WHEELS = (xs, y = 33, r = 5.5) => xs.map(x => `<circle cx="${x}" cy="${y}" r="${r}" fill="#212529"/><circle cx="${x}" cy="${y}" r="${r * 0.42}" fill="#adb5bd"/>`).join('');
@@ -560,7 +560,7 @@ function playFx(ev) {
   const vis = fxOn;
   switch (ev.name) {
     case 'toll': {
-      const big = ev.amount >= 60, mega = ev.amount >= 160;
+      const big = ev.amount >= 100, mega = ev.amount >= 250;
       SND.toll(big, mega); vibrate(mega ? [120, 60, 220] : 140, ev.pid);
       if (!vis) break;
       flash(mega ? '#ff1e1e' : '#ff4040', mega ? 750 : 480, mega ? 0.6 : 0.45);
@@ -770,7 +770,7 @@ function showInfo(i) {
     for (let L = 0; L <= 4; L++) h += `<tr><td>${LEVEL_ICONS[L].slice(-2)} ${LEVEL_NAMES[L]}</td><td>${fmt(MW.levelCost(t, L))}</td><td>+${fmt(MW.elemToll(t, L))}</td><td>${L === 4 ? '불가' : '+' + fmt(MW.levelCost(t, L) * 2)}</td></tr>`;
     h += '</table><small style="color:var(--muted)">통행료·인수비는 지어진 건물 것을 모두 더해요.</small>';
   } else if (t.type === 'station') {
-    h += `<br>가격 ${fmt(t.price)} · 통행료(가진 관광지 수): ${TOUR_TOLLS.slice(1).map((v, k) => `${TOUR_ICONS[k + 1]}${k + 1}곳 ${v}`).join(' / ')}<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
+    h += `<br>가격 ${fmt(t.price)} · 통행료(가진 관광지 수): ${[1, 2, 3, 4].map(c => `${TOUR_ICONS[c]}${c}곳 ${Math.round(t.toll * TOUR_MULT[c])}`).join(' / ')}<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
     h += `<br><span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · 관광지 4곳을 모두 가지면 관광지 독점 승리!`;
   } else {
     h += '<br>' + ({ start: `지나갈 때마다 월급 ${SALARY}만. 딱 도착하면 내 나라 한 곳에 건설할 수 있습니다.`, blackhole: `최대 3턴 표류합니다. 더블이 나오거나 ${ESCAPE_FEE}만을 내면 탈출.`,

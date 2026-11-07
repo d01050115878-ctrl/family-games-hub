@@ -11,14 +11,15 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const START_MONEY = 300, SALARY = 40, ESCAPE_FEE = 20, WARP_FEE = 10;
+  const START_MONEY = 800, SALARY = 100, ESCAPE_FEE = 50, WARP_FEE = 30;
   const FEST_COUNT = 3;           // 축제 도시는 동시에 3곳 (각각 통행료 ×2)
   const LAP_CAP = [1, 2, 3, 4];   // 바퀴 수에 따른 건설 한도: 1바퀴 하우스, 2바퀴 빌딩, 3바퀴 호텔, 4바퀴부터 제한 없음
-  const TOUR_TOLLS = [0, 12, 25, 45, 70]; // 관광지: 가진 관광지 수에 따라 통행료가 오른다
+  const TOUR_MULT = [0, 1, 1.5, 2, 2.5];   // 관광지: 가진 관광지 수에 따라 통행료가 오른다 (기본 통행료 × 배율)
   const TOUR_ICONS = ['', '🚩', '⛱️', '🛖', '🏆'];
   const GAUGE_CHANCE = 0.55;      // 주사위 조절 게이지 성공 확률
   const COST_MULT = [1, 0.6, 1.2, 1.8, 2.4];      // 땅, 하우스, 빌딩, 호텔, 랜드마크 (나라 가격 대비)
-  const ELEM_TOLL = [0.3, 0.8, 1.6, 3.0, 6.0]; // 건물별 통행료 (땅, 하우스, 빌딩, 호텔, 랜드마크) — 지어진 건물의 통행료를 모두 더한다
+  const ELEM_TOLL = [0.05, 0.15, 0.28, 0.52, 1.0]; // 건물별 통행료 = 호텔 기준 통행료 × 비율 (땅·하우스·빌딩·호텔을 더하면 호텔 통행료, 랜드마크는 그만큼 더)
+  const LAND_RATE = 0.3;  // 땅값 = 호텔 통행료 × 0.3
   const LEVEL_NAMES = ['땅', '하우스', '빌딩', '호텔', '랜드마크'];
   const LEVEL_ICONS = ['🚩', '🏠', '🏠🏢', '🏠🏢🏨', '🌟'];
   // 캐릭터: 소방차, 구급차, 경찰차, 탱크, 한전 작업차, 도시가스차
@@ -27,7 +28,7 @@
   const PEMOJI = ['🚒', '🚑', '🚓', '🪖', '⚡', '🔥'];
   const MAX_PLAYERS = 6;
   const SIDES = [[1, 7], [9, 15], [17, 23], [25, 31]];
-  const AI_RESERVE = 50;
+  const AI_RESERVE = 150;
   const BLACKHOLE = 8, FESTIVAL = 16, WARP = 24;
   const N = 32; // 보드 칸 수 (모서리 사이 7칸씩)
 
@@ -38,7 +39,6 @@
     { name: 'C라인', color: '#4dabf7', base: 18, step: 1 },
     { name: 'D라인', color: '#ff6b6b', base: 24, step: 2 },
   ];
-  const TOUR_PRICE = 45, TOUR_TOLL = 12; // 관광지는 4곳 모두 같은 값
   const lineOf = (i) => (i % 8 === 0 ? -1 : Math.floor(i / 8));
   const GROUPS = [
     { name: '중미', color: '#f783ac' }, { name: '남미', color: '#ff922b' }, { name: '아프리카', color: '#c9a66b' }, { name: '중동', color: '#fcc419' },
@@ -46,12 +46,12 @@
   ];
 
   const TILE_DEFS = [
-    { type: 'start', name: '출발', icon: '🚀', sub: '월급 40만 · 도착 시 건설' },
+    { type: 'start', name: '출발', icon: '🚀', sub: '월급 100만 · 도착 시 건설' },
     { type: 'city', name: '쿠바', cc: 'cu', g: 0 },
     { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '페루', cc: 'pe', g: 1 },
-    { type: 'station', name: '제주도', icon: '🏝️', price: TOUR_PRICE, toll: TOUR_TOLL },
+    { type: 'station', name: '제주도', icon: '🏝️', price: 60, toll: 30 },
     { type: 'city', name: '아르헨티나', cc: 'ar', g: 1 },
     { type: 'city', name: '브라질', cc: 'br', g: 1 },
     { type: 'blackhole', name: '버뮤다 삼각지대', icon: '🌊', sub: '최대 3턴 표류' },
@@ -59,7 +59,7 @@
     { type: 'city', name: '케냐', cc: 'ke', g: 2 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '튀르키예', cc: 'tr', g: 3 },
-    { type: 'station', name: '부산', icon: '🌉', price: TOUR_PRICE, toll: TOUR_TOLL },
+    { type: 'station', name: '부산', icon: '🌉', price: 100, toll: 50 },
     { type: 'city', name: '사우디', cc: 'sa', g: 3 },
     { type: 'city', name: 'UAE', cc: 'ae', g: 3 },
     { type: 'festival', name: '월드 페스티벌', icon: '🎉', sub: '통행료 배율 UP' },
@@ -67,7 +67,7 @@
     { type: 'city', name: '호주', cc: 'au', g: 4 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '태국', cc: 'th', g: 5 },
-    { type: 'station', name: '경주', icon: '🏯', price: TOUR_PRICE, toll: TOUR_TOLL },
+    { type: 'station', name: '경주', icon: '🏯', price: 60, toll: 30 },
     { type: 'city', name: '싱가포르', cc: 'sg', g: 5 },
     { type: 'city', name: '일본', cc: 'jp', g: 5 },
     { type: 'warp', name: '워프 게이트', icon: '🌀', sub: '다음 턴 원하는 곳으로' },
@@ -77,19 +77,25 @@
     { type: 'city', name: '이탈리아', cc: 'it', g: 7 },
     { type: 'tax', name: '관세', icon: '💸' },
     { type: 'city', name: '프랑스', cc: 'fr', g: 7 },
-    { type: 'station', name: '서울', icon: '🗼', price: TOUR_PRICE, toll: TOUR_TOLL },
+    { type: 'station', name: '서울', icon: '🗼', price: 300, toll: 200 },
   ];
 
-  const lineCount = [0, 0, 0, 0];
+  // 나라별 '호텔까지 지었을 때 통행료' (만). 다른 금액은 모두 이 값에서 비율로 정해진다
+  const HOTEL_TOLL = {
+    쿠바: 70, 멕시코: 80, 페루: 80, 아르헨티나: 90, 브라질: 100,
+    이집트: 90, 케냐: 90, 튀르키예: 100, 사우디: 100, UAE: 110,
+    피지: 100, 호주: 110, 태국: 110, 싱가포르: 120, 일본: 130,
+    캐나다: 110, 미국: 150, 이탈리아: 110, 프랑스: 120,
+  };
   TILE_DEFS.forEach((t, i) => {
     t.line = lineOf(i);
-    if (t.type === 'city') { const L = LINES[t.line]; t.price = L.base + L.step * lineCount[t.line]++; }
+    if (t.type === 'city') { t.hotel = HOTEL_TOLL[t.name]; t.price = Math.round(t.hotel * LAND_RATE); }
   });
 
   // 행운 카드 (보관 카드는 갖고 있다가 자동으로 사용)
   const CARDS = [
-    { icon: '🎰', title: '해외 복권 당첨', desc: '30만을 받습니다.' },
-    { icon: '🧳', title: '수하물 분실', desc: '짐을 다시 사느라 20만을 냅니다.' },
+    { icon: '🎰', title: '해외 복권 당첨', desc: '100만을 받습니다.' },
+    { icon: '🧳', title: '수하물 분실', desc: '짐을 다시 사느라 60만을 냅니다.' },
     { icon: '🛬', title: '귀국 항공권', desc: '출발지로 이동합니다. (월급 지급)' },
     { icon: '🌊', title: '폭풍우 표류', desc: '버뮤다 삼각지대로 떠내려갑니다!' },
     { icon: '🌀', title: '워프 티켓', desc: '워프 게이트로 이동합니다.' },
@@ -107,7 +113,7 @@
     { icon: '🎁', title: '나라 선물', desc: '내 나라 1곳을 가장 가난한 플레이어에게 줍니다.' },
     { icon: '🛃', title: '세관 검사', desc: '관세 칸으로 이동해서 관세를 냅니다.' },
     { icon: '✨', title: '랜덤 여행', desc: '무작위 위치로 이동합니다. (출발지 통과 시 월급)' },
-    { icon: '🎂', title: '생일 파티', desc: '모든 플레이어에게 6만씩 축하금을 받습니다.' },
+    { icon: '🎂', title: '생일 파티', desc: '모든 플레이어에게 20만씩 축하금을 받습니다.' },
   ];
   const CARD_POOL = [0, 1, 2, 3, 4, 5, 6, 6, 7, 7, 8, 9, 10, 11, 11, 12, 13, 14, 15, 15, 16, 17, 18, 19];
 
@@ -125,15 +131,15 @@
   const sellValue = (t) => Math.floor(invested(t) / 2);
   const takeoverPrice = (t) => invested(t) * 2;
   const stationCount = (s, pid) => s.tiles.filter((x) => x.type === 'station' && x.owner === pid).length;
+  const elemToll = (t, k) => Math.round(t.hotel * ELEM_TOLL[k]);
   function tollAt(s, t, L) {
-    if (t.type === 'station') return TOUR_TOLLS[Math.min(4, Math.max(1, stationCount(s, t.owner)))];
-    let m = 0; for (let k = 0; k <= L; k++) m += ELEM_TOLL[k];
-    return Math.round(t.price * m);
+    if (t.type === 'station') return Math.round(t.toll * TOUR_MULT[Math.min(4, Math.max(1, stationCount(s, t.owner)))]);
+    let m = 0; for (let k = 0; k <= L; k++) m += elemToll(t, k);
+    return m;
   }
   // 같은 대륙(색) 세트를 모두 가지면 그 나라들의 통행료 ×2
   const setOwned = (s, pid, g) => pid >= 0 && s.tiles.filter((x) => x.type === 'city' && x.g === g).every((x) => x.owner === pid);
   const setBonus = (s, t) => (t.type === 'city' && setOwned(s, t.owner, t.g) ? 2 : 1);
-  const elemToll = (t, k) => Math.round(t.price * ELEM_TOLL[k]);
   const isFestival = (s, i) => !!(s.festivals && s.festivals.includes(i));
   function toll(s, t) {
     let v = tollAt(s, t, t.level) * setBonus(s, t);
@@ -218,7 +224,7 @@
     aiAnswer(p, req) {
       const s = this.s;
       switch (req.kind) {
-        case 'blackhole': return p.money > 120 ? 'pay' : 'roll';
+        case 'blackhole': return p.money > 400 ? 'pay' : 'roll';
         case 'build': return this.aiChooseLevel(p, s.tiles[req.tile], req.from, req.maxL);
         case 'station': return p.money - req.price >= AI_RESERVE;
         case 'roll': return { target: this.aiDiceTarget(p) };
@@ -239,7 +245,7 @@
     }
     aiChooseLevel(p, t, from, maxL) {
       for (let L = maxL; L > from; L--) if (cumCost(t, from, L) <= p.money - AI_RESERVE) return L;
-      if (from === -1 && levelCost(t, 0) <= p.money - 15) return 0;
+      if (from === -1 && levelCost(t, 0) <= p.money - 50) return 0;
       return null;
     }
     aiWantsTakeover(p, t, price) {
@@ -258,7 +264,7 @@
         const t = s.tiles[(p.pos + sum) % N];
         let sc = 0;
         if (isProp(t)) {
-          if (t.owner === -1) sc = cityPrice(t) <= p.money - 15 ? 60 + cityPrice(t) : 0;
+          if (t.owner === -1) sc = cityPrice(t) <= p.money - 50 ? 60 + cityPrice(t) / 2 : 0;
           else if (t.owner === p.id) sc = t.level < 4 ? 40 : 5;
           else sc = -toll(s, t);
         } else if (t.type === 'blackhole') sc = -120;
@@ -558,7 +564,7 @@
         if (!isNew) return;
         if (p.money < t.price) { this.log(`${this.nm(p)} 자금 부족으로 ${t.name} 구매 불가`); return; }
         const n = stationCount(s, p.id) + 1;
-        const yes = (await this.ask(p, { kind: 'station', tile: t.idx, price: t.price, nextToll: TOUR_TOLLS[Math.min(4, n)], count: n, money: p.money })) === true;
+        const yes = (await this.ask(p, { kind: 'station', tile: t.idx, price: t.price, nextToll: Math.round(t.toll * TOUR_MULT[Math.min(4, n)]), count: n, money: p.money })) === true;
         if (!yes || s.over || p.money < t.price || t.owner !== -1) return;
         p.money -= t.price; t.owner = p.id; t.level = 0;
         this.sfx('build'); this.float(p, `-${t.price}`, false);
@@ -687,8 +693,8 @@
     async runCard(ci, p) {
       const s = this.s;
       switch (ci) {
-        case 0: this.gain(p, 30, '해외 복권'); break;
-        case 1: await this.pay(p, 20, null, '수하물 분실'); break;
+        case 0: this.gain(p, 100, '해외 복권'); break;
+        case 1: await this.pay(p, 60, null, '수하물 분실'); break;
         case 2: await this.moveForwardTo(p, 0); break;
         case 3: await this.teleport(p, BLACKHOLE); p.stuck = 3; this.fx('bermuda', { pid: p.id }); this.log(`${this.nm(p)} 버뮤다 삼각지대에 표류합니다.`); break;
         case 4: await this.moveForwardTo(p, WARP); await this.resolveTile(p); break;
@@ -773,14 +779,14 @@
           let i; do { i = rnd(N); } while (i === p.pos || i === BLACKHOLE);
           await this.moveForwardTo(p, i); await this.resolveTile(p); break;
         }
-        case 19: for (const q of s.players) if (q !== p && q.alive && !s.over) await this.pay(q, 6, p, '생일 축하금'); break;
+        case 19: for (const q of s.players) if (q !== p && q.alive && !s.over) await this.pay(q, 20, p, '생일 축하금'); break;
         default: break;
       }
     }
   }
 
   return {
-    START_MONEY, SALARY, ESCAPE_FEE, WARP_FEE, FEST_COUNT, LAP_CAP, TOUR_TOLLS, TOUR_ICONS, PCHARS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, MAX_PLAYERS,
+    START_MONEY, SALARY, ESCAPE_FEE, WARP_FEE, FEST_COUNT, LAP_CAP, TOUR_MULT, TOUR_ICONS, PCHARS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, MAX_PLAYERS,
     N, GROUPS, LINES, TILE_DEFS, CARDS, esc, fmt, isProp, cityPrice, levelCost, cumCost, invested, sellValue, takeoverPrice,
     stationCount, tollAt, toll, elemToll, isFestival, setOwned, setBonus, propValue, assets, fullSets, gridPos, makeTiles, expand, Game,
   };
