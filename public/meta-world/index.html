@@ -38,7 +38,7 @@ button,input,select{font-family:inherit}
   align-items:center;justify-content:flex-start;text-align:center;cursor:pointer;border:.25cqw solid transparent;
   font-size:1.25cqw;line-height:1.15;transition:background .3s,border-color .3s}
 .tile:hover{filter:brightness(1.18)}
-.tile .band{width:100%;height:1.2cqw;flex:none}
+.tile .band{width:100%;height:1.45cqw;flex:none;font-size:.95cqw;font-weight:900;color:#0b1026;line-height:1.45cqw;letter-spacing:-.02cqw;overflow:hidden;white-space:nowrap}
 .tile .flag{width:4cqw;height:2.6cqw;object-fit:cover;border-radius:.3cqw;margin-top:.45cqw;box-shadow:0 0 0 .12cqw #0007;flex:none}
 .tile .tn{font-weight:800;font-size:1.22cqw;margin-top:.3cqw;padding:0 .15cqw;word-break:keep-all;letter-spacing:-.05cqw}
 .tile .bd{font-size:1.35cqw;min-height:1.6cqw;margin-top:.1cqw;letter-spacing:-.3cqw}
@@ -50,7 +50,7 @@ button,input,select{font-family:inherit}
 .tile.corner .sub{font-size:1.05cqw;color:var(--muted);margin-top:.3cqw;padding:0 .4cqw}
 .tile.chance{background:linear-gradient(160deg,#3d2a7a,#211a4f)}
 .tile.tax{background:linear-gradient(160deg,#5a2440,#2b1530)}
-.tile.station .band{background:repeating-linear-gradient(45deg,#e9ecff 0 .6cqw,#8e99d8 .6cqw 1.2cqw)}
+.tile.station{background:linear-gradient(160deg,#1f3a5a,#16204d)}
 .tile.owned{background:color-mix(in srgb,var(--own) 30%,#151b45);border-color:var(--own)}
 .tile.owned .tp{color:#fff;font-weight:700}
 .tile.lm{box-shadow:inset 0 0 1.6cqw color-mix(in srgb,var(--own) 80%,#fff)}
@@ -167,6 +167,16 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
 .rules h4{margin:12px 0 4px;color:var(--accent)}
 .rank{display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;background:#0b1026;margin-bottom:6px}
 
+/* 효과 레이어 */
+#fxLayer{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
+.fx{position:absolute}
+.fx-big{left:50%;top:42%;font-size:clamp(34px,7vw,84px);font-weight:900;text-align:center;white-space:nowrap;line-height:1.1;
+  text-shadow:0 0 18px #000,0 0 6px #000,0 5px 0 #0009;transform:translate(-50%,-50%)}
+.fx-big small{display:block;font-size:.5em;margin-top:.15em}
+.fx-flash{inset:0}
+.fx-p{font-size:clamp(18px,3vw,34px);left:0;top:0;will-change:transform}
+.fx-ring{border-radius:50%;border:6px solid;transform:translate(-50%,-50%)}
+
 @media (max-width:900px){
   #game{flex-direction:column;align-items:center;padding:8px}
   #boardWrap{width:min(96vw,100%)}
@@ -201,6 +211,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
     <div class="toolbar">
       <button class="btn sm ghost" id="speedBtn">⏩ 속도: 보통</button>
       <button class="btn sm ghost" id="soundBtn">🔊 소리 켬</button>
+      <button class="btn sm ghost" id="fxBtn">✨ 효과 켬</button>
       <button class="btn sm ghost" id="rulesBtn">📖 규칙</button>
       <button class="btn sm ghost" id="newBtn">🔄 새 게임</button>
       <a class="btn sm ghost" id="homeBtn" href="/" style="display:none">🏠 게임 모음</a>
@@ -279,7 +290,10 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   🔰 <b>첫 바퀴</b>(출발지를 한 번 지나기 전)에는 땅과 하우스까지만 지을 수 있고, 인수도 할 수 없습니다.
   <h4>통행료 &amp; 인수</h4>
   다른 플레이어의 나라에 도착하면 통행료를 냅니다. 통행료를 낸 뒤 <b>투자금의 2배</b>를 내고 그 나라를 인수할 수 있습니다.<br>
-  ✈️ 공항(관광지)은 건물을 지을 수 없고, 공항마다 정해진 통행료를 받습니다.
+  🏝️ <b>관광지</b>(제주도·부산·경주·서울)는 건물을 지을 수 없고, 4곳 모두 같은 통행료를 받습니다.
+  <h4>라인 색깔 &amp; 가격</h4>
+  <span style="color:#ffd43b">■ A라인(노랑)</span> · <span style="color:#51cf66">■ B라인(녹색)</span> · <span style="color:#4dabf7">■ C라인(파랑)</span> · <span style="color:#ff6b6b">■ D라인(빨강)</span><br>
+  같은 라인에 있는 나라는 <b>땅값·건물값·통행료가 모두 같고</b>, A → B → C → D 순서로 비싸집니다.
   <h4>특수 칸</h4>
   🌊 <b>버뮤다 삼각지대</b>: 최대 3턴 표류합니다. 더블이 나오거나 100만을 내면 탈출합니다.<br>
   🎉 <b>월드 페스티벌</b>: 내 나라 하나를 골라 페스티벌을 엽니다. 통행료 ×2, 같은 곳에서 또 열면 ×3, ×4, 최대 ×5까지 올라갑니다. 다른 곳에서 열면 이전 페스티벌은 끝납니다.<br>
@@ -289,8 +303,8 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <h4>돈이 부족하면</h4>
   보유한 부동산을 투자금의 50%에 팔아 돈을 마련합니다. 그래도 부족하면 파산입니다.
   <h4>승리 조건</h4>
-  ① 다른 모두가 파산 ② <b>트리플 독점</b>: 대륙 세트 3개 완성 ③ <b>라인 독점</b>: 보드 한 줄의 나라와 공항을 모두 소유
-  ④ <b>공항 독점</b>: 공항 4곳 모두 소유 ⑤ 라운드 제한이 끝나면 총자산 1위
+  ① 다른 모두가 파산 ② <b>트리플 독점</b>: 대륙 세트 3개 완성 ③ <b>라인 독점</b>: 한 라인의 나라와 관광지를 모두 소유
+  ④ <b>관광지 독점</b>: 관광지 4곳 모두 소유 ⑤ 라운드 제한이 끝나면 총자산 1위
   <h4>온라인 대전</h4>
   주사위는 30초, 다른 결정은 45초 안에 하지 않으면 컴퓨터가 대신 결정합니다.
   접속이 끊겨도 게임은 계속되고(컴퓨터가 대신 진행), 같은 창에서 다시 들어오면 이어서 할 수 있어요.
@@ -307,7 +321,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
 <script src="engine.js"></script>
 <script>
 'use strict';
-const { esc, fmt, GROUPS, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, FEST_MAX } = MW;
+const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, FEST_MAX } = MW;
 
 /* ================== 캐릭터 (직접 그린 차량) ================== */
 const WHEELS = (xs, y = 33, r = 5.5) => xs.map(x => `<circle cx="${x}" cy="${y}" r="${r}" fill="#212529"/><circle cx="${x}" cy="${y}" r="${r * 0.42}" fill="#adb5bd"/>`).join('');
@@ -373,6 +387,236 @@ const sfx = {
   turn: () => { beep(784, 0.1, 'triangle', 0.06); setTimeout(() => beep(1047, 0.16, 'triangle', 0.06), 110); },
 };
 
+/* ================== 효과 (화면 + 소리) ================== */
+let fxOn = true;
+try { if (localStorage.getItem('mwd_fx') === 'off') fxOn = false; } catch (e) { }
+function audio() {
+  if (!soundOn) return null;
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); return AC; } catch (e) { return null; }
+}
+function tone(f, d, o = {}) {
+  const a = audio(); if (!a) return;
+  const t = a.currentTime + (o.at || 0);
+  const osc = a.createOscillator(), g = a.createGain();
+  osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t);
+  if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + d);
+  g.gain.setValueAtTime(o.v || 0.06, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  osc.connect(g); g.connect(a.destination); osc.start(t); osc.stop(t + d + 0.03);
+}
+let noiseBuf = null;
+function noise(d, o = {}) {
+  const a = audio(); if (!a) return;
+  if (!noiseBuf) {
+    noiseBuf = a.createBuffer(1, a.sampleRate * 2, a.sampleRate);
+    const ch = noiseBuf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  }
+  const t = a.currentTime + (o.at || 0);
+  const src = a.createBufferSource(); src.buffer = noiseBuf;
+  const fl = a.createBiquadFilter(); fl.type = o.type || 'lowpass'; fl.Q.value = o.q || 1;
+  fl.frequency.setValueAtTime(o.f || 1200, t); if (o.to) fl.frequency.exponentialRampToValueAtTime(o.to, t + d);
+  const g = a.createGain(); g.gain.setValueAtTime(o.v || 0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  src.connect(fl); fl.connect(g); g.connect(a.destination); src.start(t); src.stop(t + d + 0.03);
+}
+const SND = {
+  toll(big, mega) {
+    tone(392, 0.16, { type: 'square', v: 0.07 }); tone(262, 0.4, { type: 'square', v: 0.07, at: 0.16 });
+    noise(0.3, { v: 0.18, f: 250, at: 0.16 });
+    if (big) tone(900, mega ? 1.1 : 0.7, { type: 'sawtooth', v: 0.04, at: 0.45, to: 160 });
+    for (let i = 0; i < (mega ? 12 : 6); i++) tone(1300 + rnd(700), 0.08, { type: 'square', v: 0.022, at: 0.55 + i * 0.07 });
+  },
+  shield() { tone(500, 0.5, { v: 0.06, to: 1500 }); tone(750, 0.55, { type: 'triangle', v: 0.04, at: 0.06, to: 2100 }); tone(1500, 0.4, { v: 0.03, at: 0.45 }); },
+  takeover() { noise(0.15, { v: 0.25, f: 180 }); tone(110, 0.25, { type: 'square', v: 0.08 }); [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, { type: 'triangle', v: 0.05, at: 0.22 + i * 0.07 })); },
+  landmark() {
+    [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, 0.4, { type: 'triangle', v: 0.06, at: i * 0.12 }));
+    tone(1047, 1, { type: 'square', v: 0.025, at: 0.62 });
+    for (let i = 0; i < 12; i++) tone(2000 + rnd(1600), 0.06, { v: 0.02, at: 0.7 + i * 0.05 });
+  },
+  bermuda() { noise(1.5, { v: 0.14, f: 200, to: 2200, type: 'bandpass', q: 2 }); tone(320, 1.3, { v: 0.05, to: 70 }); },
+  bankrupt() {
+    [392, 370, 349, 330].forEach((f, i) => tone(f, i === 3 ? 1 : 0.34, { type: 'sawtooth', v: 0.05, at: i * 0.36, to: i === 3 ? 200 : null }));
+    noise(0.6, { v: 0.2, f: 140, at: 1.15 });
+  },
+  double() { tone(660, 0.1, { type: 'square', v: 0.05 }); tone(990, 0.1, { type: 'square', v: 0.05, at: 0.1 }); tone(1320, 0.2, { type: 'square', v: 0.05, at: 0.2 }); },
+  festival() {
+    [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.16, { type: 'triangle', v: 0.05, at: i * 0.08 }));
+    for (let i = 0; i < 5; i++) noise(0.06, { v: 0.16, f: 3000, type: 'highpass', at: 0.35 + i * 0.13 });
+  },
+  warp() { tone(180, 0.6, { v: 0.07, to: 1700 }); tone(1700, 0.6, { v: 0.05, at: 0.6, to: 180 }); noise(1.1, { v: 0.05, f: 600, to: 3000, type: 'bandpass', q: 4 }); },
+  typhoon() { noise(1.6, { v: 0.16, f: 400, to: 1600, type: 'bandpass', q: 3 }); noise(1.6, { v: 0.1, f: 1600, to: 300, type: 'bandpass', q: 3, at: 0.3 }); noise(0.4, { v: 0.2, f: 150, at: 0.9 }); },
+  win() { [523, 523, 523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, i === 7 ? 0.8 : 0.24, { type: 'triangle', v: 0.07, at: i * 0.15 })); },
+};
+
+let fxLayer = null;
+function fxEl(html, cls) {
+  if (!fxLayer) { fxLayer = document.createElement('div'); fxLayer.id = 'fxLayer'; document.body.appendChild(fxLayer); }
+  const d = document.createElement('div'); d.className = 'fx ' + cls; d.innerHTML = html;
+  fxLayer.appendChild(d); return d;
+}
+const fdur = ms => ms * Math.max(animSpeed(), 0.5);
+function anim(el, kf, opt) { const a = el.animate(kf, opt); a.onfinish = () => el.remove(); return a; }
+function bigText(html, color, ms = 1500) {
+  const d = fxEl(html, 'fx-big'); d.style.color = color;
+  anim(d, [
+    { transform: 'translate(-50%,-50%) scale(.3) rotate(-8deg)', opacity: 0 },
+    { transform: 'translate(-50%,-50%) scale(1.15) rotate(2deg)', opacity: 1, offset: 0.14 },
+    { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: 0.75 },
+    { transform: 'translate(-50%,-50%) scale(1.25)', opacity: 0 },
+  ], { duration: fdur(ms), easing: 'ease-out' });
+}
+function flash(color, ms = 500, peak = 0.55) { const d = fxEl('', 'fx-flash'); d.style.background = color; anim(d, [{ opacity: peak }, { opacity: 0 }], { duration: fdur(ms) }); }
+function shake(power = 1) {
+  const k = [];
+  for (let i = 0; i < 9; i++) { const a = (9 - i) * power * 1.4; k.push({ transform: `translate(${(Math.random() - 0.5) * 2 * a}px,${(Math.random() - 0.5) * 2 * a}px)` }); }
+  k.push({ transform: 'none' });
+  $('#boardWrap').animate(k, { duration: fdur(520) });
+}
+function tokenPage(pid) {
+  const el = tokenEls[pid];
+  if (!el || el.style.display === 'none') return { x: innerWidth / 2, y: innerHeight / 2 };
+  const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+function tilePage(i) { const r = tileEls[i].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
+function burst(emojis, at, n = 18, spread = 200, ms = 1100) {
+  for (let i = 0; i < n; i++) {
+    const e = fxEl(emojis[i % emojis.length], 'fx-p');
+    e.style.left = at.x + 'px'; e.style.top = at.y + 'px';
+    const ang = Math.random() * Math.PI * 2, r = spread * (0.35 + Math.random() * 0.65);
+    anim(e, [
+      { transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${Math.cos(ang) * r}px), calc(-50% + ${Math.sin(ang) * r - 40}px)) scale(1) rotate(${rnd(720) - 360}deg)`, opacity: 0 },
+    ], { duration: fdur(ms * (0.7 + Math.random() * 0.5)), easing: 'cubic-bezier(.2,.8,.3,1)' });
+  }
+}
+function rain(emojis, n = 40, ms = 2200) {
+  for (let i = 0; i < n; i++) {
+    const e = fxEl(emojis[i % emojis.length], 'fx-p');
+    e.style.left = Math.random() * 100 + 'vw'; e.style.top = '-6vh';
+    anim(e, [{ transform: 'translateY(0) rotate(0)' }, { transform: `translateY(112vh) rotate(${rnd(720)}deg)` }],
+      { duration: fdur(ms * (0.6 + Math.random() * 0.6)), delay: Math.random() * fdur(700), easing: 'ease-in', fill: 'backwards' });
+  }
+}
+function ring(at, color, ms = 800, size = 260) {
+  const e = fxEl('', 'fx-ring'); e.style.left = at.x + 'px'; e.style.top = at.y + 'px'; e.style.borderColor = color;
+  anim(e, [{ width: '0px', height: '0px', opacity: 1 }, { width: size + 'px', height: size + 'px', opacity: 0 }], { duration: fdur(ms), easing: 'ease-out' });
+}
+function coinFly(fromPid, toPid, n = 10) {
+  const a = tokenPage(fromPid);
+  const b = toPid >= 0 ? tokenPage(toPid) : { x: innerWidth / 2, y: -60 };
+  const dx = b.x - a.x, dy = b.y - a.y;
+  for (let i = 0; i < n; i++) {
+    const e = fxEl('🪙', 'fx-p'); e.style.left = a.x + 'px'; e.style.top = a.y + 'px';
+    const mx = dx / 2 + (Math.random() - 0.5) * 140, my = dy / 2 - 110 - Math.random() * 90;
+    anim(e, [
+      { transform: 'translate(-50%,-50%) scale(.5)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${mx}px), calc(-50% + ${my}px)) scale(1.25)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.8)`, opacity: 0.9 },
+    ], { duration: fdur(900), delay: i * fdur(55), easing: 'ease-in-out', fill: 'backwards' });
+  }
+}
+function tileGlow(i, color) {
+  tileEls[i].animate([{ boxShadow: `0 0 0 0 ${color}` }, { boxShadow: `0 0 2.6cqw 1.1cqw ${color}` }, { boxShadow: `0 0 0 0 ${color}` }], { duration: fdur(1300) });
+}
+function vibrate(pattern, pid) {
+  const p = S && S.players[pid];
+  if (!navigator.vibrate || !p || p.isAI) return;
+  if (mode === 'online' && pid !== mySeat) return;
+  try { navigator.vibrate(pattern); } catch (e) { }
+}
+
+function playFx(ev) {
+  if (!S) return;
+  const p = S.players[ev.pid];
+  const name = p ? esc(p.name) : '';
+  const vis = fxOn;
+  switch (ev.name) {
+    case 'toll': {
+      const big = ev.amount >= 300, mega = ev.amount >= 800;
+      SND.toll(big, mega); vibrate(mega ? [120, 60, 220] : 140, ev.pid);
+      if (!vis) break;
+      flash(mega ? '#ff1e1e' : '#ff4040', mega ? 750 : 480, mega ? 0.6 : 0.45);
+      shake(mega ? 3 : big ? 2 : 1);
+      const title = ev.tax ? '💸 관세!' : mega ? '💥 대박 통행료!' : big ? '😱 통행료 폭탄!' : '💸 통행료!';
+      bigText(`${title}<small>${name} -${fmt(ev.amount)}</small>`, '#ff6b6b', mega ? 2000 : 1500);
+      tileGlow(ev.tile, '#ff5d5d');
+      coinFly(ev.pid, ev.to, mega ? 26 : big ? 16 : 10);
+      break;
+    }
+    case 'shield':
+      SND.shield();
+      if (!vis) break;
+      flash('#4dabf7', 450, 0.35); ring(tokenPage(ev.pid), '#74c0fc', 900, 300);
+      bigText('🛡️ 여행자 보험 발동!<small>통행료 면제</small>', '#74c0fc');
+      burst(['✨', '🛡️', '💙'], tokenPage(ev.pid), 16, 160);
+      break;
+    case 'takeover':
+      SND.takeover(); vibrate(100, ev.pid);
+      if (!vis) break;
+      shake(1.5); ring(tilePage(ev.tile), p.color, 700, 240);
+      bigText(`🤝 인수 성공!<small>${name} · ${esc(S.tiles[ev.tile].name)}</small>`, '#ffd43b');
+      burst(['💵', '📜', '✨'], tilePage(ev.tile), 20, 180);
+      tileGlow(ev.tile, p.color);
+      break;
+    case 'landmark':
+      SND.landmark();
+      if (!vis) break;
+      flash('#ffd43b', 500, 0.3);
+      bigText(`🌟 랜드마크 완성!<small>${esc(S.tiles[ev.tile].name)}</small>`, '#ffd43b', 2000);
+      rain(['🎆', '✨', '🌟', '🎇'], 36, 2200);
+      burst(['🌟', '✨'], tilePage(ev.tile), 22, 220);
+      tileGlow(ev.tile, '#ffd43b');
+      break;
+    case 'bermuda':
+      SND.bermuda(); vibrate([80, 40, 80], ev.pid);
+      if (!vis) break;
+      flash('#1864ab', 1000, 0.5);
+      bigText(`🌊 표류!<small>${name} 버뮤다 삼각지대</small>`, '#74c0fc', 1700);
+      burst(['🌊', '💧', '🫧'], tokenPage(ev.pid), 22, 200, 1300);
+      ring(tokenPage(ev.pid), '#4dabf7', 1000, 340);
+      break;
+    case 'bankrupt':
+      SND.bankrupt(); vibrate([200, 100, 300], ev.pid);
+      if (!vis) break;
+      flash('#000', 1400, 0.75); shake(3);
+      $('#board').animate([{ filter: 'grayscale(1) brightness(.6)' }, { filter: 'grayscale(1) brightness(.6)', offset: 0.7 }, { filter: 'none' }], { duration: fdur(1800) });
+      bigText(`💀 파산!<small>${name}</small>`, '#ced4da', 2200);
+      burst(['💸', '💀', '📉'], tokenPage(ev.pid), 18, 220, 1500);
+      break;
+    case 'double':
+      SND.double();
+      if (!vis) break;
+      bigText('🎲 DOUBLE!<small>한 번 더!</small>', '#ffd43b', 1000);
+      burst(['🎲', '✨'], tilePage(S.players[ev.pid].pos), 10, 120, 800);
+      break;
+    case 'festival':
+      SND.festival();
+      if (!vis) break;
+      rain(['🎉', '🎊', '🎈', '✨'], 44, 2300);
+      bigText(`🎉 페스티벌 ×${ev.mul}!<small>${esc(S.tiles[ev.tile].name)}</small>`, '#ff8cc6', 1800);
+      tileGlow(ev.tile, '#ff8cc6');
+      break;
+    case 'warp':
+      SND.warp();
+      if (!vis) break;
+      flash('#7048e8', 600, 0.4);
+      bigText('🌀 워프!', '#b197fc', 1100);
+      ring(tokenPage(ev.pid), '#b197fc', 700, 260); burst(['🌀', '✨'], tokenPage(ev.pid), 14, 150);
+      break;
+    case 'typhoon':
+      SND.typhoon();
+      if (!vis) break;
+      shake(3); flash('#adb5bd', 700, 0.35);
+      bigText(`🌪️ 태풍!<small>${esc(S.tiles[ev.tile].name)} 건물 붕괴</small>`, '#a5d8ff', 1700);
+      burst(['🌪️', '🍃', '💨', '🧱'], tilePage(ev.tile), 24, 230, 1400);
+      break;
+    case 'win':
+      SND.win();
+      if (!vis) break;
+      rain(['🎆', '🎉', '🏆', '✨', '🎊'], 70, 3200);
+      break;
+  }
+}
+
 /* ================== 보드 ================== */
 const tileEls = [];
 let tokenEls = [];
@@ -385,9 +629,9 @@ function buildBoard() {
     el.className = 'tile ' + t.type + (i % 8 === 0 ? ' corner' : '');
     el.style.gridRow = r; el.style.gridColumn = c;
     if (t.type === 'city') {
-      el.innerHTML = `<div class="band" style="background:${GROUPS[t.g].color}"></div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div>`;
+      el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">${GROUPS[t.g].name}</div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div>`;
     } else if (t.type === 'station') {
-      el.innerHTML = `<div class="band"></div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div>`;
+      el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">관광지</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div>`;
     } else {
       el.innerHTML = `<div class="ic">${t.icon}</div><div class="tn">${t.name}</div>${t.sub ? `<div class="sub">${t.sub}</div>` : ''}`;
     }
@@ -477,7 +721,7 @@ function showInfo(i) {
   let h = `<b style="font-size:15px">${t.cc ? flagImg(t.cc, '') : (t.icon || '')} ${t.name}</b>`;
   if (t.type === 'city') {
     const gr = GROUPS[t.g];
-    h += ` <span style="color:${gr.color}">● ${gr.name}</span><br>`;
+    h += ` <span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · ${gr.name}<br>`;
     h += `소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> (${LEVEL_NAMES[t.level]})` : '없음'}`;
     if (t.owner >= 0) h += ` · 통행료 <b>${fmt(MW.toll(S, t))}</b>${S.festival === i ? ` 🎉×${S.festMul}` : ''}<br>인수가 ${t.level === 4 ? '인수 불가' : fmt(MW.takeoverPrice(t))}`;
     h += '<table><tr><td>단계</td><td>건설비</td><td>통행료</td></tr>';
@@ -485,10 +729,10 @@ function showInfo(i) {
     h += '</table>';
   } else if (t.type === 'station') {
     h += `<br>가격 ${fmt(t.price)} · 기본 통행료 ${fmt(t.toll)}<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
-    h += '<br>✈️ 공항 4곳을 모두 가지면 공항 독점 승리!';
+    h += `<br><span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · 관광지 4곳을 모두 가지면 관광지 독점 승리!`;
   } else {
     h += '<br>' + ({ start: `지나갈 때마다 월급 ${SALARY}만. 딱 도착하면 내 나라 한 곳에 건설할 수 있습니다.`, blackhole: `최대 3턴 표류합니다. 더블이 나오거나 ${ESCAPE_FEE}만을 내면 탈출.`,
-      festival: `내 나라(공항) 하나를 골라 페스티벌을 엽니다. 통행료 ×2, 같은 곳에서 다시 열면 최대 ×${FEST_MAX}까지!`, warp: `다음 턴에 주사위 대신 원하는 칸으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`,
+      festival: `내 나라(관광지) 하나를 골라 페스티벌을 엽니다. 통행료 ×2, 같은 곳에서 다시 열면 최대 ×${FEST_MAX}까지!`, warp: `다음 턴에 주사위 대신 원하는 칸으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`,
       chance: '행운 카드를 한 장 뽑습니다.', tax: '보유 부동산 가치의 10%를 관세로 냅니다.' }[t.type]);
   }
   $('#info').innerHTML = h;
@@ -535,6 +779,7 @@ function handleEvent(ev) {
     case 'focus': showInfo(ev.tile); break;
     case 'gauge': { const p = S && S.players[ev.pid]; if (p) log(`<b style="color:${p.color}">${p.emoji}${esc(p.name)}</b> 🎯 목표 ${ev.target} ${ev.hit ? '<span class="pos">조절 성공!</span>' : '<span class="neg">빗나감</span>'}`); break; }
     case 'end': showEnd(ev); break;
+    case 'fx': playFx(ev); break;
   }
 }
 
@@ -584,7 +829,7 @@ function askModal(p, req) {
     };
     case 'build': return {
       title: `${req.isNew ? '🌍' : '🏗️'} ${head}${t.name} ${req.isNew ? '구매' : '건설'}`,
-      html: `<span style="color:${GROUPS[t.g].color}">● ${GROUPS[t.g].name}</span> · 현재: <b>${req.from < 0 ? '빈 땅' : LEVEL_NAMES[req.from]}</b><br>보유 현금: <b>${fmt(req.money)}</b>
+      html: `<span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · ${GROUPS[t.g].name} · 현재: <b>${req.from < 0 ? '빈 땅' : LEVEL_NAMES[req.from]}</b><br>보유 현금: <b>${fmt(req.money)}</b>
         ${req.maxL === 4 ? '<br>🌟 랜드마크는 통행료가 가장 높고 인수당하지 않습니다!' : ''}
         ${req.firstLap ? '<br>🔰 첫 바퀴에는 하우스까지만 지을 수 있어요.' : ''}`,
       buttons: req.opts.map(o => ({
@@ -593,16 +838,16 @@ function askModal(p, req) {
       })).concat([{ label: '패스', value: null, cls: 'ghost' }]),
     };
     case 'station': return {
-      title: `✈️ ${t.name}`,
-      html: `가격 <b>${fmt(req.price)}</b> · 통행료 <b>${fmt(req.nextToll)}</b><br>구매하면 공항 ${req.count}곳 보유${req.count === 4 ? ' → <b style="color:var(--accent)">공항 독점 승리!</b>' : ' (4곳 모두 가지면 독점 승리)'}<br>보유 현금: ${fmt(req.money)}`,
+      title: `${t.icon} ${t.name} (관광지)`,
+      html: `가격 <b>${fmt(req.price)}</b> · 통행료 <b>${fmt(req.nextToll)}</b><br>구매하면 관광지 ${req.count}곳 보유${req.count === 4 ? ' → <b style="color:var(--accent)">관광지 독점 승리!</b>' : ' (4곳 모두 가지면 독점 승리)'}<br>보유 현금: ${fmt(req.money)}`,
       buttons: [{ label: `구매하기 <small>-${fmt(req.price)}</small>`, value: true, cls: 'gold' }, { label: '패스', value: false, cls: 'ghost' }],
     };
     case 'takeover': {
       const o = S.players[req.owner];
       return {
         title: `🤝 ${head}${t.name} 인수`,
-        html: `<b style="color:${o.color}">${o.emoji}${esc(o.name)}</b>의 ${t.type === 'station' ? '공항' : '나라'}를 <b>${fmt(req.price)}</b>에 인수할 수 있습니다.<br>
-          현재 ${t.type === 'station' ? '공항' : LEVEL_NAMES[t.level] + ' 단계'} · 통행료 ${fmt(MW.toll(S, t))}<br>보유 현금: ${fmt(req.money)}`,
+        html: `<b style="color:${o.color}">${o.emoji}${esc(o.name)}</b>의 ${t.type === 'station' ? '관광지' : '나라'}를 <b>${fmt(req.price)}</b>에 인수할 수 있습니다.<br>
+          현재 ${t.type === 'station' ? '관광지' : LEVEL_NAMES[t.level] + ' 단계'} · 통행료 ${fmt(MW.toll(S, t))}<br>보유 현금: ${fmt(req.money)}`,
         buttons: [{ label: `인수하기 <small>-${fmt(req.price)}</small>`, value: true, cls: 'gold' }, { label: '패스', value: false, cls: 'ghost' }],
       };
     }
@@ -613,7 +858,7 @@ function askModal(p, req) {
         html: `내야 할 금액: <b>${fmt(req.need)}</b><br>보유 현금: <b>${fmt(req.money)}</b> (부족 <b class="neg">${fmt(req.need - req.money)}</b>)<br>
           매각할 부동산을 고르세요. 투자금의 50%를 돌려받습니다.<br>
           ${req.money + total < req.need ? '<b class="neg">⚠ 전부 팔아도 부족합니다.</b>' : `전부 팔면 ${fmt(req.money + total)}`}`,
-        buttons: req.props.map(x => ({ label: `${S.tiles[x.idx].type === 'city' ? LEVEL_ICONS[x.level] : '✈️'} ${S.tiles[x.idx].name} <small>+${fmt(x.value)}</small>`, value: x.idx, cls: 'sm' }))
+        buttons: req.props.map(x => ({ label: `${S.tiles[x.idx].type === 'city' ? LEVEL_ICONS[x.level] : S.tiles[x.idx].icon} ${S.tiles[x.idx].name} <small>+${fmt(x.value)}</small>`, value: x.idx, cls: 'sm' }))
           .concat([{ label: '💀 파산 선언', value: 'bk', cls: 'danger' }]),
       };
     }
@@ -861,6 +1106,8 @@ document.addEventListener('keydown', e => {
 });
 $('#speedBtn').onclick = () => { speed = speed === 1 ? 0.45 : speed === 0.45 ? 0.2 : 1; $('#speedBtn').textContent = `⏩ 속도: ${speed === 1 ? '보통' : speed === 0.45 ? '빠름' : '매우 빠름'}`; };
 $('#soundBtn').onclick = () => { soundOn = !soundOn; $('#soundBtn').textContent = soundOn ? '🔊 소리 켬' : '🔇 소리 끔'; };
+$('#fxBtn').textContent = fxOn ? '✨ 효과 켬' : '✨ 효과 끔';
+$('#fxBtn').onclick = () => { fxOn = !fxOn; $('#fxBtn').textContent = fxOn ? '✨ 효과 켬' : '✨ 효과 끔'; try { localStorage.setItem('mwd_fx', fxOn ? 'on' : 'off'); } catch (e) { } };
 document.querySelectorAll('.rulesOpen').forEach(b => b.onclick = () => $('#rulesOv').classList.add('show'));
 $('#rulesBtn').onclick = () => $('#rulesOv').classList.add('show');
 $('#rulesClose').onclick = () => $('#rulesOv').classList.remove('show');
