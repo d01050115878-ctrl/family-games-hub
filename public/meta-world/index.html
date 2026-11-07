@@ -56,6 +56,17 @@ button,input,select{font-family:inherit}
 .tile.lm{box-shadow:inset 0 0 1.6cqw color-mix(in srgb,var(--own) 80%,#fff)}
 .tile .fest{position:absolute;top:1.3cqw;right:.2cqw;font-size:1.3cqw;font-weight:900;color:#ffd43b;text-shadow:0 0 .4cqw #000;display:none;animation:bob 1s infinite alternate}
 .tile.festival .fest{display:block}
+/* 소유자 표시 */
+.tile .own{position:absolute;top:1.65cqw;left:.2cqw;width:3.6cqw;height:2.5cqw;border-radius:.55cqw;background:#0b1026;
+  border:.22cqw solid var(--own);padding:.1cqw;display:none;box-shadow:0 0 .5cqw #000;z-index:1}
+.tile.owned .own{display:block}
+.tile .own svg{width:100%;height:100%;display:block}
+.tile .pk{position:absolute;left:.25cqw;right:.25cqw;bottom:.3cqw;padding:.25cqw .2cqw;border-radius:.6cqw;font-size:1.08cqw;font-weight:900;
+  color:#fff;z-index:3;line-height:1.2;background:#000d;box-shadow:0 0 .6cqw #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .pk.mine{background:#2b8a3e}
+.tile .pk.foe{background:#c92a2a}
+.tile .pk.free{background:#1c7ed6}
+.tile .pk.warn{background:#5f3dc4}
 .tile.festival{box-shadow:0 0 1.2cqw #ffcc4d}
 .tile.pickable{outline:.45cqw solid var(--accent);outline-offset:-.2cqw;animation:pulse .8s infinite alternate;z-index:2}
 .tile.dim{opacity:.35}
@@ -291,6 +302,9 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <h4>통행료 &amp; 인수</h4>
   다른 플레이어의 나라에 도착하면 통행료를 냅니다. 통행료를 낸 뒤 <b>투자금의 2배</b>를 내고 그 나라를 인수할 수 있습니다.<br>
   🏝️ <b>관광지</b>(제주도·부산·경주·서울)는 건물을 지을 수 없고, 4곳 모두 같은 통행료를 받습니다.
+  <h4>누구 땅인지 보기</h4>
+  주인이 있는 칸은 테두리가 주인 색으로 바뀌고, 왼쪽 위에 <b>주인 차량</b>이 표시됩니다.
+  워프·페스티벌처럼 칸을 고를 때는 칸마다 <b style="color:#69db7c">내 땅</b> · <b style="color:#74c0fc">빈 땅</b> · <b style="color:#ff8787">상대 땅(통행료)</b>이 표시돼요.
   <h4>라인 색깔 &amp; 가격</h4>
   <span style="color:#ffd43b">■ A라인(노랑)</span> · <span style="color:#51cf66">■ B라인(녹색)</span> · <span style="color:#4dabf7">■ C라인(파랑)</span> · <span style="color:#ff6b6b">■ D라인(빨강)</span><br>
   같은 라인에 있는 나라는 <b>땅값·건물값·통행료가 모두 같고</b>, A → B → C → D 순서로 비싸집니다.
@@ -629,9 +643,9 @@ function buildBoard() {
     el.className = 'tile ' + t.type + (i % 8 === 0 ? ' corner' : '');
     el.style.gridRow = r; el.style.gridColumn = c;
     if (t.type === 'city') {
-      el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">${GROUPS[t.g].name}</div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div>`;
+      el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">${GROUPS[t.g].name}</div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
     } else if (t.type === 'station') {
-      el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">관광지</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div>`;
+      el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">관광지</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
     } else {
       el.innerHTML = `<div class="ic">${t.icon}</div><div class="tn">${t.name}</div>${t.sub ? `<div class="sub">${t.sub}</div>` : ''}`;
     }
@@ -679,6 +693,12 @@ function updateTiles() {
     el.classList.toggle('festival', S.festival === i);
     if (S.festival === i) el.querySelector('.fest').textContent = `🎉×${S.festMul}`;
     el.style.setProperty('--own', owned ? S.players[t.owner].color : 'transparent');
+    const badge = el.querySelector('.own');
+    if (badge.dataset.o !== String(t.owner)) {
+      badge.dataset.o = String(t.owner);
+      badge.innerHTML = owned ? vehicleSVG(t.owner) : '';
+      el.title = owned ? `${S.players[t.owner].name}의 ${t.type === 'station' ? '관광지' : '땅'}` : '';
+    }
     el.querySelector('.bd').textContent = owned && t.type === 'city' ? LEVEL_ICONS[t.level] : '';
     el.querySelector('.tp').textContent = owned ? `통행 ${fmt(MW.toll(S, t))}` : fmt(MW.cityPrice(t));
   });
@@ -802,10 +822,23 @@ function modal({ title, who, html, buttons }) {
     ov.classList.add('show');
   });
 }
-function pickTile(cands, text, cancellable) {
+// 칸을 고를 때 각 칸이 누구 땅인지 라벨로 보여준다
+function pickLabel(t, me) {
+  if (MW.isProp(t)) {
+    if (t.owner < 0) return ['free', `빈 땅 ${fmt(MW.cityPrice(t))}`];
+    const o = S.players[t.owner];
+    if (me && t.owner === me.id) return ['mine', `내 땅 ${t.type === 'city' ? LEVEL_ICONS[t.level] : t.icon}`];
+    return ['foe', `${o.emoji} 통행 ${fmt(MW.toll(S, t))}`];
+  }
+  return ['warn', { start: '🚀 월급+건설', blackhole: '⚠ 표류 3턴', festival: '🎉 페스티벌', warp: '🌀 워프', chance: '🎴 카드', tax: `💸 관세` }[t.type] || t.name];
+}
+function pickTile(cands, text, cancellable, me) {
   return new Promise(res => {
     const set = new Set(cands);
-    tileEls.forEach((el, i) => { el.classList.toggle('pickable', set.has(i)); el.classList.toggle('dim', !set.has(i)); });
+    tileEls.forEach((el, i) => {
+      el.classList.toggle('pickable', set.has(i)); el.classList.toggle('dim', !set.has(i));
+      if (set.has(i)) { const [cls, label] = pickLabel(S.tiles[i], me); const d = document.createElement('div'); d.className = 'pk ' + cls; d.innerHTML = label; el.appendChild(d); }
+    });
     $('#pickText').textContent = text; $('#pickBar').hidden = false;
     $('#pickCancel').style.display = cancellable ? '' : 'none';
     picking = { set, done: v => { clearPick(); res(v); } };
@@ -814,7 +847,7 @@ function pickTile(cands, text, cancellable) {
 }
 function clearPick() {
   picking = null; $('#pickBar').hidden = true;
-  tileEls.forEach(el => el.classList.remove('pickable', 'dim'));
+  tileEls.forEach(el => { el.classList.remove('pickable', 'dim'); el.querySelectorAll('.pk').forEach(x => x.remove()); });
 }
 function onTileClick(i) { showInfo(i); if (picking && picking.set.has(i)) picking.done(i); }
 
@@ -885,7 +918,7 @@ function showAsk(p, req) {
       return;
     }
     if (req.kind === 'pick') {
-      pickTile(req.cands, req.text, req.cancellable).then(done);
+      pickTile(req.cands, req.text, req.cancellable, p).then(done);
       curAsk = { cancel: clearPick };
       return;
     }
