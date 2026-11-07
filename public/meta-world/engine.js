@@ -11,7 +11,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const START_MONEY = 1000, SALARY = 30, ESCAPE_FEE = 50, WARP_FEE = 30;
+  const START_MONEY = 1000, SALARY = 30, ESCAPE_FEE = 50, WARP_FEE = 30, TAX_FEE = 20;
   const FEST_COUNT = 3;           // 축제 도시는 동시에 3곳 (각각 통행료 ×2)
   const LAP_CAP = [1, 2, 3, 4];   // 바퀴 수에 따른 건설 한도: 1바퀴 하우스, 2바퀴 빌딩, 3바퀴 호텔, 4바퀴부터 제한 없음
   const TOUR_MULT = [0, 1, 1.5, 2, 2.5];   // 관광지: 가진 관광지 수에 따라 통행료가 오른다 (기본 통행료 × 배율)
@@ -288,7 +288,7 @@
         else if (t.type === 'start') sc = 50;
         else if (t.type === 'chance') sc = 15;
         else if (t.type === 'festival') sc = s.tiles.some((x) => x.owner === p.id) ? 40 : 0;
-        else if (t.type === 'tax') sc = -propValue(s, p) * 0.1;
+        else if (t.type === 'tax') sc = -TAX_FEE;
         sc += Math.random() * 10;
         if (sc > bestSc) { bestSc = sc; best = sum; }
       }
@@ -685,8 +685,7 @@
     }
 
     async taxTile(p) {
-      const amt = Math.round(propValue(this.s, p) * 0.1);
-      if (amt <= 0) { this.log(`${this.nm(p)} 부동산이 없어 관세 면제`); this.announce('💸 관세 면제'); return; }
+      const amt = TAX_FEE; // 관세는 20만 고정
       this.fx('toll', { pid: p.id, to: -1, amount: amt, tile: p.pos, tax: true });
       await this.sleep(1000);
       await this.pay(p, amt, null, '관세');

@@ -329,7 +329,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   🌀 <b>워프 게이트</b>: 도착하면 <b>다음 턴</b>에 주사위 대신 원하는 칸으로 여행합니다. (여행비 있음)<br>
   🎴 <b>행운 카드</b>: 이동·돈·공격 카드 등 20종류가 있어요. <b>[보관]</b> 카드(🛡️보험·🎟️쿠폰·🛟구조 요청·🧱방어막)는 필요한 순간에 <b>쓸지 말지 직접 골라요</b>. 💳보너스 월급은 자동이에요.<br>
   <b>[공격]</b> 카드(🌪️태풍·🤧독감·🔌정전·🔨강제 경매·🔄맞교환)는 뽑았을 때 <b>지금 쓰거나 보관</b>할 수 있고, 보관한 카드는 내 차례에 주사위 굴리기 전에 쓸 수 있어요. 공격받은 사람은 🧱방어막으로 막을지 고를 수 있어요.<br>
-  💸 <b>관세</b>: 부동산 가치의 10%를 냅니다.
+  💸 <b>관세</b>: 관세 20만을 냅니다.
   <h4>돈이 부족하면</h4>
   보유한 부동산을 투자금의 50%에 팔아 돈을 마련합니다. 그래도 부족하면 파산입니다.
   <h4>승리 조건</h4>
@@ -348,7 +348,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
-<script src="engine.js?v=20261107192528"></script>
+<script src="engine.js?v=20261107193300"></script>
 <script>
 'use strict';
 const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
@@ -777,7 +777,7 @@ function showInfo(i) {
   } else {
     h += '<br>' + ({ start: `지나갈 때마다 월급 ${SALARY}만. 딱 도착하면 내 나라 한 곳에 건설할 수 있습니다.`, blackhole: `최대 3턴 표류합니다. 더블이 나오거나 ${ESCAPE_FEE}만을 내면 탈출.`,
       festival: '여기 도착하면 내 나라(관광지) 한 곳을 골라 축제를 열어요. 통행료 ×2! 새 축제가 열리면 이전 축제는 끝나요.', warp: `다음 턴에 주사위 대신 원하는 칸으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`,
-      chance: '행운 카드를 한 장 뽑습니다.', tax: '보유 부동산 가치의 10%를 관세로 냅니다.' }[t.type]);
+      chance: '행운 카드를 한 장 뽑습니다.', tax: '관세 20만을 냅니다.' }[t.type]);
   }
   $('#info').innerHTML = h;
 }
