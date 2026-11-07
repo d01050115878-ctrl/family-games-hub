@@ -70,7 +70,7 @@
     { type: 'station', name: '경주', icon: '🏯', price: 20, toll: 30, pair: '관광지' },
     { type: 'city', name: '싱가포르', cc: 'sg', g: 5 },
     { type: 'city', name: '일본', cc: 'jp', g: 5 },
-    { type: 'warp', name: '워프 게이트', icon: '🌀', sub: '다음 턴 원하는 곳으로' },
+    { type: 'warp', name: '세계여행', icon: '✈️', sub: '다음 턴 원하는 곳으로' },
     { type: 'city', name: '캐나다', cc: 'ca', g: 6 },
     { type: 'city', name: '미국', cc: 'us', g: 6 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
@@ -98,7 +98,7 @@
     { icon: '🧳', title: '수하물 분실', desc: '짐을 다시 사느라 60만을 냅니다.' },
     { icon: '🛬', title: '귀국 항공권', desc: '출발지로 이동합니다. (월급 지급)' },
     { icon: '🌊', title: '폭풍우 표류', desc: '버뮤다 삼각지대로 떠내려갑니다!' },
-    { icon: '🌀', title: '워프 티켓', desc: '워프 게이트로 이동합니다.' },
+    { icon: '✈️', title: '세계여행 티켓', desc: '세계여행 칸으로 이동합니다.' },
     { icon: '🎉', title: '페스티벌 초대장', desc: '월드 페스티벌로 이동합니다.' },
     { icon: '🛡️', title: '여행자 보험', desc: '[보관] 통행료를 낼 때 원하면 써서 1번 면제받습니다.', keep: true },
     { icon: '🎟️', title: '통행 할인 쿠폰', desc: '[보관] 통행료를 낼 때 원하면 써서 50% 할인받습니다.', keep: true },
@@ -662,18 +662,18 @@
 
     async warpTile(p) {
       p.warpReady = true;
-      this.announce('🌀 워프 게이트!');
-      this.log(`${this.nm(p)} 워프 게이트 도착! 다음 턴에 원하는 곳으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`);
+      this.announce('✈️ 세계여행!');
+      this.log(`${this.nm(p)} 세계여행 칸 도착! 다음 턴에 원하는 곳으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`);
     }
     async warpTravel(p) {
       p.warpReady = false;
       if (p.pos !== WARP) return;
-      if (p.money < WARP_FEE) { this.log(`${this.nm(p)} 여행비가 부족해서 워프하지 못했어요.`); return; }
+      if (p.money < WARP_FEE) { this.log(`${this.nm(p)} 여행비가 부족해서 세계여행을 떠나지 못했어요.`); return; }
       const cands = this.s.tiles.map((t) => t.idx).filter((i) => i !== WARP);
       const target = await this.pickTile(p, cands, `🌀 여행할 곳을 고르세요 (여행비 ${fmt(WARP_FEE)} · 출발지 통과 시 월급)`, true, 'warp');
-      if (target == null || this.s.over) { this.log(`${this.nm(p)} 워프를 취소했습니다.`); return; }
+      if (target == null || this.s.over) { this.log(`${this.nm(p)} 세계여행을 취소했습니다.`); return; }
       p.money -= WARP_FEE; this.float(p, `-${WARP_FEE}`, false);
-      this.log(`${this.nm(p)} 여행비 ${fmt(WARP_FEE)}을 내고 ${this.s.tiles[target].name}(으)로 워프!`);
+      this.log(`${this.nm(p)} 여행비 ${fmt(WARP_FEE)}을 내고 ${this.s.tiles[target].name}(으)로 세계여행!`);
       this.fx('warp', { pid: p.id });
       await this.sleep(700);
       await this.moveForwardTo(p, target);

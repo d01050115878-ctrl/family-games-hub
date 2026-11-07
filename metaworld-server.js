@@ -30,7 +30,7 @@ class Room {
     this.seats = [];          // { ai, name, token, ws, left }
     this.hostToken = null;
     this.state = 'wait';      // wait | play
-    this.maxRounds = 30;
+    this.maxRounds = 50;
     this.game = null;
     this.lastSync = null;
     this.pending = new Map();
@@ -215,7 +215,7 @@ function handle(c, m) {
       break;
     }
     case 'rounds':
-      if (isHost && r.state === 'wait' && [0, 20, 30, 40].includes(Number(m.v))) { r.maxRounds = Number(m.v); r.broadcastInfo(); }
+      if (isHost && r.state === 'wait' && [0, 20, 30, 40, 50].includes(Number(m.v))) { r.maxRounds = Number(m.v); r.broadcastInfo(); }
       break;
     case 'start':
       if (isHost) r.start();
