@@ -11,7 +11,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const START_MONEY = 800, SALARY = 100, ESCAPE_FEE = 50, WARP_FEE = 30;
+  const START_MONEY = 1500, SALARY = 100, ESCAPE_FEE = 50, WARP_FEE = 30;
   const FEST_COUNT = 3;           // 축제 도시는 동시에 3곳 (각각 통행료 ×2)
   const LAP_CAP = [1, 2, 3, 4];   // 바퀴 수에 따른 건설 한도: 1바퀴 하우스, 2바퀴 빌딩, 3바퀴 호텔, 4바퀴부터 제한 없음
   const TOUR_MULT = [0, 1, 1.5, 2, 2.5];   // 관광지: 가진 관광지 수에 따라 통행료가 오른다 (기본 통행료 × 배율)
