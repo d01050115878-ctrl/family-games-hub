@@ -11,14 +11,14 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const START_MONEY = 1500, SALARY = 200, ESCAPE_FEE = 100, WARP_FEE = 50;
+  const START_MONEY = 300, SALARY = 40, ESCAPE_FEE = 20, WARP_FEE = 10;
   const FEST_COUNT = 3;           // 축제 도시는 동시에 3곳 (각각 통행료 ×2)
   const LAP_CAP = [1, 2, 3, 4];   // 바퀴 수에 따른 건설 한도: 1바퀴 하우스, 2바퀴 빌딩, 3바퀴 호텔, 4바퀴부터 제한 없음
-  const TOUR_TOLLS = [0, 80, 160, 280, 400]; // 관광지: 가진 관광지 수에 따라 통행료가 오른다
+  const TOUR_TOLLS = [0, 12, 25, 45, 70]; // 관광지: 가진 관광지 수에 따라 통행료가 오른다
   const TOUR_ICONS = ['', '🚩', '⛱️', '🛖', '🏆'];
   const GAUGE_CHANCE = 0.55;      // 주사위 조절 게이지 성공 확률
-  const COST_MULT = [1, 0.5, 1, 1.5, 2];      // 땅, 하우스, 빌딩, 호텔, 랜드마크 (나라 가격 대비)
-  const ELEM_TOLL = [0.5, 1.0, 1.7, 2.6, 3.2]; // 건물별 통행료 (땅, 하우스, 빌딩, 호텔, 랜드마크) — 지어진 건물의 통행료를 모두 더한다
+  const COST_MULT = [1, 0.6, 1.2, 1.8, 2.4];      // 땅, 하우스, 빌딩, 호텔, 랜드마크 (나라 가격 대비)
+  const ELEM_TOLL = [0.3, 0.8, 1.6, 3.0, 6.0]; // 건물별 통행료 (땅, 하우스, 빌딩, 호텔, 랜드마크) — 지어진 건물의 통행료를 모두 더한다
   const LEVEL_NAMES = ['땅', '하우스', '빌딩', '호텔', '랜드마크'];
   const LEVEL_ICONS = ['🚩', '🏠', '🏠🏢', '🏠🏢🏨', '🌟'];
   // 캐릭터: 소방차, 구급차, 경찰차, 탱크, 한전 작업차, 도시가스차
@@ -27,18 +27,18 @@
   const PEMOJI = ['🚒', '🚑', '🚓', '🪖', '⚡', '🔥'];
   const MAX_PLAYERS = 6;
   const SIDES = [[1, 7], [9, 15], [17, 23], [25, 31]];
-  const AI_RESERVE = 250;
+  const AI_RESERVE = 50;
   const BLACKHOLE = 8, FESTIVAL = 16, WARP = 24;
   const N = 32; // 보드 칸 수 (모서리 사이 7칸씩)
 
   // 라인: A(아래·노랑) B(왼쪽·녹색) C(위·파랑) D(오른쪽·빨강). 같은 라인 나라는 땅값·건물값·통행료가 모두 같다
   const LINES = [
-    { name: 'A라인', color: '#ffd43b', price: 60 },
-    { name: 'B라인', color: '#51cf66', price: 110 },
-    { name: 'C라인', color: '#4dabf7', price: 160 },
-    { name: 'D라인', color: '#ff6b6b', price: 230 },
+    { name: 'A라인', color: '#ffd43b', base: 8, step: 1 },
+    { name: 'B라인', color: '#51cf66', base: 13, step: 1 },
+    { name: 'C라인', color: '#4dabf7', base: 18, step: 1 },
+    { name: 'D라인', color: '#ff6b6b', base: 24, step: 2 },
   ];
-  const TOUR_PRICE = 200, TOUR_TOLL = 150; // 관광지는 4곳 모두 같은 값
+  const TOUR_PRICE = 45, TOUR_TOLL = 12; // 관광지는 4곳 모두 같은 값
   const lineOf = (i) => (i % 8 === 0 ? -1 : Math.floor(i / 8));
   const GROUPS = [
     { name: '중미', color: '#f783ac' }, { name: '남미', color: '#ff922b' }, { name: '아프리카', color: '#c9a66b' }, { name: '중동', color: '#fcc419' },
@@ -46,7 +46,7 @@
   ];
 
   const TILE_DEFS = [
-    { type: 'start', name: '출발', icon: '🚀', sub: '월급 200만 · 도착 시 건설' },
+    { type: 'start', name: '출발', icon: '🚀', sub: '월급 40만 · 도착 시 건설' },
     { type: 'city', name: '쿠바', cc: 'cu', g: 0 },
     { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
@@ -80,12 +80,16 @@
     { type: 'station', name: '서울', icon: '🗼', price: TOUR_PRICE, toll: TOUR_TOLL },
   ];
 
-  TILE_DEFS.forEach((t, i) => { t.line = lineOf(i); if (t.type === 'city') t.price = LINES[t.line].price; });
+  const lineCount = [0, 0, 0, 0];
+  TILE_DEFS.forEach((t, i) => {
+    t.line = lineOf(i);
+    if (t.type === 'city') { const L = LINES[t.line]; t.price = L.base + L.step * lineCount[t.line]++; }
+  });
 
   // 행운 카드 (보관 카드는 갖고 있다가 자동으로 사용)
   const CARDS = [
-    { icon: '🎰', title: '해외 복권 당첨', desc: '150만을 받습니다.' },
-    { icon: '🧳', title: '수하물 분실', desc: '짐을 다시 사느라 100만을 냅니다.' },
+    { icon: '🎰', title: '해외 복권 당첨', desc: '30만을 받습니다.' },
+    { icon: '🧳', title: '수하물 분실', desc: '짐을 다시 사느라 20만을 냅니다.' },
     { icon: '🛬', title: '귀국 항공권', desc: '출발지로 이동합니다. (월급 지급)' },
     { icon: '🌊', title: '폭풍우 표류', desc: '버뮤다 삼각지대로 떠내려갑니다!' },
     { icon: '🌀', title: '워프 티켓', desc: '워프 게이트로 이동합니다.' },
@@ -103,7 +107,7 @@
     { icon: '🎁', title: '나라 선물', desc: '내 나라 1곳을 가장 가난한 플레이어에게 줍니다.' },
     { icon: '🛃', title: '세관 검사', desc: '관세 칸으로 이동해서 관세를 냅니다.' },
     { icon: '✨', title: '랜덤 여행', desc: '무작위 위치로 이동합니다. (출발지 통과 시 월급)' },
-    { icon: '🎂', title: '생일 파티', desc: '모든 플레이어에게 30만씩 축하금을 받습니다.' },
+    { icon: '🎂', title: '생일 파티', desc: '모든 플레이어에게 6만씩 축하금을 받습니다.' },
   ];
   const CARD_POOL = [0, 1, 2, 3, 4, 5, 6, 6, 7, 7, 8, 9, 10, 11, 11, 12, 13, 14, 15, 15, 16, 17, 18, 19];
 
@@ -214,7 +218,7 @@
     aiAnswer(p, req) {
       const s = this.s;
       switch (req.kind) {
-        case 'blackhole': return p.money > 600 ? 'pay' : 'roll';
+        case 'blackhole': return p.money > 120 ? 'pay' : 'roll';
         case 'build': return this.aiChooseLevel(p, s.tiles[req.tile], req.from, req.maxL);
         case 'station': return p.money - req.price >= AI_RESERVE;
         case 'roll': return { target: this.aiDiceTarget(p) };
@@ -235,7 +239,7 @@
     }
     aiChooseLevel(p, t, from, maxL) {
       for (let L = maxL; L > from; L--) if (cumCost(t, from, L) <= p.money - AI_RESERVE) return L;
-      if (from === -1 && levelCost(t, 0) <= p.money - 80) return 0;
+      if (from === -1 && levelCost(t, 0) <= p.money - 15) return 0;
       return null;
     }
     aiWantsTakeover(p, t, price) {
@@ -254,7 +258,7 @@
         const t = s.tiles[(p.pos + sum) % N];
         let sc = 0;
         if (isProp(t)) {
-          if (t.owner === -1) sc = cityPrice(t) <= p.money - 80 ? 60 + cityPrice(t) / 4 : 0;
+          if (t.owner === -1) sc = cityPrice(t) <= p.money - 15 ? 60 + cityPrice(t) : 0;
           else if (t.owner === p.id) sc = t.level < 4 ? 40 : 5;
           else sc = -toll(s, t);
         } else if (t.type === 'blackhole') sc = -120;
@@ -290,7 +294,7 @@
 
     /* ----- 진행 ----- */
     async run() {
-      this.log('🚀 게임 시작! 모두 1,500만을 가지고 세계 일주를 떠납니다.');
+      this.log(`🚀 게임 시작! 모두 ${fmt(START_MONEY)}을 가지고 세계 일주를 떠납니다.`);
       this.log(`🎉 축제 도시: ${this.s.festivals.map((i) => this.s.tiles[i].name).join(' · ')} (통행료 ×2)`);
       while (!this.s.over) {
         const p = this.s.players[this.s.cur];
@@ -683,8 +687,8 @@
     async runCard(ci, p) {
       const s = this.s;
       switch (ci) {
-        case 0: this.gain(p, 150, '해외 복권'); break;
-        case 1: await this.pay(p, 100, null, '수하물 분실'); break;
+        case 0: this.gain(p, 30, '해외 복권'); break;
+        case 1: await this.pay(p, 20, null, '수하물 분실'); break;
         case 2: await this.moveForwardTo(p, 0); break;
         case 3: await this.teleport(p, BLACKHOLE); p.stuck = 3; this.fx('bermuda', { pid: p.id }); this.log(`${this.nm(p)} 버뮤다 삼각지대에 표류합니다.`); break;
         case 4: await this.moveForwardTo(p, WARP); await this.resolveTile(p); break;
@@ -769,7 +773,7 @@
           let i; do { i = rnd(N); } while (i === p.pos || i === BLACKHOLE);
           await this.moveForwardTo(p, i); await this.resolveTile(p); break;
         }
-        case 19: for (const q of s.players) if (q !== p && q.alive && !s.over) await this.pay(q, 30, p, '생일 축하금'); break;
+        case 19: for (const q of s.players) if (q !== p && q.alive && !s.over) await this.pay(q, 6, p, '생일 축하금'); break;
         default: break;
       }
     }
