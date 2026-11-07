@@ -79,11 +79,11 @@
     { type: 'city', name: '캐나다', cc: 'ca', g: 6 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '미국', cc: 'us', g: 6 },
-    { type: 'station', name: '서울', icon: '🗼', price: TOUR_PRICE, toll: TOUR_TOLL },
+    { type: 'city', name: '영국', cc: 'gb', g: 7 },
     { type: 'city', name: '이탈리아', cc: 'it', g: 7 },
     { type: 'tax', name: '관세', icon: '💸' },
     { type: 'city', name: '프랑스', cc: 'fr', g: 7 },
-    { type: 'city', name: '영국', cc: 'gb', g: 7 },
+    { type: 'station', name: '서울', icon: '🗼', price: TOUR_PRICE, toll: TOUR_TOLL },
   ];
 
   TILE_DEFS.forEach((t, i) => { t.line = lineOf(i); if (t.type === 'city') t.price = LINES[t.line].price; });
