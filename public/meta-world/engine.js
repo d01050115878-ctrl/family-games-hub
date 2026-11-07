@@ -114,8 +114,13 @@
     { icon: '🛃', title: '세관 검사', desc: '관세 칸으로 이동해서 관세를 냅니다.' },
     { icon: '✨', title: '랜덤 여행', desc: '무작위 위치로 이동합니다. (출발지 통과 시 월급)' },
     { icon: '🎂', title: '생일 파티', desc: '모든 플레이어에게 20만씩 축하금을 받습니다.' },
+    { icon: '🛸', title: 'UFO 출몰', desc: '[공격] 상대 나라 1곳을 고르면, 같은 색 세트에 있는 그 주인 나라들 건물이 모두 1단계씩 무너집니다. (랜드마크 제외)', attack: true },
+    { icon: '🎊', title: '깜짝 축제', desc: '지금 바로 내 나라(관광지) 한 곳에 월드 페스티벌을 엽니다. 통행료 ×2!' },
+    { icon: '🌫️', title: '미세먼지', desc: '[공격] 상대 나라 1곳의 통행료가 3라운드 동안 절반이 됩니다.', attack: true },
+    { icon: '🎲', title: '홀짝 게임', desc: '홀·짝을 골라 주사위를 굴립니다. 맞히면 40만, 틀리면 20만을 냅니다.' },
+    { icon: '🧭', title: '여행 갈림길', desc: '셋 중 하나를 고르세요: 40만 받기 / 원하는 칸으로 바로 이동 / 여행자 보험 1장' },
   ];
-  const CARD_POOL = [0, 1, 2, 3, 4, 5, 6, 6, 7, 7, 8, 9, 10, 11, 11, 12, 13, 14, 15, 15, 16, 17, 18, 19];
+  const CARD_POOL = [0, 1, 2, 3, 4, 5, 6, 6, 7, 7, 8, 9, 10, 11, 11, 12, 13, 14, 15, 15, 16, 17, 18, 19, 20, 21, 22, 23, 23, 24, 24];
 
   /* ---------- 공용 계산 ---------- */
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -256,6 +261,7 @@
           return 'none';
         }
         case 'guard': case 'rescue': return true;
+        case 'choice': return req.ai;
         default: return true; // card
       }
     }
@@ -814,6 +820,62 @@
           await this.moveForwardTo(p, i); await this.resolveTile(p); break;
         }
         case 19: for (const q of s.players) if (q !== p && q.alive && !s.over) await this.pay(q, 20, p, '생일 축하금'); break;
+        case 20: {
+          const t = await this.attackPick(p, this.foes(p, (x) => x.level >= 1 && x.level <= 3), '🛸 UFO를 보낼 상대 나라를 고르세요 (같은 세트 전체 피해)');
+          if (t) {
+            const hit = s.tiles.filter((x) => x.type === 'city' && x.g === t.g && x.owner === t.owner && x.level >= 1 && x.level <= 3);
+            hit.forEach((x) => { x.level--; });
+            this.fx('typhoon', { pid: p.id, tile: t.idx });
+            this.log(`🛸 UFO 출몰! ${hit.map((x) => x.name).join(', ')} 건물이 1단계씩 무너졌어요.`);
+          }
+          break;
+        }
+        case 21: {
+          const mine = s.tiles.filter((t) => t.owner === p.id).map((t) => t.idx);
+          if (!mine.length) { this.log(`${this.nm(p)} 축제를 열 내 나라가 없어요.`); break; }
+          const idx = await this.pickTile(p, mine, '🎊 축제를 열 내 나라를 고르세요', false, 'festival');
+          const gone = s.festivals[0];
+          s.festivals = [idx];
+          this.fx('festival', { pid: p.id, tile: idx, mul: 2 });
+          this.log(`🎊 ${this.nm(p)} ${s.tiles[idx].name}에서 깜짝 축제! 통행료 ×2${gone != null && gone !== idx ? ` (${s.tiles[gone].name} 축제 종료)` : ''}`);
+          break;
+        }
+        case 22: {
+          const t = await this.attackPick(p, this.foes(p), '🌫️ 미세먼지를 보낼 상대 나라를 고르세요');
+          if (t) {
+            s.effects[t.idx] = { kind: 'half', left: 3 };
+            this.announce(`🌫️ ${t.name} 미세먼지!`); this.sfx('lose');
+            this.log(`🌫️ ${t.name} 통행료가 3라운드 동안 절반!`);
+          }
+          break;
+        }
+        case 23: {
+          let pickOE = await this.ask(p, { kind: 'choice', card: ci, options: [{ label: '🔴 홀', value: 'odd' }, { label: '🔵 짝', value: 'even' }], ai: Math.random() < 0.5 ? 'odd' : 'even' });
+          if (pickOE !== 'odd' && pickOE !== 'even') pickOE = 'odd';
+          const d = 1 + rnd(6);
+          this.emit({ type: 'dice', a: d, b: d, pid: p.id });
+          await this.sleep(850);
+          const win = (d % 2 === 1) === (pickOE === 'odd');
+          this.log(`🎲 ${this.nm(p)} ${pickOE === 'odd' ? '홀' : '짝'} 선택 → 주사위 ${d} (${d % 2 ? '홀' : '짝'})`);
+          if (win) { this.announce('🎉 맞혔어요! +40만'); this.gain(p, 40, '홀짝 게임 성공'); }
+          else { this.announce('😢 틀렸어요… -20만'); await this.pay(p, 20, null, '홀짝 게임 실패'); }
+          break;
+        }
+        case 24: {
+          let v = await this.ask(p, {
+            kind: 'choice', card: ci,
+            options: [{ label: '💵 40만 받기', value: 'money' }, { label: '🌀 원하는 칸으로 바로 이동', value: 'move' }, { label: '🛡️ 여행자 보험 1장 받기', value: 'shield' }],
+            ai: p.money < 150 ? 'money' : p.shield ? 'move' : 'shield',
+          });
+          if (v === 'move') {
+            const cands = s.tiles.map((t) => t.idx).filter((i) => i !== p.pos);
+            const target = await this.pickTile(p, cands, '🧭 이동할 칸을 고르세요 (출발지 통과 시 월급)', false, 'warp');
+            this.log(`🧭 ${this.nm(p)} ${s.tiles[target].name}(으)로 바로 이동!`);
+            await this.moveForwardTo(p, target); await this.resolveTile(p);
+          } else if (v === 'shield') { p.shield++; this.log(`🧭 ${this.nm(p)} 여행자 보험 1장을 받았어요.`); }
+          else this.gain(p, 40, '여행 갈림길');
+          break;
+        }
         default: break;
       }
     }
