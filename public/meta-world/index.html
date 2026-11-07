@@ -32,54 +32,58 @@ button,input,select{font-family:inherit}
 #game{display:flex;gap:14px;padding:10px;justify-content:center;align-items:flex-start}
 #boardWrap{width:min(96vw,calc(100vh - 20px));container-type:inline-size;flex:none}
 #board{position:relative;width:100%;aspect-ratio:1;display:grid;
-  grid-template-columns:1.4fr repeat(9,1fr) 1.4fr;grid-template-rows:1.4fr repeat(9,1fr) 1.4fr;gap:.3cqw;
+  grid-template-columns:1.45fr repeat(7,1fr) 1.45fr;grid-template-rows:1.45fr repeat(7,1fr) 1.45fr;gap:.35cqw;
   background:#0e1433;border:.5cqw solid #3a4699;border-radius:2cqw;padding:.5cqw;box-shadow:0 0 40px #2e3cff44}
 .tile{position:relative;background:var(--tile);border-radius:.9cqw;overflow:hidden;display:flex;flex-direction:column;
   align-items:center;justify-content:flex-start;text-align:center;cursor:pointer;border:.25cqw solid transparent;
   font-size:1.25cqw;line-height:1.15;transition:background .3s,border-color .3s}
 .tile:hover{filter:brightness(1.18)}
-.tile .band{width:100%;height:1.3cqw;flex:none;font-size:.85cqw;font-weight:900;color:#0b1026;line-height:1.3cqw;letter-spacing:-.02cqw;overflow:hidden;white-space:nowrap}
-.tile .flag{width:3.4cqw;height:2.2cqw;object-fit:cover;border-radius:.3cqw;margin-top:.45cqw;box-shadow:0 0 0 .12cqw #0007;flex:none}
-.tile .tn{font-weight:800;font-size:1.08cqw;margin-top:.3cqw;padding:0 .15cqw;word-break:keep-all;letter-spacing:-.05cqw}
-.tile .bd{font-size:1.15cqw;min-height:1.35cqw;margin-top:.1cqw;letter-spacing:-.3cqw}
-.tile .tp{font-size:.95cqw;color:var(--muted);margin-top:auto;margin-bottom:.35cqw}
+.tile .band{width:100%;height:1.45cqw;flex:none;font-size:.95cqw;border-top:.42cqw solid var(--line,transparent);box-sizing:content-box;font-weight:900;color:#0b1026;line-height:1.45cqw;letter-spacing:-.02cqw;overflow:hidden;white-space:nowrap}
+.tile .flag{width:4cqw;height:2.6cqw;object-fit:cover;border-radius:.3cqw;margin-top:.45cqw;box-shadow:0 0 0 .12cqw #0007;flex:none}
+.tile .tn{text-shadow:0 0 .35cqw #000;font-weight:800;font-size:1.25cqw;margin-top:.3cqw;padding:0 .15cqw;word-break:keep-all;letter-spacing:-.05cqw}
+.tile .bd{font-size:1.35cqw;min-height:1.6cqw;margin-top:.1cqw;letter-spacing:-.3cqw}
+.tile .tp{font-size:1.1cqw;color:#e9ecff;text-shadow:0 0 .3cqw #000;margin-top:auto;margin-bottom:.35cqw}
 .tile .ic{font-size:2.6cqw;margin-top:.5cqw}
 .tile.corner{justify-content:center;background:linear-gradient(145deg,#28337a,#161d4a)}
-.tile.corner .ic{font-size:4cqw;margin:0}
-.tile.corner .tn{font-size:1.4cqw}
-.tile.corner .sub{font-size:.95cqw;color:var(--muted);margin-top:.3cqw;padding:0 .4cqw}
+.tile.corner .ic{font-size:4.6cqw;margin:0}
+.tile.corner .tn{font-size:1.6cqw}
+.tile.corner .sub{font-size:1.05cqw;color:var(--muted);margin-top:.3cqw;padding:0 .4cqw}
 .tile.chance{background:linear-gradient(160deg,#3d2a7a,#211a4f)}
 .tile.tax{background:linear-gradient(160deg,#5a2440,#2b1530)}
 .tile.station{background:linear-gradient(160deg,#1f3a5a,#16204d)}
-.tile.owned{background:color-mix(in srgb,var(--own) 30%,#151b45);border-color:var(--own)}
+.tile.city{background:linear-gradient(170deg,color-mix(in srgb,var(--gc) 62%,#151b45),color-mix(in srgb,var(--gc) 38%,#10163a))}
+.tile.owned{border-color:var(--own);border-width:.38cqw}
+.tile.station.owned{background:color-mix(in srgb,var(--own) 25%,#16204d)}
 .tile.owned .tp{color:#fff;font-weight:700}
 .tile.lm{box-shadow:inset 0 0 1.6cqw color-mix(in srgb,var(--own) 80%,#fff)}
 .tile .fest{position:absolute;top:1.3cqw;right:.2cqw;font-size:1.3cqw;font-weight:900;color:#ffd43b;text-shadow:0 0 .4cqw #000;display:none;animation:bob 1s infinite alternate}
 .tile.festival .fest{display:block}
 /* 왼쪽·오른쪽 줄 칸은 낮고 넓어서 국기와 이름을 한 줄로 */
-.tile.side.city .flag{position:absolute;left:3.4cqw;top:1.6cqw;width:2.9cqw;height:1.9cqw;margin:0}
-.tile.side.station .ic{position:absolute;left:3.5cqw;top:1.35cqw;font-size:1.9cqw;margin:0}
-.tile.side.city .tn,.tile.side.station .tn{position:absolute;left:6.6cqw;right:.2cqw;top:1.85cqw;margin:0;padding:0;text-align:left;font-size:1.05cqw;
+.tile.side.city .flag{position:absolute;left:3.9cqw;top:2.2cqw;width:3.1cqw;height:2cqw;margin:0}
+.tile.side.station .ic{position:absolute;left:4cqw;top:1.95cqw;font-size:2cqw;margin:0}
+.tile.side.city .tn,.tile.side.station .tn{position:absolute;left:7.3cqw;right:.2cqw;top:2.45cqw;margin:0;padding:0;text-align:left;font-size:1.05cqw;
   white-space:nowrap;overflow:hidden;text-overflow:clip}
-.tile.side.city .bd,.tile.side.station .bd{margin-top:2.5cqw}
+.tile.side.city .bd,.tile.side.station .bd{margin-top:2.9cqw}
 /* 소유자 표시 */
-.tile .own{position:absolute;top:1.45cqw;left:.15cqw;width:3cqw;height:2.1cqw;border-radius:.55cqw;background:#0b1026;
+.tile .own{position:absolute;top:2cqw;left:.2cqw;width:3.4cqw;height:2.4cqw;border-radius:.55cqw;background:#0b1026;
   border:.22cqw solid var(--own);padding:.1cqw;display:none;box-shadow:0 0 .5cqw #000;z-index:1}
 .tile.owned .own{display:block}
 .tile .own svg{width:100%;height:100%;display:block}
-.tile .pk{position:absolute;left:.15cqw;right:.15cqw;bottom:.25cqw;padding:.2cqw .1cqw;border-radius:.5cqw;font-size:.92cqw;font-weight:900;
+.tile .pk{position:absolute;left:.25cqw;right:.25cqw;bottom:.3cqw;padding:.25cqw .2cqw;border-radius:.6cqw;font-size:1.05cqw;font-weight:900;
   color:#fff;z-index:3;line-height:1.2;background:#000d;box-shadow:0 0 .6cqw #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .pk.mine{background:#2b8a3e}
 .tile .pk.foe{background:#c92a2a}
 .tile .pk.free{background:#1c7ed6}
 .tile .pk.warn{background:#5f3dc4}
+.tile .x2{display:inline-block;margin-left:.25cqw;padding:0 .3cqw;border-radius:.4cqw;background:linear-gradient(#ffe066,#f59f00);color:#3a2500;font-weight:900;font-size:1cqw;line-height:1.35cqw}
+.tile.setx2{box-shadow:inset 0 0 1.2cqw #ffd43b88}
 .tile.festival{box-shadow:0 0 1.2cqw #ffcc4d}
 .tile.pickable{outline:.45cqw solid var(--accent);outline-offset:-.2cqw;animation:pulse .8s infinite alternate;z-index:2}
 .tile.dim{opacity:.35}
 @keyframes pulse{from{filter:brightness(1)}to{filter:brightness(1.5)}}
 @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-.4cqw)}}
 
-#center{grid-row:2/11;grid-column:2/11;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5cqw;
+#center{grid-row:2/9;grid-column:2/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5cqw;
   position:relative;border-radius:1.5cqw;background:radial-gradient(circle at 50% 40%,#2a3690 0%,#121942 70%)}
 .logo{font-size:5.6cqw;font-weight:900;letter-spacing:.2cqw;background:linear-gradient(90deg,#7cf3ff,#b78bff,#ffcc4d);
   -webkit-background-clip:text;background-clip:text;color:transparent;text-align:center;line-height:1}
@@ -105,11 +109,11 @@ button,input,select{font-family:inherit}
   transition:opacity .25s,transform .25s;white-space:nowrap;z-index:6;text-shadow:0 0 1cqw #000}
 #announce.show{opacity:1;transform:translate(-50%,0) scale(1)}
 
-.token{position:absolute;width:4.8cqw;height:3.3cqw;border-radius:1cqw;display:grid;place-items:center;
+.token{position:absolute;width:5.4cqw;height:3.8cqw;border-radius:1cqw;display:grid;place-items:center;
   background:#0b1026e0;border:.3cqw solid var(--pc);box-shadow:0 .4cqw .8cqw #000a;transform:translate(-50%,-50%);z-index:4;
   transition:left .16s ease-out,top .16s ease-out;pointer-events:none;padding:.15cqw}
 .token svg{width:100%;height:100%}
-#board.many .token{width:3.9cqw;height:2.7cqw;border-width:.25cqw}
+#board.many .token{width:4.5cqw;height:3.1cqw;border-width:.25cqw}
 .veh{display:inline-grid;place-items:center;flex:none;background:#0b1026;border:2px solid var(--pc);border-radius:9px;padding:2px}
 .veh svg{width:100%;height:100%}
 #gauge{width:46cqw;display:flex;flex-direction:column;gap:.4cqw}
@@ -304,10 +308,14 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <h4>나라 &amp; 건설</h4>
   빈 나라에 도착하면 땅을 사고 🏠하우스 · 🏢빌딩 · 🏨호텔까지 한 번에 지을 수 있습니다.<br>
   호텔까지 지은 내 나라에 다시 도착하면 🌟<b>랜드마크</b>를 세울 수 있습니다. 랜드마크는 통행료가 매우 높고 <b>인수할 수 없습니다</b>.<br>
-  🔰 <b>첫 바퀴</b>(출발지를 한 번 지나기 전)에는 땅과 하우스까지만 지을 수 있고, 인수도 할 수 없습니다.
+  🔰 <b>건설 한도</b>: 1바퀴째 하우스까지 → 2바퀴째 빌딩까지 → 3바퀴째 호텔까지 → <b>4바퀴째부터 제한 없음</b>. 첫 바퀴에는 인수도 할 수 없어요.<br>
+  💰 건설비는 한 번에 짓는 땅·건물 값을 더해서 내고, <b>통행료와 인수비도 지어진 건물 것을 모두 더해서</b> 계산합니다.
   <h4>통행료 &amp; 인수</h4>
   다른 플레이어의 나라에 도착하면 통행료를 냅니다. 통행료를 낸 뒤 <b>투자금의 2배</b>를 내고 그 나라를 인수할 수 있습니다.<br>
-  🏝️ <b>관광지</b>(제주도·부산·경주·서울)는 건물을 지을 수 없고, 4곳 모두 같은 통행료를 받습니다.
+  🏝️ <b>관광지</b>(제주도·부산·경주·서울)는 직접 건물을 지을 수 없고, <b>가진 관광지 수가 늘어날수록</b> 🚩→⛱️→🛖로 업그레이드되며 통행료가 올라갑니다.
+  <h4>🎨 같은 색 세트 ×2</h4>
+  나라 칸 위쪽 띠의 <b>색깔(대륙)</b>이 같은 나라 3곳이 한 세트입니다. 세트를 모두 가지면 그 나라들의 통행료가 <b>2배</b>가 되고 칸에 <b style="color:#ffd43b">×2</b> 표시가 붙습니다.
+  페스티벌과 겹치면 함께 곱해져요. (칸 맨 위의 얇은 줄은 A·B·C·D 라인 색이에요.)
   <h4>누구 땅인지 보기</h4>
   주인이 있는 칸은 테두리가 주인 색으로 바뀌고, 왼쪽 위에 <b>주인 차량</b>이 표시됩니다.
   워프·페스티벌처럼 칸을 고를 때는 칸마다 <b style="color:#69db7c">내 땅</b> · <b style="color:#74c0fc">빈 땅</b> · <b style="color:#ff8787">상대 땅(통행료)</b>이 표시돼요.
@@ -316,9 +324,10 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   같은 라인에 있는 나라는 <b>땅값·건물값·통행료가 모두 같고</b>, A → B → C → D 순서로 비싸집니다.
   <h4>특수 칸</h4>
   🌊 <b>버뮤다 삼각지대</b>: 최대 3턴 표류합니다. 더블이 나오거나 100만을 내면 탈출합니다.<br>
-  🎉 <b>월드 페스티벌</b>: 내 나라 하나를 골라 페스티벌을 엽니다. 통행료 ×2, 같은 곳에서 또 열면 ×3, ×4, 최대 ×5까지 올라갑니다. 다른 곳에서 열면 이전 페스티벌은 끝납니다.<br>
+  🎉 <b>축제 도시</b>: 게임 시작 때 도시 3곳을 뽑아 축제 도시로 정합니다(통행료 ×2). <b>월드 페스티벌</b> 칸에 도착하면 가장 오래된 축제를 내 나라로 옮겨올 수 있어요.<br>
   🌀 <b>워프 게이트</b>: 도착하면 <b>다음 턴</b>에 주사위 대신 원하는 칸으로 여행합니다. (여행비 50만)<br>
-  🎴 <b>행운 카드</b>: 행운 또는 불운 카드를 뽑습니다. 🛡️여행자 보험·🎟️할인 쿠폰은 보관했다가 자동으로 사용됩니다.<br>
+  🎴 <b>행운 카드</b>: 이동·돈·공격 카드 등 20종류가 있어요. <b>[보관]</b> 카드(🛡️보험·🎟️쿠폰·💳보너스 월급·🛟구조 요청·🧱방어막)는 갖고 있다가 자동으로 쓰이고,
+  <b>[공격]</b> 카드(🌪️태풍·🤧독감·🔌정전·🔨강제 경매·🔄맞교환)는 상대 나라를 골라 씁니다. 🧱방어막이 있으면 공격을 막아요.<br>
   💸 <b>관세</b>: 부동산 가치의 10%를 냅니다.
   <h4>돈이 부족하면</h4>
   보유한 부동산을 투자금의 50%에 팔아 돈을 마련합니다. 그래도 부족하면 파산입니다.
@@ -341,7 +350,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
 <script src="engine.js"></script>
 <script>
 'use strict';
-const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, FEST_MAX } = MW;
+const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_TOLLS, TOUR_ICONS } = MW;
 
 /* ================== 캐릭터 (직접 그린 차량) ================== */
 const WHEELS = (xs, y = 33, r = 5.5) => xs.map(x => `<circle cx="${x}" cy="${y}" r="${r}" fill="#212529"/><circle cx="${x}" cy="${y}" r="${r * 0.42}" fill="#adb5bd"/>`).join('');
@@ -646,12 +655,13 @@ function buildBoard() {
   TILE_DEFS.forEach((t, i) => {
     const el = document.createElement('div');
     const { r, c } = MW.gridPos(i);
-    el.className = 'tile ' + t.type + (i % 10 === 0 ? ' corner' : '') + ((i > 10 && i < 20) || i > 30 ? ' side' : '');
+    el.className = 'tile ' + t.type + (i % 8 === 0 ? ' corner' : '') + ((i > 8 && i < 16) || i > 24 ? ' side' : '');
     el.style.gridRow = r; el.style.gridColumn = c;
     if (t.type === 'city') {
-      el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">${GROUPS[t.g].name}</div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
+      el.style.setProperty('--gc', GROUPS[t.g].color);
+      el.innerHTML = `<div class="band" style="background:${GROUPS[t.g].color};--line:${LINES[t.line].color}">${GROUPS[t.g].name}</div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
     } else if (t.type === 'station') {
-      el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">관광지</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
+      el.innerHTML = `<div class="band" style="background:#e9ecef;--line:${LINES[t.line].color}">관광지</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
     } else {
       el.innerHTML = `<div class="ic">${t.icon}</div><div class="tn">${t.name}</div>${t.sub ? `<div class="sub">${t.sub}</div>` : ''}`;
     }
@@ -696,8 +706,9 @@ function updateTiles() {
     const el = tileEls[i], owned = t.owner >= 0;
     el.classList.toggle('owned', owned);
     el.classList.toggle('lm', t.level === 4);
-    el.classList.toggle('festival', S.festival === i);
-    if (S.festival === i) el.querySelector('.fest').textContent = `🎉×${S.festMul}`;
+    const fest = MW.isFestival(S, i), eff = S.effects && S.effects[i];
+    el.classList.toggle('festival', fest || !!eff);
+    el.querySelector('.fest').textContent = [fest ? '🎉×2' : '', eff ? (eff.kind === 'off' ? '🔌' : '🤧') : ''].join('');
     el.style.setProperty('--own', owned ? S.players[t.owner].color : 'transparent');
     const badge = el.querySelector('.own');
     if (badge.dataset.o !== String(t.owner)) {
@@ -705,15 +716,17 @@ function updateTiles() {
       badge.innerHTML = owned ? vehicleSVG(t.owner) : '';
       el.title = owned ? `${S.players[t.owner].name}의 ${t.type === 'station' ? '관광지' : '땅'}` : '';
     }
-    el.querySelector('.bd').textContent = owned && t.type === 'city' ? LEVEL_ICONS[t.level] : '';
-    el.querySelector('.tp').textContent = owned ? `통행 ${fmt(MW.toll(S, t))}` : fmt(MW.cityPrice(t));
+    el.querySelector('.bd').textContent = !owned ? '' : t.type === 'city' ? LEVEL_ICONS[t.level] : TOUR_ICONS[Math.min(4, MW.stationCount(S, t.owner))];
+    const x2 = owned && MW.setBonus(S, t) === 2;
+    el.classList.toggle('setx2', x2);
+    el.querySelector('.tp').innerHTML = owned ? `통행 ${fmt(MW.toll(S, t))}${x2 ? '<span class="x2">×2</span>' : ''}` : fmt(MW.cityPrice(t));
   });
 }
 function seatOnline(i) { return mode !== 'online' || !roomInfo || !roomInfo.seats[i] || roomInfo.seats[i].online; }
 function renderPlayers() {
   $('#players').innerHTML = S.players.map((p, i) => {
     const cnt = S.tiles.filter(t => t.owner === p.id).length;
-    const items = [p.laps === 0 && p.alive ? '🔰 첫 바퀴' : '', p.warpReady ? '🌀 여행 대기' : '', p.shield ? `🛡️×${p.shield}` : '', p.coupon ? `🎟️×${p.coupon}` : '', p.stuck ? `🌊 표류 ${p.stuck}턴` : '',
+    const items = [p.laps < 3 && p.alive ? `🔰 ${p.laps + 1}바퀴째 (${LEVEL_NAMES[MW.LAP_CAP[p.laps]]}까지)` : '', p.warpReady ? '🌀 여행 대기' : '', p.shield ? `🛡️×${p.shield}` : '', p.coupon ? `🎟️×${p.coupon}` : '', p.salBoost ? `💳×${p.salBoost}` : '', p.rescue ? `🛟×${p.rescue}` : '', p.guard ? `🧱×${p.guard}` : '', p.stuck ? `🌊 표류 ${p.stuck}턴` : '',
       !p.alive ? '💀 파산' : '', p.alive && !seatOnline(i) ? '🔌 연결 끊김' : ''].filter(Boolean).join(' · ');
     return `<div class="pcard ${i === S.cur && !S.over ? 'active' : ''} ${p.alive ? '' : 'dead'}" style="--pc:${p.color}">
       <div class="ph"><span class="pe">${vehicleSVG(p.id)}</span><b>${esc(p.name)}</b>${i === mySeat ? '<span class="tag me">나</span>' : ''}${p.isAI ? '<span class="tag">AI</span>' : ''}</div>
@@ -747,18 +760,21 @@ function showInfo(i) {
   let h = `<b style="font-size:15px">${t.cc ? flagImg(t.cc, '') : (t.icon || '')} ${t.name}</b>`;
   if (t.type === 'city') {
     const gr = GROUPS[t.g];
-    h += ` <span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · ${gr.name}<br>`;
+    h += ` <span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · <b style="color:${gr.color}">● ${gr.name} 세트</b><br>`;
     h += `소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> (${LEVEL_NAMES[t.level]})` : '없음'}`;
-    if (t.owner >= 0) h += ` · 통행료 <b>${fmt(MW.toll(S, t))}</b>${S.festival === i ? ` 🎉×${S.festMul}` : ''}<br>인수가 ${t.level === 4 ? '인수 불가' : fmt(MW.takeoverPrice(t))}`;
-    h += '<table><tr><td>단계</td><td>건설비</td><td>통행료</td></tr>';
-    for (let L = 0; L <= 4; L++) h += `<tr><td>${LEVEL_ICONS[L]} ${LEVEL_NAMES[L]}</td><td>${fmt(MW.levelCost(t, L))}</td><td>${fmt(MW.tollAt(S, t, L))}</td></tr>`;
-    h += '</table>';
+    if (t.owner >= 0) h += ` · 통행료 <b>${fmt(MW.toll(S, t))}</b>${MW.setBonus(S, t) === 2 ? ' 🎨세트×2' : ''}${MW.isFestival(S, i) ? ' 🎉축제×2' : ''}${S.effects && S.effects[i] ? (S.effects[i].kind === 'off' ? ` 🔌정전(${S.effects[i].left}라운드)` : ` 🤧독감 ½(${S.effects[i].left}라운드)`) : ''}<br>인수가 ${t.level === 4 ? '인수 불가' : fmt(MW.takeoverPrice(t))}`;
+    const sameSet = S.tiles.filter(x => x.type === 'city' && x.g === t.g).map(x => x.name).join(' · ');
+    h += `<br><small style="color:var(--muted)">세트: ${sameSet} — 모두 가지면 통행료 ×2</small>`;
+    if (MW.isFestival(S, i)) h += '<br>🎉 <b>축제 도시</b> — 통행료 ×2';
+    h += '<table><tr><td>건물</td><td>건설비</td><td>통행료</td><td>인수비</td></tr>';
+    for (let L = 0; L <= 4; L++) h += `<tr><td>${LEVEL_ICONS[L].slice(-2)} ${LEVEL_NAMES[L]}</td><td>${fmt(MW.levelCost(t, L))}</td><td>+${fmt(MW.elemToll(t, L))}</td><td>${L === 4 ? '불가' : '+' + fmt(MW.levelCost(t, L) * 2)}</td></tr>`;
+    h += '</table><small style="color:var(--muted)">통행료·인수비는 지어진 건물 것을 모두 더해요.</small>';
   } else if (t.type === 'station') {
-    h += `<br>가격 ${fmt(t.price)} · 기본 통행료 ${fmt(t.toll)}<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
+    h += `<br>가격 ${fmt(t.price)} · 통행료(가진 관광지 수): ${TOUR_TOLLS.slice(1).map((v, k) => `${TOUR_ICONS[k + 1]}${k + 1}곳 ${v}`).join(' / ')}<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
     h += `<br><span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · 관광지 4곳을 모두 가지면 관광지 독점 승리!`;
   } else {
     h += '<br>' + ({ start: `지나갈 때마다 월급 ${SALARY}만. 딱 도착하면 내 나라 한 곳에 건설할 수 있습니다.`, blackhole: `최대 3턴 표류합니다. 더블이 나오거나 ${ESCAPE_FEE}만을 내면 탈출.`,
-      festival: `내 나라(관광지) 하나를 골라 페스티벌을 엽니다. 통행료 ×2, 같은 곳에서 다시 열면 최대 ×${FEST_MAX}까지!`, warp: `다음 턴에 주사위 대신 원하는 칸으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`,
+      festival: '축제 도시는 항상 3곳(통행료 ×2)이에요. 여기 도착하면 가장 오래된 축제를 내 나라로 옮겨올 수 있어요.', warp: `다음 턴에 주사위 대신 원하는 칸으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`,
       chance: '행운 카드를 한 장 뽑습니다.', tax: '보유 부동산 가치의 10%를 관세로 냅니다.' }[t.type]);
   }
   $('#info').innerHTML = h;
@@ -870,7 +886,7 @@ function askModal(p, req) {
       title: `${req.isNew ? '🌍' : '🏗️'} ${head}${t.name} ${req.isNew ? '구매' : '건설'}`,
       html: `<span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · ${GROUPS[t.g].name} · 현재: <b>${req.from < 0 ? '빈 땅' : LEVEL_NAMES[req.from]}</b><br>보유 현금: <b>${fmt(req.money)}</b>
         ${req.maxL === 4 ? '<br>🌟 랜드마크는 통행료가 가장 높고 인수당하지 않습니다!' : ''}
-        ${req.firstLap ? '<br>🔰 첫 바퀴에는 하우스까지만 지을 수 있어요.' : ''}`,
+        ${req.cap < 4 ? `<br>🔰 ${req.lap}바퀴째: <b>${LEVEL_NAMES[req.cap]}</b>까지 지을 수 있어요 (4바퀴째부터 제한 없음)` : ''}`,
       buttons: req.opts.map(o => ({
         label: `${LEVEL_ICONS[o.L]} ${LEVEL_NAMES[o.L]}${o.L > 0 && o.L < 4 ? '까지' : ''} <small>${fmt(o.cost)} · 통행료 ${fmt(o.toll)}</small>`,
         value: o.L, disabled: !o.ok, cls: o.L === 4 ? 'gold' : '',
