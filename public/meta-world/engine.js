@@ -249,7 +249,7 @@
         case 'station': return Math.random() < 0.5 && p.money - req.price >= this.reserve();
         case 'takeover': return Math.random() < 0.15 && p.money - req.price >= this.reserve() + 100;
         case 'pick': return req.cands[rnd(req.cands.length)];
-        case 'cardUse': return Math.random() < 0.5 ? 'use' : 'keep';
+        case 'cardUse': return Math.random() < 0.8 ? 'use' : 'skip';
         case 'hand': return Math.random() < 0.5 ? 0 : null;
         case 'defend': return req.toll > p.money ? (req.shield ? 'shield' : 'coupon') : Math.random() < 0.5 ? 'none' : (req.shield ? 'shield' : 'coupon');
         default: return undefined;
@@ -737,7 +737,8 @@
       if (s.over) return;
       if (c.attack) {
         const v = await this.ask(p, { kind: 'cardUse', card: ci });
-        if (v === 'keep') { p.hand.push(ci); this.log(`${this.nm(p)} ${c.icon} ${c.title} 카드를 보관했어요.`); this.sync(); return; }
+        // 공격 카드는 즉시 사용 카드: 지금 쓰거나 버린다 (보관 불가)
+        if (v === 'skip') { this.log(`${this.nm(p)} ${c.icon} ${c.title} 카드를 쓰지 않고 버렸어요.`); this.sync(); return; }
       }
       await this.runCard(ci, p);
       this.sync();

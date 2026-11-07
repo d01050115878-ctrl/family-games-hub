@@ -337,7 +337,8 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   🎉 <b>월드 페스티벌</b>: 도착한 사람이 자기 나라(관광지) 한 곳을 골라 축제를 엽니다. 그곳 통행료 ×2! 축제는 한 곳만 열리고, 새 축제가 열리면 이전 축제는 끝나요.<br>
   ✈️ <b>세계여행</b>: 도착하면 <b>다음 턴</b>에 주사위 대신 원하는 칸으로 여행합니다. (여행비 있음)<br>
   🎴 <b>행운 카드</b>: 이동·돈·공격·선택 카드 등 25종류가 있어요. 🎲홀짝 게임·🧭여행 갈림길처럼 <b>여러 옵션 중 골라 쓰는 카드</b>도 있어요. <b>[보관]</b> 카드(🛡️보험·🎟️쿠폰·🛟구조 요청·🧱방어막)는 필요한 순간에 <b>쓸지 말지 직접 골라요</b>. 💳보너스 월급은 자동이에요.<br>
-  <b>[공격]</b> 카드(🌪️태풍·🤧독감·🔌정전·🔨강제 경매·🔄맞교환)는 뽑았을 때 <b>지금 쓰거나 보관</b>할 수 있고, 보관한 카드는 내 차례에 주사위 굴리기 전에 쓸 수 있어요. 공격받은 사람은 🧱방어막으로 막을지 고를 수 있어요.<br>
+  <b>[즉시]</b> 공격 카드(🌪️태풍·🤧독감·🔌정전·🔨강제 경매·🔄맞교환·🛸UFO·🌫️미세먼지)와 나머지 카드는 뽑자마자 효과가 나요. 공격 카드는 <b>지금 쓰거나 버릴</b> 수 있고, 공격받은 사람은 🧱방어막으로 막을지 고를 수 있어요.<br>
+  <b>[보관]</b> 카드는 수비·보너스 카드뿐이고, 같은 카드는 1장까지만 가질 수 있어요.<br>
   💸 <b>관세</b>: 관세 20만을 냅니다.
   <h4>돈이 부족하면</h4>
   보유한 부동산을 투자금의 50%에 팔아 돈을 마련합니다. 그래도 부족하면 파산입니다.
@@ -357,7 +358,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
-<script src="engine.js?v=20261107194524"></script>
+<script src="engine.js?v=20261107194703"></script>
 <script>
 'use strict';
 const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
@@ -942,8 +943,8 @@ function askModal(p, req) {
       const c = CARDS[req.card];
       return {
         title: `${c.icon} ${c.title}`,
-        html: `${c.desc}<br><br>지금 바로 쓸까요, 보관했다가 나중에 내 차례(주사위 굴리기 전)에 쓸까요?`,
-        buttons: [{ label: '⚔️ 지금 사용', value: 'use', cls: 'gold' }, { label: '👜 보관하기', value: 'keep' }],
+        html: `${c.desc}<br><br>공격 카드는 <b>즉시 사용</b> 카드예요. 지금 쓸까요?`,
+        buttons: [{ label: '⚔️ 지금 사용', value: 'use', cls: 'gold' }, { label: '🙅 사용 안 함 <small>카드 버리기</small>', value: 'skip', cls: 'ghost' }],
       };
     }
     case 'choice': {
