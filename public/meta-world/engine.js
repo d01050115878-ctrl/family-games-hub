@@ -11,7 +11,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const START_MONEY = 1000, SALARY = 30, ESCAPE_FEE = 50, WARP_FEE = 30, TAX_FEE = 20;
+  const START_MONEY = 1000, SALARY = 50, ESCAPE_FEE = 50, WARP_FEE = 30, TAX_FEE = 20;
   const FEST_COUNT = 3;           // 축제 도시는 동시에 3곳 (각각 통행료 ×2)
   const LAP_CAP = [1, 2, 3, 4];   // 바퀴 수에 따른 건설 한도: 1바퀴 하우스, 2바퀴 빌딩, 3바퀴 호텔, 4바퀴부터 제한 없음
   const TOUR_MULT = [0, 1, 1.5, 2, 2.5];   // 관광지: 가진 관광지 수에 따라 통행료가 오른다 (기본 통행료 × 배율)
@@ -46,7 +46,7 @@
   ];
 
   const TILE_DEFS = [
-    { type: 'start', name: '출발', icon: '🚀', sub: '월급 30만 · 도착 시 건설' },
+    { type: 'start', name: '출발', icon: '🚀', sub: '월급 50만 · 도착 시 건설' },
     { type: 'city', name: '쿠바', cc: 'cu', g: 0 },
     { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
