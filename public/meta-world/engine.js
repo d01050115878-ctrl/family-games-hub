@@ -722,8 +722,15 @@
 
     async drawCard(p) {
       const s = this.s;
-      if (!s.deck.length) s.deck = shuffle(CARD_POOL.slice());
-      const ci = s.deck.pop(), c = CARDS[ci];
+      // 보관 카드(수비·공격)는 같은 카드를 1장까지만 가질 수 있다. 이미 가진 카드가 나오면 무효 → 다시 뽑기
+      let ci;
+      for (let tries = 0; tries < 20; tries++) {
+        if (!s.deck.length) s.deck = shuffle(CARD_POOL.slice());
+        ci = s.deck.pop();
+        if (!this.holdsCard(p, ci)) break;
+        this.log(`${this.nm(p)} ${CARDS[ci].icon} ${CARDS[ci].title} — 이미 가지고 있어서 무효! 다시 뽑아요.`);
+      }
+      const c = CARDS[ci];
       this.log(`${this.nm(p)} 🎴 ${c.icon} ${c.title}`);
       this.announce(`${c.icon} ${c.title}`);
       await this.ask(p, { kind: 'card', card: ci });
@@ -752,6 +759,13 @@
       return t;
     }
     foes(p, f) { return this.s.tiles.filter((t) => t.type === 'city' && t.owner >= 0 && t.owner !== p.id && (!f || f(t))).map((t) => t.idx); }
+
+    // 이 카드를 이미 보관 중인가 (수비 카드 개수 또는 보관한 공격 카드)
+    holdsCard(p, ci) {
+      const keepField = { 6: 'shield', 7: 'coupon', 9: 'salBoost', 10: 'rescue', 11: 'guard' }[ci];
+      if (keepField) return p[keepField] > 0;
+      return !!CARDS[ci].attack && p.hand.includes(ci);
+    }
 
     async runCard(ci, p) {
       const s = this.s;
@@ -887,9 +901,11 @@
         case 24: {
           let v = await this.ask(p, {
             kind: 'choice', card: ci,
-            options: [{ label: '💵 40만 받기', value: 'money' }, { label: '🌀 원하는 칸으로 바로 이동', value: 'move' }, { label: '🛡️ 여행자 보험 1장 받기', value: 'shield' }],
+            options: [{ label: '💵 40만 받기', value: 'money' }, { label: '🌀 원하는 칸으로 바로 이동', value: 'move' }]
+              .concat(p.shield ? [] : [{ label: '🛡️ 여행자 보험 1장 받기', value: 'shield' }]),
             ai: p.money < 150 ? 'money' : p.shield ? 'move' : 'shield',
           });
+          if (v === 'shield' && p.shield) v = 'money';
           if (v === 'move') {
             const cands = s.tiles.map((t) => t.idx).filter((i) => i !== p.pos);
             const target = await this.pickTile(p, cands, '🧭 이동할 칸을 고르세요 (출발지 통과 시 월급)', false, 'warp');
