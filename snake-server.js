@@ -210,7 +210,12 @@ function quickMatch(c) {
 }
 
 module.exports = function attachSnakeServer(server) {
-  const wss = new WebSocketServer({ server, path: '/snake-ws' });
+  // 같은 서버에 여러 WebSocket 서버가 붙을 수 있도록 자기 주소로 온 연결만 받는다
+  const wss = new WebSocketServer({ noServer: true });
+  server.on('upgrade', (req, socket, head) => {
+    if ((req.url || '').split('?')[0] !== '/snake-ws') return;
+    wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
+  });
 
   wss.on('connection', (ws) => {
     const c = { ws, cid: cidSeq++, name: '플레이어', skin: 'tree', room: null, sid: 0, best: 0, alive: true };

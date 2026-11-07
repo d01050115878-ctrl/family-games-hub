@@ -5,6 +5,7 @@ const path = require('path');
 const http = require('http');
 const express = require('express');
 const attachSnakeServer = require('./snake-server');
+const attachMetaWorldServer = require('./metaworld-server');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -14,6 +15,7 @@ app.get('/healthz', (req, res) => res.send('ok'));
 
 const server = http.createServer(app);
 attachSnakeServer(server);
+attachMetaWorldServer(server);
 
 server.listen(PORT, () => {
   console.log(`가족 게임 허브가 http://localhost:${PORT} 에서 실행 중입니다.`);

@@ -1,0 +1,577 @@
+/* =========================================================
+   메타 월드 다이스 - 게임 엔진 (브라우저 · 서버 공용)
+   게임 규칙과 진행만 담당한다. 화면/통신은 io 객체가 맡는다.
+     io.event(ev)      : 화면에 보여줄 일 (sync, log, dice, announce, float, sfx, msg, end)
+     io.ask(p, req)    : 사람 플레이어에게 결정 요청 → Promise(답). undefined면 컴퓨터가 대신 결정
+     io.sleep(ms)      : 연출용 대기
+   ========================================================= */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.MW = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const START_MONEY = 1500, SALARY = 200, ESCAPE_FEE = 100, STATION_PRICE = 150;
+  const STATION_TOLL = [0, 50, 120, 250, 500];
+  const COST_MULT = [1, 0.5, 1, 1.5, 2];      // 땅, 하우스, 빌딩, 호텔, 랜드마크 (나라 가격 대비)
+  const TOLL_MULT = [0.4, 1.2, 2.5, 4.5, 7];  // 단계별 통행료 배율
+  const LEVEL_NAMES = ['땅', '하우스', '빌딩', '호텔', '랜드마크'];
+  const LEVEL_ICONS = ['🚩', '🏠', '🏠🏢', '🏠🏢🏨', '🌟'];
+  const PCOLORS = ['#ff5d73', '#4dabf7', '#51cf66', '#ffd43b', '#c084fc', '#ff922b'];
+  const PEMOJI = ['🦊', '🐼', '🐸', '🐯', '🐰', '🐵'];
+  const MAX_PLAYERS = 6;
+  const SIDES = [[1, 7], [9, 15], [17, 23], [25, 31]];
+  const AI_RESERVE = 250;
+  const BLACKHOLE = 8, FESTIVAL = 16, WARP = 24;
+
+  const GROUPS = [
+    { name: '중미', color: '#b0b7c9', price: 40 },
+    { name: '남미', color: '#22d3ee', price: 60 },
+    { name: '아프리카', color: '#fb923c', price: 80 },
+    { name: '오세아니아', color: '#c084fc', price: 100 },
+    { name: '중동', color: '#60a5fa', price: 120 },
+    { name: '아시아', color: '#4ade80', price: 140 },
+    { name: '북미', color: '#f87171', price: 170 },
+    { name: '유럽', color: '#facc15', price: 200 },
+  ];
+
+  const TILE_DEFS = [
+    { type: 'start', name: '출발', icon: '🚀', sub: '지날 때 월급 200만' },
+    { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
+    { type: 'city', name: '쿠바', cc: 'cu', g: 0 },
+    { type: 'chance', name: '행운 카드', icon: '🎴' },
+    { type: 'city', name: '페루', cc: 'pe', g: 1 },
+    { type: 'city', name: '아르헨티나', cc: 'ar', g: 1 },
+    { type: 'station', name: '인천공항', icon: '✈️' },
+    { type: 'city', name: '브라질', cc: 'br', g: 1 },
+    { type: 'blackhole', name: '버뮤다 삼각지대', icon: '🌊', sub: '최대 3턴 표류' },
+    { type: 'city', name: '이집트', cc: 'eg', g: 2 },
+    { type: 'chance', name: '행운 카드', icon: '🎴' },
+    { type: 'city', name: '남아공', cc: 'za', g: 2 },
+    { type: 'station', name: '두바이공항', icon: '✈️' },
+    { type: 'city', name: '피지', cc: 'fj', g: 3 },
+    { type: 'city', name: '뉴질랜드', cc: 'nz', g: 3 },
+    { type: 'city', name: '호주', cc: 'au', g: 3 },
+    { type: 'festival', name: '월드 페스티벌', icon: '🎉', sub: '내 나라 통행료 2배' },
+    { type: 'city', name: '튀르키예', cc: 'tr', g: 4 },
+    { type: 'chance', name: '행운 카드', icon: '🎴' },
+    { type: 'city', name: '아랍에미리트', cc: 'ae', g: 4 },
+    { type: 'station', name: 'JFK공항', icon: '✈️' },
+    { type: 'city', name: '태국', cc: 'th', g: 5 },
+    { type: 'city', name: '일본', cc: 'jp', g: 5 },
+    { type: 'city', name: '대한민국', cc: 'kr', g: 5 },
+    { type: 'warp', name: '워프 게이트', icon: '🌀', sub: '원하는 칸으로 이동' },
+    { type: 'city', name: '캐나다', cc: 'ca', g: 6 },
+    { type: 'city', name: '미국', cc: 'us', g: 6 },
+    { type: 'station', name: '히드로공항', icon: '✈️' },
+    { type: 'tax', name: '관세', icon: '💸' },
+    { type: 'city', name: '이탈리아', cc: 'it', g: 7 },
+    { type: 'city', name: '프랑스', cc: 'fr', g: 7 },
+    { type: 'city', name: '영국', cc: 'gb', g: 7 },
+  ];
+
+  const CARDS = [
+    { icon: '🎰', title: '해외 복권 당첨', desc: '150만을 받습니다.' },
+    { icon: '🧳', title: '수하물 분실', desc: '짐을 다시 사느라 100만을 냅니다.' },
+    { icon: '🛬', title: '귀국 항공권', desc: '출발지로 이동합니다. (월급 지급)' },
+    { icon: '🌊', title: '폭풍우 표류', desc: '버뮤다 삼각지대로 떠내려갑니다!' },
+    { icon: '🌀', title: '워프 티켓', desc: '워프 게이트로 이동합니다.' },
+    { icon: '🎉', title: '페스티벌 초대장', desc: '월드 페스티벌로 이동합니다.' },
+    { icon: '🛡️', title: '여행자 보험', desc: '통행료를 1회 면제받습니다. (자동 사용)' },
+    { icon: '🎟️', title: '통행 할인 쿠폰', desc: '통행료를 1회 50% 할인받습니다. (자동 사용)' },
+    { icon: '⏪', title: '길을 잃었다!', desc: '3칸 뒤로 이동합니다.' },
+    { icon: '🎂', title: '생일 파티', desc: '모든 플레이어에게 30만씩 축하금을 받습니다.' },
+    { icon: '💝', title: '자선 기부', desc: '모든 플레이어에게 30만씩 기부합니다.' },
+    { icon: '🌪️', title: '태풍 발생', desc: '상대 나라 1곳의 건물을 1단계 파괴합니다. (랜드마크 제외)' },
+    { icon: '✈️', title: '무료 항공권', desc: '가장 가까운 공항으로 이동합니다.' },
+    { icon: '💵', title: '세금 환급', desc: '80만을 돌려받습니다.' },
+    { icon: '✨', title: '랜덤 여행', desc: '무작위 위치로 이동합니다. (출발지 통과 시 월급)' },
+  ];
+  const CARD_POOL = [0, 0, 1, 1, 2, 3, 4, 5, 6, 6, 7, 7, 8, 9, 10, 11, 12, 13, 14];
+
+  /* ---------- 공용 계산 ---------- */
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const rnd = (n) => Math.floor(Math.random() * n);
+  const fmt = (n) => `${Math.round(n).toLocaleString()}만`;
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  const isProp = (t) => t.type === 'city' || t.type === 'station';
+  const cityPrice = (t) => (t.type === 'station' ? STATION_PRICE : GROUPS[t.g].price);
+  const levelCost = (t, L) => (t.type === 'station' ? STATION_PRICE : Math.round(GROUPS[t.g].price * COST_MULT[L]));
+  function cumCost(t, from, to) { let s = 0; for (let L = from + 1; L <= to; L++) s += levelCost(t, L); return s; }
+  const invested = (t) => (t.level < 0 ? 0 : t.type === 'station' ? STATION_PRICE : cumCost(t, -1, t.level));
+  const sellValue = (t) => Math.floor(invested(t) / 2);
+  const takeoverPrice = (t) => invested(t) * 2;
+  const stationCount = (s, pid) => s.tiles.filter((x) => x.type === 'station' && x.owner === pid).length;
+  function tollAt(s, t, L, ownerId = t.owner) {
+    if (t.type === 'station') return STATION_TOLL[Math.min(4, stationCount(s, ownerId))];
+    return Math.round(GROUPS[t.g].price * TOLL_MULT[L]);
+  }
+  function toll(s, t) { let v = tollAt(s, t, t.level); if (s.festival === t.idx) v *= 2; return v; }
+  const propValue = (s, p) => s.tiles.filter((t) => t.owner === p.id).reduce((a, t) => a + invested(t), 0);
+  const assets = (s, p) => (p.alive ? p.money + propValue(s, p) : 0);
+  function fullSets(s, pid) {
+    let n = 0;
+    for (let g = 0; g < GROUPS.length; g++) if (s.tiles.filter((t) => t.type === 'city' && t.g === g).every((t) => t.owner === pid)) n++;
+    return n;
+  }
+  function gridPos(i) {
+    if (i <= 8) return { r: 9, c: 9 - i };
+    if (i <= 16) return { r: 9 - (i - 8), c: 1 };
+    if (i <= 24) return { r: 1, c: 1 + (i - 16) };
+    return { r: 1 + (i - 24), c: 9 };
+  }
+  function makeTiles() { return TILE_DEFS.map((d, i) => Object.assign({}, d, { idx: i, owner: -1, level: -1 })); }
+  // 네트워크로 받은 요약 상태를 계산 가능한 상태로 되돌림
+  function expand(snap) {
+    const tiles = makeTiles();
+    snap.tiles.forEach((v, i) => { tiles[i].owner = v[0]; tiles[i].level = v[1]; });
+    return Object.assign({}, snap, { tiles });
+  }
+
+  /* ---------- 게임 ---------- */
+  class Game {
+    constructor(seats, opts, io) {
+      this.io = io;
+      this.aborted = false;
+      this.s = {
+        players: seats.map((p, i) => ({
+          id: i, name: String(p.name), isAI: !!p.isAI, color: PCOLORS[i], emoji: PEMOJI[i],
+          money: START_MONEY, pos: 0, alive: true, stuck: 0, shield: 0, coupon: 0,
+        })),
+        tiles: makeTiles(), cur: 0, round: 1, maxRounds: opts.maxRounds || 0, festival: -1, over: false, deck: [], dbl: 0,
+      };
+    }
+
+    snapshot() {
+      const s = this.s;
+      return {
+        players: s.players.map((p) => Object.assign({}, p)), tiles: s.tiles.map((t) => [t.owner, t.level]),
+        cur: s.cur, round: s.round, maxRounds: s.maxRounds, festival: s.festival, over: s.over,
+      };
+    }
+    sleep(ms) { return this.io.sleep(ms); }
+    emit(ev) { if (!this.aborted) this.io.event(ev); }
+    sync() { this.emit({ type: 'sync', state: this.snapshot() }); }
+    log(html) { this.emit({ type: 'log', html }); }
+    announce(text) { this.emit({ type: 'announce', text }); }
+    float(p, text, good) { this.emit({ type: 'float', pid: p.id, text, good }); }
+    sfx(name) { this.emit({ type: 'sfx', name }); }
+    msg(html) { this.emit({ type: 'msg', html }); }
+    nm(p) { return `<b style="color:${p.color}">${p.emoji}${esc(p.name)}</b>`; }
+    abort() { this.aborted = true; this.s.over = true; }
+
+    async ask(p, req) {
+      if (this.s.over) return this.aiAnswer(p, req);
+      if (p.isAI) {
+        await this.sleep(req.kind === 'roll' ? 650 : req.kind === 'card' ? 1100 : 450);
+        return this.aiAnswer(p, req);
+      }
+      const a = await this.io.ask(p, req);
+      return a === undefined ? this.aiAnswer(p, req) : a;
+    }
+
+    /* ----- 컴퓨터(또는 자리 비운 사람)의 결정 ----- */
+    aiAnswer(p, req) {
+      const s = this.s;
+      switch (req.kind) {
+        case 'blackhole': return p.money > 600 ? 'pay' : 'roll';
+        case 'build': return this.aiChooseLevel(p, s.tiles[req.tile], req.from, req.maxL);
+        case 'station': return p.money - STATION_PRICE >= AI_RESERVE - 100;
+        case 'takeover': return this.aiWantsTakeover(p, s.tiles[req.tile], req.price);
+        case 'sell': {
+          const mine = s.tiles.filter((t) => t.owner === p.id).sort((a, b) => sellValue(a) - sellValue(b));
+          return mine.length ? mine[0].idx : 'bk';
+        }
+        case 'pick': {
+          if (req.purpose === 'warp') return this.aiWarp(p);
+          const c = req.cands.slice().sort((a, b) => toll(s, s.tiles[b]) - toll(s, s.tiles[a]));
+          return c[0];
+        }
+        default: return true; // roll, card
+      }
+    }
+    aiChooseLevel(p, t, from, maxL) {
+      for (let L = maxL; L > from; L--) if (cumCost(t, from, L) <= p.money - AI_RESERVE) return L;
+      if (from === -1 && levelCost(t, 0) <= p.money - 80) return 0;
+      return null;
+    }
+    aiWantsTakeover(p, t, price) {
+      if (p.money - price < AI_RESERVE) return false;
+      if (t.type === 'city') {
+        const others = this.s.tiles.filter((x) => x.type === 'city' && x.g === t.g && x !== t);
+        if (others.every((x) => x.owner === p.id)) return true;
+      }
+      return Math.random() < 0.65;
+    }
+    aiWarp(p) {
+      let best = 0, bestScore = 60;
+      for (const t of this.s.tiles) {
+        if (t.idx === WARP || t.idx === BLACKHOLE) continue;
+        let sc = 0;
+        if (isProp(t) && t.owner === -1 && cityPrice(t) <= p.money - AI_RESERVE) sc = cityPrice(t) + 50;
+        else if (t.type === 'city' && t.owner === p.id && t.level < 4) {
+          const nxt = t.level === 3 ? 4 : t.level + 1;
+          if (levelCost(t, nxt) <= p.money - AI_RESERVE) sc = cityPrice(t) + 30;
+        }
+        if (sc > bestScore) { bestScore = sc; best = t.idx; }
+      }
+      return best;
+    }
+
+    /* ----- 진행 ----- */
+    async run() {
+      this.log('🚀 게임 시작! 모두 1,500만을 가지고 세계 일주를 떠납니다.');
+      while (!this.s.over) {
+        const p = this.s.players[this.s.cur];
+        this.sync();
+        await this.playTurn(p);
+        if (this.s.over) break;
+        await this.sleep(350);
+        this.advance();
+        if (this.s.maxRounds && this.s.round > this.s.maxRounds) { this.endByAssets(); break; }
+      }
+    }
+    advance() {
+      const s = this.s;
+      let n = s.cur;
+      do { n = (n + 1) % s.players.length; if (n === 0) s.round++; } while (!s.players[n].alive);
+      s.cur = n;
+    }
+
+    async playTurn(p) {
+      const s = this.s;
+      s.dbl = 0;
+      this.msg(`${p.emoji} ${esc(p.name)}의 차례`);
+      if (p.stuck > 0) {
+        const r = await this.blackholeTurn(p);
+        if (r !== 'paid') return;
+      }
+      while (!s.over) {
+        const [a, b] = await this.rollDice(p);
+        if (s.over) return;
+        const isD = a === b;
+        if (isD && ++s.dbl === 3) {
+          this.announce('3연속 더블! 버뮤다로 표류…');
+          this.log(`${this.nm(p)} 3연속 더블! 버뮤다 삼각지대로 떠내려갑니다.`);
+          await this.teleport(p, BLACKHOLE); p.stuck = 3; this.sync(); return;
+        }
+        await this.moveSteps(p, a + b);
+        await this.resolveTile(p);
+        this.sync();
+        if (s.over || !p.alive || p.stuck > 0 || !isD) return;
+        this.announce('🎲 더블! 한 번 더!');
+        await this.sleep(500);
+      }
+    }
+
+    async rollDice(p, auto) {
+      if (!auto) { this.msg(`${p.emoji} ${esc(p.name)}의 차례 — 주사위를 굴리세요`); await this.ask(p, { kind: 'roll' }); }
+      else await this.sleep(p.isAI ? 600 : 250);
+      if (this.s.over) return [1, 2];
+      const a = 1 + rnd(6), b = 1 + rnd(6);
+      this.emit({ type: 'dice', a, b, pid: p.id });
+      await this.sleep(850);
+      const dbl = a === b;
+      this.msg(`🎲 ${a} + ${b} = <b>${a + b}</b>${dbl ? ' <span style="color:var(--accent)">더블!</span>' : ''}`);
+      this.log(`${this.nm(p)} 🎲 ${a}+${b}=${a + b}${dbl ? ' (더블)' : ''}`);
+      return [a, b];
+    }
+
+    async blackholeTurn(p) {
+      let choice = 'roll';
+      if (p.money >= ESCAPE_FEE) {
+        choice = await this.ask(p, { kind: 'blackhole', stuck: p.stuck, fee: ESCAPE_FEE, money: p.money });
+        if (choice !== 'pay') choice = 'roll';
+      }
+      if (this.s.over) return false;
+      if (choice === 'pay') {
+        p.money -= ESCAPE_FEE; p.stuck = 0; this.float(p, `-${ESCAPE_FEE}`, false);
+        this.log(`${this.nm(p)} 구조비 ${fmt(ESCAPE_FEE)}을 내고 버뮤다 탈출!`); this.sync();
+        return 'paid';
+      }
+      const [a, b] = await this.rollDice(p, true);
+      if (a === b) {
+        p.stuck = 0; this.announce('🎉 버뮤다 탈출!'); this.log(`${this.nm(p)} 더블로 버뮤다 탈출!`);
+        await this.moveSteps(p, a + b); await this.resolveTile(p); this.sync();
+        return 'moved';
+      }
+      p.stuck--;
+      this.log(`${this.nm(p)} 탈출 실패… ${p.stuck > 0 ? `남은 ${p.stuck}턴` : '다음 턴에 자유!'}`);
+      this.sync();
+      return false;
+    }
+
+    async moveSteps(p, n, delay = 170) {
+      for (let k = 0; k < n; k++) {
+        if (this.aborted) return;
+        p.pos = (p.pos + 1) % 32;
+        if (p.pos === 0) {
+          p.money += SALARY; this.float(p, `+${SALARY} 월급`, true); this.sfx('coin');
+          this.log(`${this.nm(p)} 출발지 통과! 월급 ${fmt(SALARY)}`);
+        }
+        this.sync();
+        await this.sleep(delay);
+      }
+    }
+    async moveBack(p, n) {
+      for (let k = 0; k < n; k++) { p.pos = (p.pos + 31) % 32; this.sync(); await this.sleep(170); }
+    }
+    async moveForwardTo(p, target) { await this.moveSteps(p, (target - p.pos + 32) % 32, 70); }
+    async teleport(p, target) { p.pos = target; this.sync(); this.sfx('warp'); await this.sleep(400); }
+
+    gain(p, amt, reason) {
+      p.money += amt; this.float(p, `+${amt}`, true); this.sfx('coin');
+      this.log(`${this.nm(p)} ${reason} <span class="pos">+${fmt(amt)}</span>`); this.sync();
+    }
+
+    async pay(p, amt, to, reason) {
+      if (amt <= 0) return true;
+      if (p.money < amt) await this.raiseFunds(p, amt);
+      if (p.money >= amt) {
+        p.money -= amt; this.float(p, `-${amt}`, false); this.sfx('lose');
+        if (to) { to.money += amt; this.float(to, `+${amt}`, true); }
+        this.log(`${this.nm(p)} ${reason} <span class="neg">-${fmt(amt)}</span>${to ? ` → ${this.nm(to)}` : ''}`);
+        this.sync();
+        return true;
+      }
+      if (to) to.money += p.money;
+      p.money = 0;
+      this.log(`${this.nm(p)} ${reason} ${fmt(amt)}을(를) 낼 수 없습니다!`);
+      await this.bankrupt(p);
+      return false;
+    }
+
+    sellProp(t) {
+      const o = this.s.players[t.owner], v = sellValue(t);
+      o.money += v;
+      this.log(`${this.nm(o)} ${t.name} 매각 <span class="pos">+${fmt(v)}</span>`);
+      t.owner = -1; t.level = -1;
+      if (this.s.festival === t.idx) this.s.festival = -1;
+    }
+
+    async raiseFunds(p, need) {
+      while (p.money < need && !this.s.over) {
+        const mine = this.s.tiles.filter((t) => t.owner === p.id);
+        if (!mine.length) return;
+        const v = await this.ask(p, {
+          kind: 'sell', need, money: p.money,
+          props: mine.map((t) => ({ idx: t.idx, value: sellValue(t), level: t.level })),
+        });
+        if (v === 'bk') return;
+        const t = this.s.tiles[v];
+        if (!t || t.owner !== p.id) continue;
+        this.sellProp(t); this.sync();
+        await this.sleep(300);
+      }
+    }
+
+    async bankrupt(p) {
+      p.alive = false; p.stuck = 0;
+      this.s.tiles.forEach((t) => { if (t.owner === p.id) { t.owner = -1; t.level = -1; if (this.s.festival === t.idx) this.s.festival = -1; } });
+      this.log(`💀 ${this.nm(p)} 파산했습니다!`);
+      this.announce(`💀 ${esc(p.name)} 파산!`); this.sfx('lose');
+      this.sync(); await this.sleep(1000);
+      const alive = this.s.players.filter((x) => x.alive);
+      if (alive.length === 1) this.endGame(alive[0], '최후의 생존자');
+    }
+
+    checkWin(p) {
+      const s = this.s;
+      if (s.over) return true;
+      if (fullSets(s, p.id) >= 3) { this.endGame(p, '트리플 독점! (대륙 세트 3개 완성)'); return true; }
+      for (const [a, b] of SIDES) {
+        if (s.tiles.slice(a, b + 1).filter(isProp).every((t) => t.owner === p.id)) { this.endGame(p, '라인 독점! (한 줄 전체 소유)'); return true; }
+      }
+      if (s.tiles.filter((t) => t.type === 'station').every((t) => t.owner === p.id)) { this.endGame(p, '공항 독점! (공항 4곳 소유)'); return true; }
+      return false;
+    }
+
+    endGame(winner, reason) {
+      const s = this.s;
+      if (s.over) return;
+      s.over = true;
+      const ranking = s.players.slice().sort((a, b) => (b.alive - a.alive) || (assets(s, b) - assets(s, a)))
+        .map((p) => ({ id: p.id, alive: p.alive, assets: assets(s, p) }));
+      this.result = { winner: winner.id, reason };
+      this.sync();
+      this.sfx('win');
+      this.msg(`🏆 ${esc(winner.name)} 승리 — ${reason}`);
+      this.emit({ type: 'end', winner: winner.id, reason, ranking });
+    }
+    endByAssets() {
+      const alive = this.s.players.filter((p) => p.alive).sort((a, b) => assets(this.s, b) - assets(this.s, a));
+      this.endGame(alive[0], `${this.s.maxRounds}라운드 종료 — 총자산 1위`);
+    }
+
+    async resolveTile(p) {
+      if (this.s.over || !p.alive) return;
+      const t = this.s.tiles[p.pos];
+      this.emit({ type: 'focus', tile: p.pos });
+      switch (t.type) {
+        case 'city': case 'station': await this.landProperty(p, t); break;
+        case 'chance': await this.drawCard(p); break;
+        case 'blackhole': p.stuck = 3; this.announce('🌊 버뮤다 삼각지대!'); this.log(`${this.nm(p)} 버뮤다 삼각지대에 표류합니다. (최대 3턴)`); break;
+        case 'festival': await this.festivalTile(p); break;
+        case 'warp': await this.warpTile(p); break;
+        case 'tax': await this.taxTile(p); break;
+        default: break;
+      }
+      this.sync();
+    }
+
+    async landProperty(p, t) {
+      const s = this.s;
+      if (t.owner === -1) return this.buildDialog(p, t, true);
+      if (t.owner === p.id) return this.buildDialog(p, t, false);
+      const owner = s.players[t.owner];
+      let amt = toll(s, t);
+      if (p.shield > 0) { p.shield--; amt = 0; this.announce('🛡️ 여행자 보험 발동!'); this.log(`${this.nm(p)} 여행자 보험으로 통행료 면제!`); }
+      else if (p.coupon > 0) { p.coupon--; amt = Math.round(amt / 2); this.log(`${this.nm(p)} 할인 쿠폰 사용 (50%)`); }
+      if (amt > 0) {
+        this.announce(`💸 통행료 ${fmt(amt)}`);
+        const ok = await this.pay(p, amt, owner, `${t.name} 통행료`);
+        if (!ok || s.over) return;
+      }
+      if (t.level >= 4 || t.owner === p.id || t.owner < 0) return;
+      const price = takeoverPrice(t);
+      if (p.money < price) return;
+      const yes = (await this.ask(p, { kind: 'takeover', tile: t.idx, price, owner: owner.id, money: p.money })) === true;
+      if (!yes || s.over || p.money < price || t.owner !== owner.id) return;
+      p.money -= price; owner.money += price; t.owner = p.id;
+      this.float(p, `-${price}`, false); this.sfx('build');
+      this.announce(`🤝 ${esc(p.name)} ${t.name} 인수!`);
+      this.log(`${this.nm(p)} ${this.nm(owner)}의 ${t.name}을(를) ${fmt(price)}에 인수!`);
+      this.sync();
+      if (this.checkWin(p)) return;
+      if (t.type === 'city') await this.buildDialog(p, t, false);
+    }
+
+    async buildDialog(p, t, isNew) {
+      const s = this.s;
+      if (t.type === 'station') {
+        if (!isNew) return;
+        if (p.money < STATION_PRICE) { this.log(`${this.nm(p)} 자금 부족으로 ${t.name} 구매 불가`); return; }
+        const n = stationCount(s, p.id) + 1;
+        const yes = (await this.ask(p, { kind: 'station', tile: t.idx, price: STATION_PRICE, nextToll: STATION_TOLL[n], count: n, money: p.money })) === true;
+        if (!yes || s.over || p.money < STATION_PRICE || t.owner !== -1) return;
+        p.money -= STATION_PRICE; t.owner = p.id; t.level = 0;
+        this.sfx('build'); this.float(p, `-${STATION_PRICE}`, false);
+        this.log(`${this.nm(p)} ${t.name} 구매!`); this.sync(); this.checkWin(p);
+        return;
+      }
+      const from = t.level;
+      if (from >= 4) return;
+      const maxL = from === 3 ? 4 : 3;
+      const opts = [];
+      for (let L = from + 1; L <= maxL; L++) {
+        const cost = cumCost(t, from, L);
+        opts.push({ L, cost, toll: tollAt(s, t, L), ok: cost <= p.money });
+      }
+      if (!opts.some((o) => o.ok)) { if (isNew) this.log(`${this.nm(p)} 자금 부족으로 ${t.name} 구매 불가`); return; }
+      let L = await this.ask(p, { kind: 'build', tile: t.idx, from, maxL, isNew, opts, money: p.money });
+      if (s.over) return;
+      if (!(Number.isInteger(L) && L > from && L <= maxL && cumCost(t, from, L) <= p.money)) return;
+      if (t.owner !== -1 && t.owner !== p.id) return;
+      const cost = cumCost(t, from, L);
+      p.money -= cost; t.owner = p.id; t.level = L;
+      this.sfx('build'); this.float(p, `-${cost}`, false);
+      if (L === 4) this.announce(`🌟 ${t.name} 랜드마크 건설!`);
+      this.log(`${this.nm(p)} ${t.name} ${isNew ? '구매' : '건설'} → ${LEVEL_ICONS[L]} ${LEVEL_NAMES[L]} <span class="neg">-${fmt(cost)}</span>`);
+      this.sync();
+      if (isNew) this.checkWin(p);
+    }
+
+    async pickTile(p, cands, text, cancellable, purpose) {
+      const v = await this.ask(p, { kind: 'pick', cands, text, cancellable, purpose });
+      if (cands.includes(v)) return v;
+      if (cancellable) return null;
+      return this.aiAnswer(p, { kind: 'pick', cands, purpose });
+    }
+
+    async festivalTile(p) {
+      const s = this.s;
+      const mine = s.tiles.filter((t) => t.owner === p.id);
+      if (!mine.length) { this.log(`${this.nm(p)} 페스티벌을 열 나라가 없습니다.`); this.announce('🎉 월드 페스티벌'); return; }
+      const idx = await this.pickTile(p, mine.map((t) => t.idx), '🎉 페스티벌을 열 내 나라를 고르세요 (통행료 2배)', true, 'festival');
+      if (idx == null || s.over) return;
+      s.festival = idx;
+      this.announce(`🎉 ${s.tiles[idx].name} 페스티벌 개최!`); this.sfx('build');
+      this.log(`${this.nm(p)} ${s.tiles[idx].name}에서 페스티벌 개최! 통행료 2배`);
+    }
+
+    async warpTile(p) {
+      this.announce('🌀 워프 게이트!');
+      const cands = this.s.tiles.map((t) => t.idx).filter((i) => i !== WARP);
+      const target = await this.pickTile(p, cands, '🌀 이동할 칸을 고르세요 (출발지 통과 시 월급)', true, 'warp');
+      if (target == null || this.s.over) return;
+      this.log(`${this.nm(p)} ${this.s.tiles[target].name}(으)로 워프!`);
+      await this.moveForwardTo(p, target);
+      await this.resolveTile(p);
+    }
+
+    async taxTile(p) {
+      const amt = Math.round(propValue(this.s, p) * 0.1);
+      if (amt <= 0) { this.log(`${this.nm(p)} 부동산이 없어 관세 면제`); this.announce('💸 관세 면제'); return; }
+      this.announce(`💸 관세 ${fmt(amt)}`);
+      await this.pay(p, amt, null, '관세');
+    }
+
+    async drawCard(p) {
+      const s = this.s;
+      if (!s.deck.length) s.deck = shuffle(CARD_POOL.slice());
+      const ci = s.deck.pop(), c = CARDS[ci];
+      this.log(`${this.nm(p)} 🎴 ${c.icon} ${c.title}`);
+      this.announce(`${c.icon} ${c.title}`);
+      await this.ask(p, { kind: 'card', card: ci });
+      if (s.over) return;
+      await this.runCard(ci, p);
+      this.sync();
+    }
+
+    async runCard(ci, p) {
+      const s = this.s;
+      switch (ci) {
+        case 0: this.gain(p, 150, '해외 복권'); break;
+        case 1: await this.pay(p, 100, null, '수하물 분실'); break;
+        case 2: await this.moveForwardTo(p, 0); break;
+        case 3: await this.teleport(p, BLACKHOLE); p.stuck = 3; this.log(`${this.nm(p)} 버뮤다 삼각지대에 표류합니다.`); break;
+        case 4: await this.moveForwardTo(p, WARP); await this.resolveTile(p); break;
+        case 5: await this.moveForwardTo(p, FESTIVAL); await this.resolveTile(p); break;
+        case 6: p.shield++; break;
+        case 7: p.coupon++; break;
+        case 8: await this.moveBack(p, 3); await this.resolveTile(p); break;
+        case 9: for (const q of s.players) if (q !== p && q.alive && !s.over) await this.pay(q, 30, p, '생일 축하금'); break;
+        case 10: for (const q of s.players) if (q !== p && q.alive && p.alive && !s.over) await this.pay(p, 30, q, '기부금'); break;
+        case 11: {
+          const cands = s.tiles.filter((t) => t.type === 'city' && t.owner >= 0 && t.owner !== p.id && t.level >= 1 && t.level <= 3).map((t) => t.idx);
+          if (!cands.length) { this.log('파괴할 건물이 없습니다.'); break; }
+          const idx = await this.pickTile(p, cands, '🌪️ 태풍을 보낼 상대 나라를 고르세요', false, 'quake');
+          const t = s.tiles[idx];
+          if (t.level >= 1 && t.level <= 3) {
+            t.level--;
+            this.announce(`🌪️ ${t.name} 태풍 피해!`); this.sfx('lose');
+            this.log(`🌪️ ${t.name}의 건물이 무너져 ${LEVEL_NAMES[t.level]} 단계가 되었습니다.`);
+          }
+          break;
+        }
+        case 12: {
+          let i = p.pos; do { i = (i + 1) % 32; } while (s.tiles[i].type !== 'station');
+          await this.moveForwardTo(p, i); await this.resolveTile(p); break;
+        }
+        case 13: this.gain(p, 80, '세금 환급'); break;
+        case 14: {
+          let i; do { i = rnd(32); } while (i === p.pos || i === BLACKHOLE);
+          await this.moveForwardTo(p, i); await this.resolveTile(p); break;
+        }
+        default: break;
+      }
+    }
+  }
+
+  return {
+    START_MONEY, SALARY, ESCAPE_FEE, STATION_PRICE, STATION_TOLL, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, MAX_PLAYERS,
+    GROUPS, TILE_DEFS, CARDS, esc, fmt, isProp, cityPrice, levelCost, cumCost, invested, sellValue, takeoverPrice,
+    stationCount, tollAt, toll, propValue, assets, fullSets, gridPos, makeTiles, expand, Game,
+  };
+});
