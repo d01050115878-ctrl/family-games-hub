@@ -118,7 +118,7 @@
     { icon: '🎊', title: '깜짝 축제', desc: '지금 바로 내 나라(관광지) 한 곳에 월드 페스티벌을 엽니다. 통행료 ×2!' },
     { icon: '🌫️', title: '미세먼지', desc: '[공격] 상대 나라 1곳의 통행료가 3라운드 동안 절반이 됩니다.', attack: true },
     { icon: '🎲', title: '홀짝 게임', desc: '홀·짝을 골라 주사위를 굴립니다. 맞히면 40만, 틀리면 20만을 냅니다.' },
-    { icon: '🧭', title: '여행 갈림길', desc: '셋 중 하나를 고르세요: 40만 받기 / 원하는 칸으로 바로 이동 / 여행자 보험 1장' },
+    { icon: '🧭', title: '여행 갈림길', desc: '둘 중 하나를 고르세요: 40만 받기 / 원하는 칸으로 바로 이동' },
   ];
   // 카드 덱 (숫자 = 카드 번호, 여러 번 나오면 그만큼 자주 뽑힘). 특수 수비·공격 카드는 1장씩만 넣어 잘 안 나오게 한다
   const CARD_POOL = [
@@ -907,18 +907,15 @@
         case 24: {
           let v = await this.ask(p, {
             kind: 'choice', card: ci,
-            options: [{ label: '💵 40만 받기', value: 'money' }, { label: '🌀 원하는 칸으로 바로 이동', value: 'move' }]
-              .concat(p.shield ? [] : [{ label: '🛡️ 여행자 보험 1장 받기', value: 'shield' }]),
-            ai: p.money < 150 ? 'money' : p.shield ? 'move' : 'shield',
+            options: [{ label: '💵 40만 받기', value: 'money' }, { label: '🌀 원하는 칸으로 바로 이동', value: 'move' }],
+            ai: p.money < 150 ? 'money' : 'move',
           });
-          if (v === 'shield' && p.shield) v = 'money';
           if (v === 'move') {
             const cands = s.tiles.map((t) => t.idx).filter((i) => i !== p.pos);
             const target = await this.pickTile(p, cands, '🧭 이동할 칸을 고르세요 (출발지 통과 시 월급)', false, 'warp');
             this.log(`🧭 ${this.nm(p)} ${s.tiles[target].name}(으)로 바로 이동!`);
             await this.moveForwardTo(p, target); await this.resolveTile(p);
-          } else if (v === 'shield') { p.shield++; this.log(`🧭 ${this.nm(p)} 여행자 보험 1장을 받았어요.`); }
-          else this.gain(p, 40, '여행 갈림길');
+          } else this.gain(p, 40, '여행 갈림길');
           break;
         }
         default: break;
