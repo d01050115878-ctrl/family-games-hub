@@ -548,7 +548,8 @@
         const ok = await this.pay(p, amt, owner, `${t.name} 통행료`);
         if (!ok || s.over) return;
       }
-      if (t.level >= 4 || t.owner === p.id || t.owner < 0) return;
+      // 랜드마크와 관광지·휴양지는 한 번 사면 인수할 수 없다
+      if (t.level >= 4 || t.type === 'station' || t.owner === p.id || t.owner < 0) return;
       if (p.laps === 0) { this.log(`${this.nm(p)} 첫 바퀴에는 인수할 수 없어요.`); return; }
       const price = takeoverPrice(t);
       if (p.money < price) return;
