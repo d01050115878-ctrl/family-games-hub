@@ -16,7 +16,7 @@
   const FIRST_LAP_MAX_LEVEL = 1;  // 첫 바퀴에는 하우스까지만
   const GAUGE_CHANCE = 0.55;      // 주사위 조절 게이지 성공 확률
   const COST_MULT = [1, 0.5, 1, 1.5, 2];      // 땅, 하우스, 빌딩, 호텔, 랜드마크 (나라 가격 대비)
-  const TOLL_MULT = [0.4, 1.2, 2.5, 4.5, 7];  // 단계별 통행료 배율
+  const TOLL_MULT = [0.5, 1.5, 3.2, 5.8, 9];  // 단계별 통행료 배율
   const LEVEL_NAMES = ['땅', '하우스', '빌딩', '호텔', '랜드마크'];
   const LEVEL_ICONS = ['🚩', '🏠', '🏠🏢', '🏠🏢🏨', '🌟'];
   // 캐릭터: 소방차, 구급차, 경찰차, 탱크, 한전 작업차, 도시가스차
@@ -24,61 +24,64 @@
   const PCOLORS = ['#ff5d5d', '#ffa94d', '#4dabf7', '#94d82d', '#ffd43b', '#20c997'];
   const PEMOJI = ['🚒', '🚑', '🚓', '🪖', '⚡', '🔥'];
   const MAX_PLAYERS = 6;
-  const SIDES = [[1, 7], [9, 15], [17, 23], [25, 31]];
+  const SIDES = [[1, 9], [11, 19], [21, 29], [31, 39]];
   const AI_RESERVE = 250;
-  const BLACKHOLE = 8, FESTIVAL = 16, WARP = 24;
+  const BLACKHOLE = 10, FESTIVAL = 20, WARP = 30;
+  const N = 40; // 보드 칸 수 (한 라인 10칸)
 
   // 라인: A(아래·노랑) B(왼쪽·녹색) C(위·파랑) D(오른쪽·빨강). 같은 라인 나라는 땅값·건물값·통행료가 모두 같다
   const LINES = [
-    { name: 'A라인', color: '#ffd43b', price: 50 },
-    { name: 'B라인', color: '#51cf66', price: 90 },
-    { name: 'C라인', color: '#4dabf7', price: 140 },
-    { name: 'D라인', color: '#ff6b6b', price: 200 },
+    { name: 'A라인', color: '#ffd43b', price: 60 },
+    { name: 'B라인', color: '#51cf66', price: 110 },
+    { name: 'C라인', color: '#4dabf7', price: 160 },
+    { name: 'D라인', color: '#ff6b6b', price: 230 },
   ];
-  const TOUR_PRICE = 150, TOUR_TOLL = 120; // 관광지는 4곳 모두 같은 값
-  const lineOf = (i) => (i % 8 === 0 ? -1 : Math.floor(i / 8));
+  const TOUR_PRICE = 200, TOUR_TOLL = 150; // 관광지는 4곳 모두 같은 값
+  const lineOf = (i) => (i % 10 === 0 ? -1 : Math.floor(i / 10));
   const GROUPS = [
-    { name: '중미', color: '#b0b7c9', price: 40 },
-    { name: '남미', color: '#22d3ee', price: 60 },
-    { name: '아프리카', color: '#fb923c', price: 80 },
-    { name: '오세아니아', color: '#c084fc', price: 100 },
-    { name: '중동', color: '#60a5fa', price: 120 },
-    { name: '아시아', color: '#4ade80', price: 140 },
-    { name: '북미', color: '#f87171', price: 170 },
-    { name: '유럽', color: '#facc15', price: 200 },
+    { name: '중미' }, { name: '남미' }, { name: '아프리카' }, { name: '중동' },
+    { name: '오세아니아' }, { name: '아시아' }, { name: '북미' }, { name: '유럽' },
   ];
 
   const TILE_DEFS = [
     { type: 'start', name: '출발', icon: '🚀', sub: '월급 200만 · 도착 시 건설' },
-    { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
     { type: 'city', name: '쿠바', cc: 'cu', g: 0 },
+    { type: 'city', name: '자메이카', cc: 'jm', g: 0 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
-    { type: 'city', name: '페루', cc: 'pe', g: 1 },
-    { type: 'city', name: '아르헨티나', cc: 'ar', g: 1 },
+    { type: 'city', name: '파나마', cc: 'pa', g: 0 },
     { type: 'station', name: '제주도', icon: '🏝️', price: TOUR_PRICE, toll: TOUR_TOLL },
+    { type: 'city', name: '페루', cc: 'pe', g: 1 },
+    { type: 'chance', name: '행운 카드', icon: '🎴' },
+    { type: 'city', name: '아르헨티나', cc: 'ar', g: 1 },
     { type: 'city', name: '브라질', cc: 'br', g: 1 },
     { type: 'blackhole', name: '버뮤다 삼각지대', icon: '🌊', sub: '최대 3턴 표류' },
     { type: 'city', name: '이집트', cc: 'eg', g: 2 },
+    { type: 'city', name: '케냐', cc: 'ke', g: 2 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '남아공', cc: 'za', g: 2 },
     { type: 'station', name: '부산', icon: '🌉', price: TOUR_PRICE, toll: TOUR_TOLL },
-    { type: 'city', name: '피지', cc: 'fj', g: 3 },
-    { type: 'city', name: '뉴질랜드', cc: 'nz', g: 3 },
-    { type: 'city', name: '호주', cc: 'au', g: 3 },
-    { type: 'festival', name: '월드 페스티벌', icon: '🎉', sub: '통행료 배율 UP' },
-    { type: 'city', name: '튀르키예', cc: 'tr', g: 4 },
+    { type: 'city', name: '튀르키예', cc: 'tr', g: 3 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
-    { type: 'city', name: '아랍에미리트', cc: 'ae', g: 4 },
+    { type: 'city', name: '사우디', cc: 'sa', g: 3 },
+    { type: 'city', name: 'UAE', cc: 'ae', g: 3 },
+    { type: 'festival', name: '월드 페스티벌', icon: '🎉', sub: '통행료 배율 UP' },
+    { type: 'city', name: '피지', cc: 'fj', g: 4 },
+    { type: 'city', name: '뉴질랜드', cc: 'nz', g: 4 },
+    { type: 'chance', name: '행운 카드', icon: '🎴' },
+    { type: 'city', name: '호주', cc: 'au', g: 4 },
     { type: 'station', name: '경주', icon: '🏯', price: TOUR_PRICE, toll: TOUR_TOLL },
     { type: 'city', name: '태국', cc: 'th', g: 5 },
-    { type: 'city', name: '일본', cc: 'jp', g: 5 },
+    { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '싱가포르', cc: 'sg', g: 5 },
+    { type: 'city', name: '일본', cc: 'jp', g: 5 },
     { type: 'warp', name: '워프 게이트', icon: '🌀', sub: '다음 턴 원하는 곳으로' },
+    { type: 'city', name: '멕시코', cc: 'mx', g: 6 },
     { type: 'city', name: '캐나다', cc: 'ca', g: 6 },
+    { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '미국', cc: 'us', g: 6 },
     { type: 'station', name: '서울', icon: '🗼', price: TOUR_PRICE, toll: TOUR_TOLL },
-    { type: 'tax', name: '관세', icon: '💸' },
     { type: 'city', name: '이탈리아', cc: 'it', g: 7 },
+    { type: 'tax', name: '관세', icon: '💸' },
     { type: 'city', name: '프랑스', cc: 'fr', g: 7 },
     { type: 'city', name: '영국', cc: 'gb', g: 7 },
   ];
@@ -136,11 +139,11 @@
     for (let g = 0; g < GROUPS.length; g++) if (s.tiles.filter((t) => t.type === 'city' && t.g === g).every((t) => t.owner === pid)) n++;
     return n;
   }
-  function gridPos(i) {
-    if (i <= 8) return { r: 9, c: 9 - i };
-    if (i <= 16) return { r: 9 - (i - 8), c: 1 };
-    if (i <= 24) return { r: 1, c: 1 + (i - 16) };
-    return { r: 1 + (i - 24), c: 9 };
+  function gridPos(i) {  // 11×11 격자
+    if (i <= 10) return { r: 11, c: 11 - i };
+    if (i <= 20) return { r: 11 - (i - 10), c: 1 };
+    if (i <= 30) return { r: 1, c: 1 + (i - 20) };
+    return { r: 1 + (i - 30), c: 11 };
   }
   function makeTiles() { return TILE_DEFS.map((d, i) => Object.assign({}, d, { idx: i, owner: -1, level: -1 })); }
   // 네트워크로 받은 요약 상태를 계산 가능한 상태로 되돌림
@@ -233,7 +236,7 @@
       const s = this.s;
       let best = 7, bestSc = -Infinity;
       for (let sum = 2; sum <= 12; sum++) {
-        const t = s.tiles[(p.pos + sum) % 32];
+        const t = s.tiles[(p.pos + sum) % N];
         let sc = 0;
         if (isProp(t)) {
           if (t.owner === -1) sc = cityPrice(t) <= p.money - 80 ? 60 + cityPrice(t) / 4 : 0;
@@ -369,7 +372,7 @@
     async moveSteps(p, n, delay = 170) {
       for (let k = 0; k < n; k++) {
         if (this.aborted) return;
-        p.pos = (p.pos + 1) % 32;
+        p.pos = (p.pos + 1) % N;
         if (p.pos === 0) {
           p.laps++;
           p.money += SALARY; this.float(p, `+${SALARY} 월급`, true); this.sfx('coin');
@@ -380,9 +383,9 @@
       }
     }
     async moveBack(p, n) {
-      for (let k = 0; k < n; k++) { p.pos = (p.pos + 31) % 32; this.sync(); await this.sleep(170); }
+      for (let k = 0; k < n; k++) { p.pos = (p.pos + N - 1) % N; this.sync(); await this.sleep(170); }
     }
-    async moveForwardTo(p, target) { await this.moveSteps(p, (target - p.pos + 32) % 32, 70); }
+    async moveForwardTo(p, target) { await this.moveSteps(p, (target - p.pos + N) % N, 70); }
     async teleport(p, target) { p.pos = target; this.sync(); this.sfx('warp'); await this.sleep(400); }
 
     gain(p, amt, reason) {
@@ -652,12 +655,12 @@
           break;
         }
         case 12: {
-          let i = p.pos; do { i = (i + 1) % 32; } while (s.tiles[i].type !== 'station');
+          let i = p.pos; do { i = (i + 1) % N; } while (s.tiles[i].type !== 'station');
           await this.moveForwardTo(p, i); await this.resolveTile(p); break;
         }
         case 13: this.gain(p, 80, '세금 환급'); break;
         case 14: {
-          let i; do { i = rnd(32); } while (i === p.pos || i === BLACKHOLE);
+          let i; do { i = rnd(N); } while (i === p.pos || i === BLACKHOLE);
           await this.moveForwardTo(p, i); await this.resolveTile(p); break;
         }
         default: break;
@@ -667,7 +670,7 @@
 
   return {
     START_MONEY, SALARY, ESCAPE_FEE, WARP_FEE, FEST_MAX, PCHARS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, MAX_PLAYERS,
-    GROUPS, LINES, TILE_DEFS, CARDS, esc, fmt, isProp, cityPrice, levelCost, cumCost, invested, sellValue, takeoverPrice,
+    N, GROUPS, LINES, TILE_DEFS, CARDS, esc, fmt, isProp, cityPrice, levelCost, cumCost, invested, sellValue, takeoverPrice,
     stationCount, tollAt, toll, propValue, assets, fullSets, gridPos, makeTiles, expand, Game,
   };
 });

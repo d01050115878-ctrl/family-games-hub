@@ -32,22 +32,22 @@ button,input,select{font-family:inherit}
 #game{display:flex;gap:14px;padding:10px;justify-content:center;align-items:flex-start}
 #boardWrap{width:min(96vw,calc(100vh - 20px));container-type:inline-size;flex:none}
 #board{position:relative;width:100%;aspect-ratio:1;display:grid;
-  grid-template-columns:1.45fr repeat(7,1fr) 1.45fr;grid-template-rows:1.45fr repeat(7,1fr) 1.45fr;gap:.35cqw;
+  grid-template-columns:1.4fr repeat(9,1fr) 1.4fr;grid-template-rows:1.4fr repeat(9,1fr) 1.4fr;gap:.3cqw;
   background:#0e1433;border:.5cqw solid #3a4699;border-radius:2cqw;padding:.5cqw;box-shadow:0 0 40px #2e3cff44}
 .tile{position:relative;background:var(--tile);border-radius:.9cqw;overflow:hidden;display:flex;flex-direction:column;
   align-items:center;justify-content:flex-start;text-align:center;cursor:pointer;border:.25cqw solid transparent;
   font-size:1.25cqw;line-height:1.15;transition:background .3s,border-color .3s}
 .tile:hover{filter:brightness(1.18)}
-.tile .band{width:100%;height:1.45cqw;flex:none;font-size:.95cqw;font-weight:900;color:#0b1026;line-height:1.45cqw;letter-spacing:-.02cqw;overflow:hidden;white-space:nowrap}
-.tile .flag{width:4cqw;height:2.6cqw;object-fit:cover;border-radius:.3cqw;margin-top:.45cqw;box-shadow:0 0 0 .12cqw #0007;flex:none}
-.tile .tn{font-weight:800;font-size:1.22cqw;margin-top:.3cqw;padding:0 .15cqw;word-break:keep-all;letter-spacing:-.05cqw}
-.tile .bd{font-size:1.35cqw;min-height:1.6cqw;margin-top:.1cqw;letter-spacing:-.3cqw}
-.tile .tp{font-size:1.08cqw;color:var(--muted);margin-top:auto;margin-bottom:.35cqw}
+.tile .band{width:100%;height:1.3cqw;flex:none;font-size:.85cqw;font-weight:900;color:#0b1026;line-height:1.3cqw;letter-spacing:-.02cqw;overflow:hidden;white-space:nowrap}
+.tile .flag{width:3.4cqw;height:2.2cqw;object-fit:cover;border-radius:.3cqw;margin-top:.45cqw;box-shadow:0 0 0 .12cqw #0007;flex:none}
+.tile .tn{font-weight:800;font-size:1.08cqw;margin-top:.3cqw;padding:0 .15cqw;word-break:keep-all;letter-spacing:-.05cqw}
+.tile .bd{font-size:1.15cqw;min-height:1.35cqw;margin-top:.1cqw;letter-spacing:-.3cqw}
+.tile .tp{font-size:.95cqw;color:var(--muted);margin-top:auto;margin-bottom:.35cqw}
 .tile .ic{font-size:2.6cqw;margin-top:.5cqw}
 .tile.corner{justify-content:center;background:linear-gradient(145deg,#28337a,#161d4a)}
-.tile.corner .ic{font-size:4.6cqw;margin:0}
-.tile.corner .tn{font-size:1.6cqw}
-.tile.corner .sub{font-size:1.05cqw;color:var(--muted);margin-top:.3cqw;padding:0 .4cqw}
+.tile.corner .ic{font-size:4cqw;margin:0}
+.tile.corner .tn{font-size:1.4cqw}
+.tile.corner .sub{font-size:.95cqw;color:var(--muted);margin-top:.3cqw;padding:0 .4cqw}
 .tile.chance{background:linear-gradient(160deg,#3d2a7a,#211a4f)}
 .tile.tax{background:linear-gradient(160deg,#5a2440,#2b1530)}
 .tile.station{background:linear-gradient(160deg,#1f3a5a,#16204d)}
@@ -56,12 +56,18 @@ button,input,select{font-family:inherit}
 .tile.lm{box-shadow:inset 0 0 1.6cqw color-mix(in srgb,var(--own) 80%,#fff)}
 .tile .fest{position:absolute;top:1.3cqw;right:.2cqw;font-size:1.3cqw;font-weight:900;color:#ffd43b;text-shadow:0 0 .4cqw #000;display:none;animation:bob 1s infinite alternate}
 .tile.festival .fest{display:block}
+/* 왼쪽·오른쪽 줄 칸은 낮고 넓어서 국기와 이름을 한 줄로 */
+.tile.side.city .flag{position:absolute;left:3.4cqw;top:1.6cqw;width:2.9cqw;height:1.9cqw;margin:0}
+.tile.side.station .ic{position:absolute;left:3.5cqw;top:1.35cqw;font-size:1.9cqw;margin:0}
+.tile.side.city .tn,.tile.side.station .tn{position:absolute;left:6.6cqw;right:.2cqw;top:1.85cqw;margin:0;padding:0;text-align:left;font-size:1.05cqw;
+  white-space:nowrap;overflow:hidden;text-overflow:clip}
+.tile.side.city .bd,.tile.side.station .bd{margin-top:2.5cqw}
 /* 소유자 표시 */
-.tile .own{position:absolute;top:1.65cqw;left:.2cqw;width:3.6cqw;height:2.5cqw;border-radius:.55cqw;background:#0b1026;
+.tile .own{position:absolute;top:1.45cqw;left:.15cqw;width:3cqw;height:2.1cqw;border-radius:.55cqw;background:#0b1026;
   border:.22cqw solid var(--own);padding:.1cqw;display:none;box-shadow:0 0 .5cqw #000;z-index:1}
 .tile.owned .own{display:block}
 .tile .own svg{width:100%;height:100%;display:block}
-.tile .pk{position:absolute;left:.25cqw;right:.25cqw;bottom:.3cqw;padding:.25cqw .2cqw;border-radius:.6cqw;font-size:1.08cqw;font-weight:900;
+.tile .pk{position:absolute;left:.15cqw;right:.15cqw;bottom:.25cqw;padding:.2cqw .1cqw;border-radius:.5cqw;font-size:.92cqw;font-weight:900;
   color:#fff;z-index:3;line-height:1.2;background:#000d;box-shadow:0 0 .6cqw #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile .pk.mine{background:#2b8a3e}
 .tile .pk.foe{background:#c92a2a}
@@ -73,7 +79,7 @@ button,input,select{font-family:inherit}
 @keyframes pulse{from{filter:brightness(1)}to{filter:brightness(1.5)}}
 @keyframes bob{from{transform:translateY(0)}to{transform:translateY(-.4cqw)}}
 
-#center{grid-row:2/9;grid-column:2/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5cqw;
+#center{grid-row:2/11;grid-column:2/11;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5cqw;
   position:relative;border-radius:1.5cqw;background:radial-gradient(circle at 50% 40%,#2a3690 0%,#121942 70%)}
 .logo{font-size:5.6cqw;font-weight:900;letter-spacing:.2cqw;background:linear-gradient(90deg,#7cf3ff,#b78bff,#ffcc4d);
   -webkit-background-clip:text;background-clip:text;color:transparent;text-align:center;line-height:1}
@@ -99,11 +105,11 @@ button,input,select{font-family:inherit}
   transition:opacity .25s,transform .25s;white-space:nowrap;z-index:6;text-shadow:0 0 1cqw #000}
 #announce.show{opacity:1;transform:translate(-50%,0) scale(1)}
 
-.token{position:absolute;width:5.6cqw;height:3.9cqw;border-radius:1cqw;display:grid;place-items:center;
+.token{position:absolute;width:4.8cqw;height:3.3cqw;border-radius:1cqw;display:grid;place-items:center;
   background:#0b1026e0;border:.3cqw solid var(--pc);box-shadow:0 .4cqw .8cqw #000a;transform:translate(-50%,-50%);z-index:4;
   transition:left .16s ease-out,top .16s ease-out;pointer-events:none;padding:.15cqw}
 .token svg{width:100%;height:100%}
-#board.many .token{width:4.6cqw;height:3.2cqw;border-width:.25cqw}
+#board.many .token{width:3.9cqw;height:2.7cqw;border-width:.25cqw}
 .veh{display:inline-grid;place-items:center;flex:none;background:#0b1026;border:2px solid var(--pc);border-radius:9px;padding:2px}
 .veh svg{width:100%;height:100%}
 #gauge{width:46cqw;display:flex;flex-direction:column;gap:.4cqw}
@@ -640,7 +646,7 @@ function buildBoard() {
   TILE_DEFS.forEach((t, i) => {
     const el = document.createElement('div');
     const { r, c } = MW.gridPos(i);
-    el.className = 'tile ' + t.type + (i % 8 === 0 ? ' corner' : '');
+    el.className = 'tile ' + t.type + (i % 10 === 0 ? ' corner' : '') + ((i > 10 && i < 20) || i > 30 ? ' side' : '');
     el.style.gridRow = r; el.style.gridColumn = c;
     if (t.type === 'city') {
       el.innerHTML = `<div class="band" style="background:${LINES[t.line].color}">${GROUPS[t.g].name}</div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
