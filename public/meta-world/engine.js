@@ -51,7 +51,7 @@
     { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '페루', cc: 'pe', g: 1 },
-    { type: 'station', name: '제주도', icon: '🏝️', price: 60, toll: 30 },
+    { type: 'station', name: '제주도', icon: '🏝️', price: 20, toll: 30, pair: '휴양지' },
     { type: 'city', name: '아르헨티나', cc: 'ar', g: 1 },
     { type: 'city', name: '브라질', cc: 'br', g: 1 },
     { type: 'blackhole', name: '버뮤다 삼각지대', icon: '🌊', sub: '최대 3턴 표류' },
@@ -59,7 +59,7 @@
     { type: 'city', name: '케냐', cc: 'ke', g: 2 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '튀르키예', cc: 'tr', g: 3 },
-    { type: 'station', name: '부산', icon: '🌉', price: 100, toll: 50 },
+    { type: 'station', name: '부산', icon: '🌉', price: 50, toll: 60, pair: '휴양지' },
     { type: 'city', name: '사우디', cc: 'sa', g: 3 },
     { type: 'city', name: 'UAE', cc: 'ae', g: 3 },
     { type: 'festival', name: '월드 페스티벌', icon: '🎉', sub: '통행료 배율 UP' },
@@ -67,7 +67,7 @@
     { type: 'city', name: '호주', cc: 'au', g: 4 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '태국', cc: 'th', g: 5 },
-    { type: 'station', name: '경주', icon: '🏯', price: 60, toll: 30 },
+    { type: 'station', name: '경주', icon: '🏯', price: 20, toll: 30, pair: '관광지' },
     { type: 'city', name: '싱가포르', cc: 'sg', g: 5 },
     { type: 'city', name: '일본', cc: 'jp', g: 5 },
     { type: 'warp', name: '워프 게이트', icon: '🌀', sub: '다음 턴 원하는 곳으로' },
@@ -77,7 +77,7 @@
     { type: 'city', name: '이탈리아', cc: 'it', g: 7 },
     { type: 'tax', name: '관세', icon: '💸' },
     { type: 'city', name: '프랑스', cc: 'fr', g: 7 },
-    { type: 'station', name: '서울', icon: '🗼', price: 300, toll: 200 },
+    { type: 'station', name: '서울', icon: '🗼', price: 100, toll: 200, pair: '관광지' },
   ];
 
   // 나라별 '호텔까지 지었을 때 통행료' (만). 다른 금액은 모두 이 값에서 비율로 정해진다
@@ -131,6 +131,8 @@
   const sellValue = (t) => Math.floor(invested(t) / 2);
   const takeoverPrice = (t) => invested(t) * 2;
   const stationCount = (s, pid) => s.tiles.filter((x) => x.type === 'station' && x.owner === pid).length;
+  // 관광지 짝(제주도+부산 = 휴양지, 서울+경주 = 관광지)을 한 사람이 모두 가지면 통행료 ×2
+  const pairOwned = (s, t, pid = t.owner) => pid >= 0 && s.tiles.filter((x) => x.type === 'station' && x.pair === t.pair).every((x) => x.owner === pid);
   // 건물별 통행료: 땅·하우스·빌딩을 정하고, 호텔은 '호텔까지 합계 = 정한 호텔 통행료'가 딱 맞도록, 랜드마크는 그만큼 더
   function elemToll(t, k) {
     const H = t.hotel, r = [0, 1, 2].map((i) => Math.round(H * ELEM_TOLL[i]));
@@ -139,7 +141,7 @@
     return H;
   }
   function tollAt(s, t, L) {
-    if (t.type === 'station') return Math.round(t.toll * TOUR_MULT[Math.min(4, Math.max(1, stationCount(s, t.owner)))]);
+    if (t.type === 'station') return t.toll * (pairOwned(s, t) ? 2 : 1);
     let m = 0; for (let k = 0; k <= L; k++) m += elemToll(t, k);
     return m;
   }
@@ -570,7 +572,7 @@
         if (!isNew) return;
         if (p.money < t.price) { this.log(`${this.nm(p)} 자금 부족으로 ${t.name} 구매 불가`); return; }
         const n = stationCount(s, p.id) + 1;
-        const yes = (await this.ask(p, { kind: 'station', tile: t.idx, price: t.price, nextToll: Math.round(t.toll * TOUR_MULT[Math.min(4, n)]), count: n, money: p.money })) === true;
+        const yes = (await this.ask(p, { kind: 'station', tile: t.idx, price: t.price, nextToll: t.toll * (s.tiles.filter((x) => x.type === 'station' && x.pair === t.pair && x !== t).every((x) => x.owner === p.id) ? 2 : 1), pair: t.pair, count: n, money: p.money })) === true;
         if (!yes || s.over || p.money < t.price || t.owner !== -1) return;
         p.money -= t.price; t.owner = p.id; t.level = 0;
         this.sfx('build'); this.float(p, `-${t.price}`, false);
@@ -794,6 +796,6 @@
   return {
     START_MONEY, SALARY, ESCAPE_FEE, WARP_FEE, FEST_COUNT, LAP_CAP, TOUR_MULT, TOUR_ICONS, PCHARS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, MAX_PLAYERS,
     N, GROUPS, LINES, TILE_DEFS, CARDS, esc, fmt, isProp, cityPrice, levelCost, cumCost, invested, sellValue, takeoverPrice,
-    stationCount, tollAt, toll, elemToll, isFestival, setOwned, setBonus, propValue, assets, fullSets, gridPos, makeTiles, expand, Game,
+    stationCount, tollAt, toll, pairOwned, elemToll, isFestival, setOwned, setBonus, propValue, assets, fullSets, gridPos, makeTiles, expand, Game,
   };
 });

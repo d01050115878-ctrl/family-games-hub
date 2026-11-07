@@ -312,7 +312,8 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   💰 건설비는 한 번에 짓는 땅·건물 값을 더해서 내고, <b>통행료와 인수비도 지어진 건물 것을 모두 더해서</b> 계산합니다.
   <h4>통행료 &amp; 인수</h4>
   다른 플레이어의 나라에 도착하면 통행료를 냅니다. 통행료를 낸 뒤 <b>투자금의 2배</b>를 내고 그 나라를 인수할 수 있습니다.<br>
-  🏝️ <b>관광지</b>(제주도·부산·경주·서울)는 직접 건물을 지을 수 없고, <b>가진 관광지 수가 늘어날수록</b> 🚩→⛱️→🛖로 업그레이드되며 통행료가 올라갑니다.
+  🏝️ <b>관광지</b>는 건물을 지을 수 없고 정해진 통행료를 받습니다. 제주도(매입 20·통행 30)·부산(50·60)은 <b>휴양지</b> 짝, 경주(20·30)·서울(100·200)은 <b>관광지</b> 짝이에요.
+  <b>짝을 둘 다 가지면 통행료 ×2!</b>
   <h4>🎨 같은 색 세트 ×2</h4>
   나라 칸 위쪽 띠의 <b>색깔(대륙)</b>이 같은 나라 3곳이 한 세트입니다. 세트를 모두 가지면 그 나라들의 통행료가 <b>2배</b>가 되고 칸에 <b style="color:#ffd43b">×2</b> 표시가 붙습니다.
   페스티벌과 겹치면 함께 곱해져요. (칸 맨 위의 얇은 줄은 A·B·C·D 라인 색이에요.)
@@ -347,7 +348,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
-<script src="engine.js?v=20261107190747"></script>
+<script src="engine.js?v=20261107190952"></script>
 <script>
 'use strict';
 const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
@@ -661,7 +662,7 @@ function buildBoard() {
       el.style.setProperty('--gc', GROUPS[t.g].color);
       el.innerHTML = `<div class="band" style="background:${GROUPS[t.g].color};--line:${LINES[t.line].color}">${GROUPS[t.g].name}</div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
     } else if (t.type === 'station') {
-      el.innerHTML = `<div class="band" style="background:#e9ecef;--line:${LINES[t.line].color}">관광지</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
+      el.innerHTML = `<div class="band" style="background:${t.pair === '휴양지' ? '#99e9f2' : '#ffd8a8'};--line:${LINES[t.line].color}">${t.pair}</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
     } else {
       el.innerHTML = `<div class="ic">${t.icon}</div><div class="tn">${t.name}</div>${t.sub ? `<div class="sub">${t.sub}</div>` : ''}`;
     }
@@ -716,8 +717,8 @@ function updateTiles() {
       badge.innerHTML = owned ? vehicleSVG(t.owner) : '';
       el.title = owned ? `${S.players[t.owner].name}의 ${t.type === 'station' ? '관광지' : '땅'}` : '';
     }
-    el.querySelector('.bd').textContent = !owned ? '' : t.type === 'city' ? LEVEL_ICONS[t.level] : TOUR_ICONS[Math.min(4, MW.stationCount(S, t.owner))];
-    const x2 = owned && MW.setBonus(S, t) === 2;
+    el.querySelector('.bd').textContent = !owned ? '' : t.type === 'city' ? LEVEL_ICONS[t.level] : '🚩';
+    const x2 = owned && (t.type === 'city' ? MW.setBonus(S, t) === 2 : MW.pairOwned(S, t));
     el.classList.toggle('setx2', x2);
     el.querySelector('.tp').innerHTML = owned ? `통행 ${fmt(MW.toll(S, t))}${x2 ? '<span class="x2">×2</span>' : ''}` : t.type === 'city' ? `🏨 ${fmt(MW.tollAt(S, t, 3))}` : `통행 ${fmt(t.toll)}`;
   });
@@ -770,7 +771,8 @@ function showInfo(i) {
     for (let L = 0; L <= 4; L++) h += `<tr><td>${LEVEL_ICONS[L].slice(-2)} ${LEVEL_NAMES[L]}</td><td>${fmt(MW.levelCost(t, L))}</td><td><b>${fmt(MW.tollAt(S, t, L))}</b></td><td>${L === 4 ? '불가' : fmt(MW.cumCost(t, -1, L) * 2)}</td></tr>`;
     h += '</table><small style="color:var(--muted)">통행료·인수비는 그 단계까지 지은 건물 것을 모두 더한 금액이에요. (세트·축제면 ×2)</small>';
   } else if (t.type === 'station') {
-    h += `<br>가격 ${fmt(t.price)} · 통행료(가진 관광지 수): ${[1, 2, 3, 4].map(c => `${TOUR_ICONS[c]}${c}곳 ${Math.round(t.toll * TOUR_MULT[c])}`).join(' / ')}<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
+    const mate = S.tiles.find(x => x.type === 'station' && x.pair === t.pair && x !== t);
+    h += `<br>매입가 ${fmt(t.price)} · 통행료 ${fmt(t.toll)}<br>🔗 ${t.pair} 짝: ${mate.name} — 둘 다 가지면 통행료 ×2 (${fmt(t.toll * 2)})<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
     h += `<br><span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · 관광지 4곳을 모두 가지면 관광지 독점 승리!`;
   } else {
     h += '<br>' + ({ start: `지나갈 때마다 월급 ${SALARY}만. 딱 도착하면 내 나라 한 곳에 건설할 수 있습니다.`, blackhole: `최대 3턴 표류합니다. 더블이 나오거나 ${ESCAPE_FEE}만을 내면 탈출.`,
@@ -894,7 +896,7 @@ function askModal(p, req) {
     };
     case 'station': return {
       title: `${t.icon} ${t.name} (관광지)`,
-      html: `가격 <b>${fmt(req.price)}</b> · 통행료 <b>${fmt(req.nextToll)}</b><br>구매하면 관광지 ${req.count}곳 보유${req.count === 4 ? ' → <b style="color:var(--accent)">관광지 독점 승리!</b>' : ' (4곳 모두 가지면 독점 승리)'}<br>보유 현금: ${fmt(req.money)}`,
+      html: `매입가 <b>${fmt(req.price)}</b> · 통행료 <b>${fmt(req.nextToll)}</b>${req.nextToll > t.toll ? ` <b style="color:var(--accent)">(${req.pair} 짝 완성 ×2!)</b>` : ''}<br>구매하면 관광지 ${req.count}곳 보유${req.count === 4 ? ' → <b style="color:var(--accent)">관광지 독점 승리!</b>' : ' (4곳 모두 가지면 독점 승리)'}<br>보유 현금: ${fmt(req.money)}`,
       buttons: [{ label: `구매하기 <small>-${fmt(req.price)}</small>`, value: true, cls: 'gold' }, { label: '패스', value: false, cls: 'ghost' }],
     };
     case 'takeover': {
