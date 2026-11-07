@@ -131,7 +131,13 @@
   const sellValue = (t) => Math.floor(invested(t) / 2);
   const takeoverPrice = (t) => invested(t) * 2;
   const stationCount = (s, pid) => s.tiles.filter((x) => x.type === 'station' && x.owner === pid).length;
-  const elemToll = (t, k) => Math.round(t.hotel * ELEM_TOLL[k]);
+  // 건물별 통행료: 땅·하우스·빌딩을 정하고, 호텔은 '호텔까지 합계 = 정한 호텔 통행료'가 딱 맞도록, 랜드마크는 그만큼 더
+  function elemToll(t, k) {
+    const H = t.hotel, r = [0, 1, 2].map((i) => Math.round(H * ELEM_TOLL[i]));
+    if (k < 3) return r[k];
+    if (k === 3) return H - r[0] - r[1] - r[2];
+    return H;
+  }
   function tollAt(s, t, L) {
     if (t.type === 'station') return Math.round(t.toll * TOUR_MULT[Math.min(4, Math.max(1, stationCount(s, t.owner)))]);
     let m = 0; for (let k = 0; k <= L; k++) m += elemToll(t, k);
