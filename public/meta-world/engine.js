@@ -195,8 +195,7 @@
         })),
         tiles: makeTiles(), cur: 0, round: 1, maxRounds: opts.maxRounds || 0, festivals: [], effects: {}, over: false, deck: [], dbl: 0,
       };
-      // 시작할 때 도시 카드에서 3곳을 뽑아 축제 도시로 정한다
-      this.s.festivals = shuffle(this.s.tiles.filter((t) => t.type === 'city').map((t) => t.idx)).slice(0, FEST_COUNT);
+
     }
 
     snapshot() {
@@ -309,7 +308,7 @@
     /* ----- 진행 ----- */
     async run() {
       this.log(`🚀 게임 시작! 모두 ${fmt(START_MONEY)}을 가지고 세계 일주를 떠납니다.`);
-      this.log(`🎉 축제 도시: ${this.s.festivals.map((i) => this.s.tiles[i].name).join(' · ')} (통행료 ×2)`);
+
       while (!this.s.over) {
         const p = this.s.players[this.s.cur];
         this.sync();
@@ -622,13 +621,13 @@
     async festivalTile(p) {
       const s = this.s;
       const mine = s.tiles.filter((t) => t.owner === p.id && !isFestival(s, t.idx));
-      if (!mine.length) { this.log(`${this.nm(p)} 축제를 옮길 내 나라가 없습니다.`); this.announce('🎉 월드 페스티벌'); return; }
-      const idx = await this.pickTile(p, mine.map((t) => t.idx), '🎉 축제를 옮겨올 내 나라를 고르세요 (가장 오래된 축제 도시가 끝나요)', true, 'festival');
+      if (!mine.length) { this.log(`${this.nm(p)} 축제를 열 내 나라가 없습니다.`); this.announce('🎉 월드 페스티벌'); return; }
+      const idx = await this.pickTile(p, mine.map((t) => t.idx), '🎉 축제를 열 내 나라를 고르세요 (통행료 ×2 · 이전 축제는 끝나요)', true, 'festival');
       if (idx == null || s.over) return;
-      const gone = s.festivals.shift();
-      s.festivals.push(idx);
+      const gone = s.festivals[0];
+      s.festivals = [idx]; // 축제는 한 곳만
       this.fx('festival', { pid: p.id, tile: idx, mul: 2 });
-      this.log(`${this.nm(p)} ${s.tiles[gone].name}의 축제를 ${s.tiles[idx].name}(으)로 옮겼어요! 통행료 ×2`);
+      this.log(`${this.nm(p)} ${s.tiles[idx].name}에서 월드 페스티벌 개최! 통행료 ×2${gone != null ? ` (${s.tiles[gone].name} 축제 종료)` : ''}`);
     }
 
     async warpTile(p) {

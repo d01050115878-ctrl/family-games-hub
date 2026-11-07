@@ -325,7 +325,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   같은 라인에 있는 나라는 <b>땅값·건물값·통행료가 모두 같고</b>, A → B → C → D 순서로 비싸집니다.
   <h4>특수 칸</h4>
   🌊 <b>버뮤다 삼각지대</b>: 최대 3턴 표류합니다. 더블이 나오거나 구조비를 내면 탈출합니다.<br>
-  🎉 <b>축제 도시</b>: 게임 시작 때 도시 3곳을 뽑아 축제 도시로 정합니다(통행료 ×2). <b>월드 페스티벌</b> 칸에 도착하면 가장 오래된 축제를 내 나라로 옮겨올 수 있어요.<br>
+  🎉 <b>월드 페스티벌</b>: 도착한 사람이 자기 나라(관광지) 한 곳을 골라 축제를 엽니다. 그곳 통행료 ×2! 축제는 한 곳만 열리고, 새 축제가 열리면 이전 축제는 끝나요.<br>
   🌀 <b>워프 게이트</b>: 도착하면 <b>다음 턴</b>에 주사위 대신 원하는 칸으로 여행합니다. (여행비 있음)<br>
   🎴 <b>행운 카드</b>: 이동·돈·공격 카드 등 20종류가 있어요. <b>[보관]</b> 카드(🛡️보험·🎟️쿠폰·💳보너스 월급·🛟구조 요청·🧱방어막)는 갖고 있다가 자동으로 쓰이고,
   <b>[공격]</b> 카드(🌪️태풍·🤧독감·🔌정전·🔨강제 경매·🔄맞교환)는 상대 나라를 골라 씁니다. 🧱방어막이 있으면 공격을 막아요.<br>
@@ -348,7 +348,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
-<script src="engine.js?v=20261107190952"></script>
+<script src="engine.js?v=20261107191154"></script>
 <script>
 'use strict';
 const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
@@ -776,7 +776,7 @@ function showInfo(i) {
     h += `<br><span style="color:${LINES[t.line].color}">■ ${LINES[t.line].name}</span> · 관광지 4곳을 모두 가지면 관광지 독점 승리!`;
   } else {
     h += '<br>' + ({ start: `지나갈 때마다 월급 ${SALARY}만. 딱 도착하면 내 나라 한 곳에 건설할 수 있습니다.`, blackhole: `최대 3턴 표류합니다. 더블이 나오거나 ${ESCAPE_FEE}만을 내면 탈출.`,
-      festival: '축제 도시는 항상 3곳(통행료 ×2)이에요. 여기 도착하면 가장 오래된 축제를 내 나라로 옮겨올 수 있어요.', warp: `다음 턴에 주사위 대신 원하는 칸으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`,
+      festival: '여기 도착하면 내 나라(관광지) 한 곳을 골라 축제를 열어요. 통행료 ×2! 새 축제가 열리면 이전 축제는 끝나요.', warp: `다음 턴에 주사위 대신 원하는 칸으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`,
       chance: '행운 카드를 한 장 뽑습니다.', tax: '보유 부동산 가치의 10%를 관세로 냅니다.' }[t.type]);
   }
   $('#info').innerHTML = h;
