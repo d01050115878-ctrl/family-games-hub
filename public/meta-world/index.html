@@ -327,8 +327,8 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   🌊 <b>버뮤다 삼각지대</b>: 최대 3턴 표류합니다. 더블이 나오거나 구조비를 내면 탈출합니다.<br>
   🎉 <b>월드 페스티벌</b>: 도착한 사람이 자기 나라(관광지) 한 곳을 골라 축제를 엽니다. 그곳 통행료 ×2! 축제는 한 곳만 열리고, 새 축제가 열리면 이전 축제는 끝나요.<br>
   🌀 <b>워프 게이트</b>: 도착하면 <b>다음 턴</b>에 주사위 대신 원하는 칸으로 여행합니다. (여행비 있음)<br>
-  🎴 <b>행운 카드</b>: 이동·돈·공격 카드 등 20종류가 있어요. <b>[보관]</b> 카드(🛡️보험·🎟️쿠폰·💳보너스 월급·🛟구조 요청·🧱방어막)는 갖고 있다가 자동으로 쓰이고,
-  <b>[공격]</b> 카드(🌪️태풍·🤧독감·🔌정전·🔨강제 경매·🔄맞교환)는 상대 나라를 골라 씁니다. 🧱방어막이 있으면 공격을 막아요.<br>
+  🎴 <b>행운 카드</b>: 이동·돈·공격 카드 등 20종류가 있어요. <b>[보관]</b> 카드(🛡️보험·🎟️쿠폰·🛟구조 요청·🧱방어막)는 필요한 순간에 <b>쓸지 말지 직접 골라요</b>. 💳보너스 월급은 자동이에요.<br>
+  <b>[공격]</b> 카드(🌪️태풍·🤧독감·🔌정전·🔨강제 경매·🔄맞교환)는 뽑았을 때 <b>지금 쓰거나 보관</b>할 수 있고, 보관한 카드는 내 차례에 주사위 굴리기 전에 쓸 수 있어요. 공격받은 사람은 🧱방어막으로 막을지 고를 수 있어요.<br>
   💸 <b>관세</b>: 부동산 가치의 10%를 냅니다.
   <h4>돈이 부족하면</h4>
   보유한 부동산을 투자금의 50%에 팔아 돈을 마련합니다. 그래도 부족하면 파산입니다.
@@ -348,7 +348,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
-<script src="engine.js?v=20261107191942"></script>
+<script src="engine.js?v=20261107192528"></script>
 <script>
 'use strict';
 const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
@@ -727,7 +727,7 @@ function seatOnline(i) { return mode !== 'online' || !roomInfo || !roomInfo.seat
 function renderPlayers() {
   $('#players').innerHTML = S.players.map((p, i) => {
     const cnt = S.tiles.filter(t => t.owner === p.id).length;
-    const items = [p.laps < 3 && p.alive ? `🔰 ${p.laps + 1}바퀴째 (${LEVEL_NAMES[MW.LAP_CAP[p.laps]]}까지)` : '', p.warpReady ? '🌀 여행 대기' : '', p.shield ? `🛡️×${p.shield}` : '', p.coupon ? `🎟️×${p.coupon}` : '', p.salBoost ? `💳×${p.salBoost}` : '', p.rescue ? `🛟×${p.rescue}` : '', p.guard ? `🧱×${p.guard}` : '', p.stuck ? `🌊 표류 ${p.stuck}턴` : '',
+    const items = [p.laps < 3 && p.alive ? `🔰 ${p.laps + 1}바퀴째 (${LEVEL_NAMES[MW.LAP_CAP[p.laps]]}까지)` : '', p.warpReady ? '🌀 여행 대기' : '', p.shield ? `🛡️×${p.shield}` : '', p.coupon ? `🎟️×${p.coupon}` : '', p.salBoost ? `💳×${p.salBoost}` : '', p.rescue ? `🛟×${p.rescue}` : '', p.guard ? `🧱×${p.guard}` : '', p.hand && p.hand.length ? `⚔️${p.hand.map(ci => CARDS[ci].icon).join('')}` : '', p.stuck ? `🌊 표류 ${p.stuck}턴` : '',
       !p.alive ? '💀 파산' : '', p.alive && !seatOnline(i) ? '🔌 연결 끊김' : ''].filter(Boolean).join(' · ');
     return `<div class="pcard ${i === S.cur && !S.over ? 'active' : ''} ${p.alive ? '' : 'dead'}" style="--pc:${p.color}">
       <div class="ph"><span class="pe">${vehicleSVG(p.id)}</span><b>${esc(p.name)}</b>${i === mySeat ? '<span class="tag me">나</span>' : ''}${p.isAI ? '<span class="tag">AI</span>' : ''}</div>
@@ -919,6 +919,41 @@ function askModal(p, req) {
           .concat([{ label: '💀 파산 선언', value: 'bk', cls: 'danger' }]),
       };
     }
+    case 'cardUse': {
+      const c = CARDS[req.card];
+      return {
+        title: `${c.icon} ${c.title}`,
+        html: `${c.desc}<br><br>지금 바로 쓸까요, 보관했다가 나중에 내 차례(주사위 굴리기 전)에 쓸까요?`,
+        buttons: [{ label: '⚔️ 지금 사용', value: 'use', cls: 'gold' }, { label: '👜 보관하기', value: 'keep' }],
+      };
+    }
+    case 'hand': return {
+      title: '👜 보관한 카드',
+      html: '주사위를 굴리기 전에 보관한 카드를 쓸 수 있어요.',
+      buttons: req.cards.map((ci, k) => ({ label: `${CARDS[ci].icon} ${CARDS[ci].title} <small>사용</small>`, value: k, cls: 'sm' }))
+        .concat([{ label: '이번엔 안 써요', value: null, cls: 'ghost' }]),
+    };
+    case 'defend': {
+      const o = S.players[req.owner];
+      const b = [];
+      if (req.shield) b.push({ label: `🛡️ 여행자 보험 사용 <small>통행료 0원 (남은 ${req.shield}장)</small>`, value: 'shield', cls: 'gold' });
+      if (req.coupon) b.push({ label: `🎟️ 할인 쿠폰 사용 <small>${fmt(Math.round(req.toll / 2))} 내기 (남은 ${req.coupon}장)</small>`, value: 'coupon' });
+      b.push({ label: `그냥 내기 <small>${fmt(req.toll)}</small>`, value: 'none', cls: 'ghost' });
+      return { title: `💸 통행료 ${fmt(req.toll)}`, html: `<b style="color:${o.color}">${o.emoji}${esc(o.name)}</b>의 ${t.name}에 도착했어요. 카드를 쓸까요?<br>보유 현금: ${fmt(req.money)}`, buttons: b };
+    }
+    case 'guard': {
+      const a = S.players[req.attacker];
+      return {
+        title: '🧱 공격받았어요!',
+        html: `<b style="color:${a.color}">${a.emoji}${esc(a.name)}</b>이(가) <b>${t.name}</b>을(를) 공격하려고 해요.<br>방어막을 써서 막을까요?`,
+        buttons: [{ label: '🧱 방어막 사용 <small>공격 막기</small>', value: true, cls: 'gold' }, { label: '안 써요', value: false, cls: 'ghost' }],
+      };
+    }
+    case 'rescue': return {
+      title: '🛟 구조 요청 카드',
+      html: `버뮤다에 표류 중이에요 (남은 ${req.stuck}턴).<br>구조 요청 카드를 쓰면 바로 탈출해서 이번 턴에 주사위를 굴려요.`,
+      buttons: [{ label: '🛟 구조 요청 사용', value: true, cls: 'gold' }, { label: '안 써요', value: false, cls: 'ghost' }],
+    };
     case 'card': {
       const c = CARDS[req.card];
       return { title: '🎴 행운 카드', html: `<div class="cardart">${c.icon}</div><div style="text-align:center"><b style="font-size:19px">${c.title}</b><br>${c.desc}</div>`, buttons: [{ label: '확인', value: true, cls: 'gold' }] };

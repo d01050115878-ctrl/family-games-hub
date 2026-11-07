@@ -100,12 +100,12 @@
     { icon: '🌊', title: '폭풍우 표류', desc: '버뮤다 삼각지대로 떠내려갑니다!' },
     { icon: '🌀', title: '워프 티켓', desc: '워프 게이트로 이동합니다.' },
     { icon: '🎉', title: '페스티벌 초대장', desc: '월드 페스티벌로 이동합니다.' },
-    { icon: '🛡️', title: '여행자 보험', desc: '[보관] 통행료를 1번 면제받습니다.', keep: true },
-    { icon: '🎟️', title: '통행 할인 쿠폰', desc: '[보관] 통행료를 1번 50% 할인받습니다.', keep: true },
+    { icon: '🛡️', title: '여행자 보험', desc: '[보관] 통행료를 낼 때 원하면 써서 1번 면제받습니다.', keep: true },
+    { icon: '🎟️', title: '통행 할인 쿠폰', desc: '[보관] 통행료를 낼 때 원하면 써서 50% 할인받습니다.', keep: true },
     { icon: '🌪️', title: '태풍 발생', desc: '[공격] 상대 나라 1곳의 건물을 1단계 무너뜨립니다. (랜드마크 제외)', attack: true },
     { icon: '💳', title: '보너스 월급', desc: '[보관] 다음에 출발지를 지날 때 월급을 2배로 받습니다.', keep: true },
-    { icon: '🛟', title: '구조 요청', desc: '[보관] 버뮤다에 갇히면 바로 구조됩니다.', keep: true },
-    { icon: '🧱', title: '방어막', desc: '[보관] 내 나라를 노린 공격 카드를 1번 막아냅니다.', keep: true },
+    { icon: '🛟', title: '구조 요청', desc: '[보관] 버뮤다에 갇혔을 때 원하면 써서 바로 구조됩니다.', keep: true },
+    { icon: '🧱', title: '방어막', desc: '[보관] 내 나라가 공격받을 때 원하면 써서 1번 막아냅니다.', keep: true },
     { icon: '🤧', title: '독감 유행', desc: '[공격] 상대 나라 1곳과 같은 세트의 그 주인 나라들 통행료가 3라운드 동안 절반이 됩니다.', attack: true },
     { icon: '🔌', title: '대정전', desc: '[공격] 상대 나라 1곳의 통행료가 2라운드 동안 0원이 됩니다.', attack: true },
     { icon: '🔨', title: '강제 경매', desc: '[공격] 상대 나라 1곳을 은행에 팔아버립니다. 주인은 투자금 절반만 받아요. (랜드마크 제외)', attack: true },
@@ -191,7 +191,7 @@
       this.s = {
         players: seats.map((p, i) => ({
           id: i, name: String(p.name), isAI: !!p.isAI, color: PCOLORS[i], emoji: PEMOJI[i],
-          money: START_MONEY, pos: 0, alive: true, stuck: 0, shield: 0, coupon: 0, salBoost: 0, rescue: 0, guard: 0, laps: 0, warpReady: false,
+          money: START_MONEY, pos: 0, alive: true, stuck: 0, shield: 0, coupon: 0, salBoost: 0, rescue: 0, guard: 0, hand: [], laps: 0, warpReady: false,
         })),
         tiles: makeTiles(), cur: 0, round: 1, maxRounds: opts.maxRounds || 0, festivals: [], effects: {}, over: false, deck: [], dbl: 0,
       };
@@ -201,7 +201,7 @@
     snapshot() {
       const s = this.s;
       return {
-        players: s.players.map((p) => Object.assign({}, p)), tiles: s.tiles.map((t) => [t.owner, t.level]),
+        players: s.players.map((p) => Object.assign({}, p, { hand: p.hand.slice() })), tiles: s.tiles.map((t) => [t.owner, t.level]),
         cur: s.cur, round: s.round, maxRounds: s.maxRounds, festivals: s.festivals.slice(), effects: JSON.parse(JSON.stringify(s.effects)), over: s.over,
       };
     }
@@ -247,6 +247,15 @@
           const c = req.cands.slice().sort((a, b) => toll(s, s.tiles[b]) - toll(s, s.tiles[a]));
           return c[0];
         }
+        case 'cardUse': return 'use';
+        case 'hand': return 0;
+        case 'defend': {
+          const big = req.toll >= 30 || req.toll > p.money;
+          if (req.shield && big) return 'shield';
+          if (req.coupon && (req.toll >= 20 || req.toll > p.money)) return 'coupon';
+          return 'none';
+        }
+        case 'guard': case 'rescue': return true;
         default: return true; // card
       }
     }
@@ -340,6 +349,17 @@
         const r = await this.blackholeTurn(p);
         if (r !== 'paid') return;
       }
+      if (p.hand.length && !s.over) {
+        const v = await this.ask(p, { kind: 'hand', cards: p.hand.slice() });
+        if (Number.isInteger(v) && v >= 0 && v < p.hand.length) {
+          const ci = p.hand.splice(v, 1)[0];
+          this.log(`${this.nm(p)} 보관한 카드 사용: ${CARDS[ci].icon} ${CARDS[ci].title}`);
+          this.announce(`${CARDS[ci].icon} ${CARDS[ci].title}`);
+          await this.runCard(ci, p);
+          this.sync();
+          if (s.over || !p.alive) return;
+        }
+      }
       if (p.warpReady) { await this.warpTravel(p); return; }
       while (!s.over) {
         const [a, b] = await this.rollDice(p);
@@ -385,7 +405,7 @@
     }
 
     async blackholeTurn(p) {
-      if (p.rescue > 0) {
+      if (p.rescue > 0 && (await this.ask(p, { kind: 'rescue', stuck: p.stuck })) === true) {
         p.rescue--; p.stuck = 0;
         this.announce('🛟 구조 요청 성공!'); this.log(`${this.nm(p)} 구조 요청 카드로 버뮤다에서 바로 탈출!`); this.sync();
         return 'paid';
@@ -540,8 +560,11 @@
       if (t.owner === p.id) return this.buildDialog(p, t, false);
       const owner = s.players[t.owner];
       let amt = toll(s, t);
-      if (p.shield > 0) { p.shield--; amt = 0; this.fx('shield', { pid: p.id }); this.log(`${this.nm(p)} 여행자 보험으로 통행료 면제!`); await this.sleep(900); }
-      else if (p.coupon > 0) { p.coupon--; amt = Math.round(amt / 2); this.log(`${this.nm(p)} 할인 쿠폰 사용 (50%)`); }
+      if (amt > 0 && (p.shield > 0 || p.coupon > 0)) {
+        const d = await this.ask(p, { kind: 'defend', toll: amt, tile: t.idx, owner: owner.id, shield: p.shield, coupon: p.coupon, money: p.money });
+        if (d === 'shield' && p.shield > 0) { p.shield--; amt = 0; this.fx('shield', { pid: p.id }); this.log(`${this.nm(p)} 여행자 보험으로 통행료 면제!`); await this.sleep(900); }
+        else if (d === 'coupon' && p.coupon > 0) { p.coupon--; amt = Math.round(amt / 2); this.log(`${this.nm(p)} 할인 쿠폰 사용 (50%)`); }
+      }
       if (amt > 0) {
         this.fx('toll', { pid: p.id, to: owner.id, amount: amt, tile: t.idx });
         await this.sleep(1000);
@@ -677,6 +700,10 @@
       this.announce(`${c.icon} ${c.title}`);
       await this.ask(p, { kind: 'card', card: ci });
       if (s.over) return;
+      if (c.attack) {
+        const v = await this.ask(p, { kind: 'cardUse', card: ci });
+        if (v === 'keep') { p.hand.push(ci); this.log(`${this.nm(p)} ${c.icon} ${c.title} 카드를 보관했어요.`); this.sync(); return; }
+      }
       await this.runCard(ci, p);
       this.sync();
     }
@@ -687,7 +714,7 @@
       const idx = await this.pickTile(p, cands, text, false, 'attack');
       const t = this.s.tiles[idx];
       const o = this.s.players[t.owner];
-      if (o && o.guard > 0) {
+      if (o && o.guard > 0 && (await this.ask(o, { kind: 'guard', tile: t.idx, attacker: p.id, text })) === true) {
         o.guard--;
         this.fx('shield', { pid: o.id });
         this.log(`🧱 ${this.nm(o)} 방어막으로 공격을 막았어요!`);
