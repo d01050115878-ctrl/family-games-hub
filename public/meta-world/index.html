@@ -347,7 +347,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
-<script src="engine.js?v=202611071907"></script>
+<script src="engine.js?v=20261107190747"></script>
 <script>
 'use strict';
 const { esc, fmt, GROUPS, LINES, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, TOUR_MULT, TOUR_ICONS } = MW;
@@ -719,7 +719,7 @@ function updateTiles() {
     el.querySelector('.bd').textContent = !owned ? '' : t.type === 'city' ? LEVEL_ICONS[t.level] : TOUR_ICONS[Math.min(4, MW.stationCount(S, t.owner))];
     const x2 = owned && MW.setBonus(S, t) === 2;
     el.classList.toggle('setx2', x2);
-    el.querySelector('.tp').innerHTML = owned ? `통행 ${fmt(MW.toll(S, t))}${x2 ? '<span class="x2">×2</span>' : ''}` : t.type === 'city' ? `🏨 ${fmt(MW.tollAt(S, t, 3))}` : `땅 ${fmt(MW.cityPrice(t))}`;
+    el.querySelector('.tp').innerHTML = owned ? `통행 ${fmt(MW.toll(S, t))}${x2 ? '<span class="x2">×2</span>' : ''}` : t.type === 'city' ? `🏨 ${fmt(MW.tollAt(S, t, 3))}` : `통행 ${fmt(t.toll)}`;
   });
 }
 function seatOnline(i) { return mode !== 'online' || !roomInfo || !roomInfo.seats[i] || roomInfo.seats[i].online; }
