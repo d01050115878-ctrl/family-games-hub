@@ -11,14 +11,18 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const START_MONEY = 1500, SALARY = 200, ESCAPE_FEE = 100, STATION_PRICE = 150;
-  const STATION_TOLL = [0, 50, 120, 250, 500];
+  const START_MONEY = 1500, SALARY = 200, ESCAPE_FEE = 100, WARP_FEE = 50;
+  const FEST_MAX = 5;             // 페스티벌 배율 최대 ×5
+  const FIRST_LAP_MAX_LEVEL = 1;  // 첫 바퀴에는 하우스까지만
+  const GAUGE_CHANCE = 0.55;      // 주사위 조절 게이지 성공 확률
   const COST_MULT = [1, 0.5, 1, 1.5, 2];      // 땅, 하우스, 빌딩, 호텔, 랜드마크 (나라 가격 대비)
   const TOLL_MULT = [0.4, 1.2, 2.5, 4.5, 7];  // 단계별 통행료 배율
   const LEVEL_NAMES = ['땅', '하우스', '빌딩', '호텔', '랜드마크'];
   const LEVEL_ICONS = ['🚩', '🏠', '🏠🏢', '🏠🏢🏨', '🌟'];
-  const PCOLORS = ['#ff5d73', '#4dabf7', '#51cf66', '#ffd43b', '#c084fc', '#ff922b'];
-  const PEMOJI = ['🦊', '🐼', '🐸', '🐯', '🐰', '🐵'];
+  // 캐릭터: 소방차, 구급차, 경찰차, 탱크, 한전 작업차, 도시가스차
+  const PCHARS = ['소방차', '구급차', '경찰차', '탱크', '한전 작업차', '도시가스차'];
+  const PCOLORS = ['#ff5d5d', '#ffa94d', '#4dabf7', '#94d82d', '#ffd43b', '#20c997'];
+  const PEMOJI = ['🚒', '🚑', '🚓', '🪖', '⚡', '🔥'];
   const MAX_PLAYERS = 6;
   const SIDES = [[1, 7], [9, 15], [17, 23], [25, 31]];
   const AI_RESERVE = 250;
@@ -36,34 +40,34 @@
   ];
 
   const TILE_DEFS = [
-    { type: 'start', name: '출발', icon: '🚀', sub: '지날 때 월급 200만' },
+    { type: 'start', name: '출발', icon: '🚀', sub: '월급 200만 · 도착 시 건설' },
     { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
     { type: 'city', name: '쿠바', cc: 'cu', g: 0 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '페루', cc: 'pe', g: 1 },
     { type: 'city', name: '아르헨티나', cc: 'ar', g: 1 },
-    { type: 'station', name: '인천공항', icon: '✈️' },
+    { type: 'station', name: '인천공항', icon: '✈️', price: 160, toll: 120 },
     { type: 'city', name: '브라질', cc: 'br', g: 1 },
     { type: 'blackhole', name: '버뮤다 삼각지대', icon: '🌊', sub: '최대 3턴 표류' },
     { type: 'city', name: '이집트', cc: 'eg', g: 2 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '남아공', cc: 'za', g: 2 },
-    { type: 'station', name: '두바이공항', icon: '✈️' },
+    { type: 'station', name: '두바이공항', icon: '✈️', price: 180, toll: 140 },
     { type: 'city', name: '피지', cc: 'fj', g: 3 },
     { type: 'city', name: '뉴질랜드', cc: 'nz', g: 3 },
     { type: 'city', name: '호주', cc: 'au', g: 3 },
-    { type: 'festival', name: '월드 페스티벌', icon: '🎉', sub: '내 나라 통행료 2배' },
+    { type: 'festival', name: '월드 페스티벌', icon: '🎉', sub: '통행료 배율 UP' },
     { type: 'city', name: '튀르키예', cc: 'tr', g: 4 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '아랍에미리트', cc: 'ae', g: 4 },
-    { type: 'station', name: 'JFK공항', icon: '✈️' },
+    { type: 'station', name: 'JFK공항', icon: '✈️', price: 210, toll: 170 },
     { type: 'city', name: '태국', cc: 'th', g: 5 },
     { type: 'city', name: '일본', cc: 'jp', g: 5 },
     { type: 'city', name: '대한민국', cc: 'kr', g: 5 },
-    { type: 'warp', name: '워프 게이트', icon: '🌀', sub: '원하는 칸으로 이동' },
+    { type: 'warp', name: '워프 게이트', icon: '🌀', sub: '다음 턴 원하는 곳으로' },
     { type: 'city', name: '캐나다', cc: 'ca', g: 6 },
     { type: 'city', name: '미국', cc: 'us', g: 6 },
-    { type: 'station', name: '히드로공항', icon: '✈️' },
+    { type: 'station', name: '히드로공항', icon: '✈️', price: 240, toll: 200 },
     { type: 'tax', name: '관세', icon: '💸' },
     { type: 'city', name: '이탈리아', cc: 'it', g: 7 },
     { type: 'city', name: '프랑스', cc: 'fr', g: 7 },
@@ -96,18 +100,24 @@
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
   const isProp = (t) => t.type === 'city' || t.type === 'station';
-  const cityPrice = (t) => (t.type === 'station' ? STATION_PRICE : GROUPS[t.g].price);
-  const levelCost = (t, L) => (t.type === 'station' ? STATION_PRICE : Math.round(GROUPS[t.g].price * COST_MULT[L]));
+  const cityPrice = (t) => (t.type === 'station' ? t.price : GROUPS[t.g].price);
+  const levelCost = (t, L) => (t.type === 'station' ? t.price : Math.round(GROUPS[t.g].price * COST_MULT[L]));
   function cumCost(t, from, to) { let s = 0; for (let L = from + 1; L <= to; L++) s += levelCost(t, L); return s; }
-  const invested = (t) => (t.level < 0 ? 0 : t.type === 'station' ? STATION_PRICE : cumCost(t, -1, t.level));
+  const invested = (t) => (t.level < 0 ? 0 : t.type === 'station' ? t.price : cumCost(t, -1, t.level));
   const sellValue = (t) => Math.floor(invested(t) / 2);
   const takeoverPrice = (t) => invested(t) * 2;
   const stationCount = (s, pid) => s.tiles.filter((x) => x.type === 'station' && x.owner === pid).length;
-  function tollAt(s, t, L, ownerId = t.owner) {
-    if (t.type === 'station') return STATION_TOLL[Math.min(4, stationCount(s, ownerId))];
+  function tollAt(s, t, L) {
+    if (t.type === 'station') return t.toll;
     return Math.round(GROUPS[t.g].price * TOLL_MULT[L]);
   }
-  function toll(s, t) { let v = tollAt(s, t, t.level); if (s.festival === t.idx) v *= 2; return v; }
+  function toll(s, t) { let v = tollAt(s, t, t.level); if (s.festival === t.idx) v *= s.festMul || 2; return v; }
+  // 합이 sum이 되는 주사위 두 개
+  function pairForSum(sum) {
+    const ps = [];
+    for (let a = 1; a <= 6; a++) { const b = sum - a; if (b >= 1 && b <= 6) ps.push([a, b]); }
+    return ps[rnd(ps.length)];
+  }
   const propValue = (s, p) => s.tiles.filter((t) => t.owner === p.id).reduce((a, t) => a + invested(t), 0);
   const assets = (s, p) => (p.alive ? p.money + propValue(s, p) : 0);
   function fullSets(s, pid) {
@@ -137,9 +147,9 @@
       this.s = {
         players: seats.map((p, i) => ({
           id: i, name: String(p.name), isAI: !!p.isAI, color: PCOLORS[i], emoji: PEMOJI[i],
-          money: START_MONEY, pos: 0, alive: true, stuck: 0, shield: 0, coupon: 0,
+          money: START_MONEY, pos: 0, alive: true, stuck: 0, shield: 0, coupon: 0, laps: 0, warpReady: false,
         })),
-        tiles: makeTiles(), cur: 0, round: 1, maxRounds: opts.maxRounds || 0, festival: -1, over: false, deck: [], dbl: 0,
+        tiles: makeTiles(), cur: 0, round: 1, maxRounds: opts.maxRounds || 0, festival: -1, festMul: 0, over: false, deck: [], dbl: 0,
       };
     }
 
@@ -147,7 +157,7 @@
       const s = this.s;
       return {
         players: s.players.map((p) => Object.assign({}, p)), tiles: s.tiles.map((t) => [t.owner, t.level]),
-        cur: s.cur, round: s.round, maxRounds: s.maxRounds, festival: s.festival, over: s.over,
+        cur: s.cur, round: s.round, maxRounds: s.maxRounds, festival: s.festival, festMul: s.festMul, over: s.over,
       };
     }
     sleep(ms) { return this.io.sleep(ms); }
@@ -177,7 +187,8 @@
       switch (req.kind) {
         case 'blackhole': return p.money > 600 ? 'pay' : 'roll';
         case 'build': return this.aiChooseLevel(p, s.tiles[req.tile], req.from, req.maxL);
-        case 'station': return p.money - STATION_PRICE >= AI_RESERVE - 100;
+        case 'station': return p.money - req.price >= AI_RESERVE;
+        case 'roll': return { target: this.aiDiceTarget(p) };
         case 'takeover': return this.aiWantsTakeover(p, s.tiles[req.tile], req.price);
         case 'sell': {
           const mine = s.tiles.filter((t) => t.owner === p.id).sort((a, b) => sellValue(a) - sellValue(b));
@@ -185,10 +196,11 @@
         }
         case 'pick': {
           if (req.purpose === 'warp') return this.aiWarp(p);
+          if (req.purpose === 'startBuild') return this.aiStartBuild(p, req.cands);
           const c = req.cands.slice().sort((a, b) => toll(s, s.tiles[b]) - toll(s, s.tiles[a]));
           return c[0];
         }
-        default: return true; // roll, card
+        default: return true; // card
       }
     }
     aiChooseLevel(p, t, from, maxL) {
@@ -203,6 +215,33 @@
         if (others.every((x) => x.owner === p.id)) return true;
       }
       return Math.random() < 0.65;
+    }
+    // 주사위 조절: 도착했을 때 가장 좋은 칸을 노린다
+    aiDiceTarget(p) {
+      const s = this.s;
+      let best = 7, bestSc = -Infinity;
+      for (let sum = 2; sum <= 12; sum++) {
+        const t = s.tiles[(p.pos + sum) % 32];
+        let sc = 0;
+        if (isProp(t)) {
+          if (t.owner === -1) sc = cityPrice(t) <= p.money - 80 ? 60 + cityPrice(t) / 4 : 0;
+          else if (t.owner === p.id) sc = t.level < 4 ? 40 : 5;
+          else sc = -toll(s, t);
+        } else if (t.type === 'blackhole') sc = -120;
+        else if (t.type === 'warp') sc = 35;
+        else if (t.type === 'start') sc = 50;
+        else if (t.type === 'chance') sc = 15;
+        else if (t.type === 'festival') sc = s.tiles.some((x) => x.owner === p.id) ? 40 : 0;
+        else if (t.type === 'tax') sc = -propValue(s, p) * 0.1;
+        sc += Math.random() * 10;
+        if (sc > bestSc) { bestSc = sc; best = sum; }
+      }
+      return best;
+    }
+    aiStartBuild(p, cands) {
+      const s = this.s;
+      const c = cands.map((i) => s.tiles[i]).filter((t) => t.level < 4).sort((a, b) => cityPrice(b) - cityPrice(a));
+      return c.length ? c[0].idx : null;
     }
     aiWarp(p) {
       let best = 0, bestScore = 60;
@@ -247,6 +286,7 @@
         const r = await this.blackholeTurn(p);
         if (r !== 'paid') return;
       }
+      if (p.warpReady) { await this.warpTravel(p); return; }
       while (!s.over) {
         const [a, b] = await this.rollDice(p);
         if (s.over) return;
@@ -266,10 +306,21 @@
     }
 
     async rollDice(p, auto) {
-      if (!auto) { this.msg(`${p.emoji} ${esc(p.name)}의 차례 — 주사위를 굴리세요`); await this.ask(p, { kind: 'roll' }); }
-      else await this.sleep(p.isAI ? 600 : 250);
+      let target = null;
+      if (!auto) {
+        this.msg(`${p.emoji} ${esc(p.name)}의 차례 — 게이지를 맞춰 주사위를 굴리세요`);
+        const ans = await this.ask(p, { kind: 'roll' });
+        const tg = ans && Number(ans.target);
+        if (Number.isInteger(tg) && tg >= 2 && tg <= 12) target = tg;
+      } else await this.sleep(p.isAI ? 600 : 250);
       if (this.s.over) return [1, 2];
-      const a = 1 + rnd(6), b = 1 + rnd(6);
+      let a = 1 + rnd(6), b = 1 + rnd(6);
+      if (target != null && Math.random() < GAUGE_CHANCE) {
+        // 게이지 성공: 목표 합 ±1 범위에서 나온다
+        const sums = [target - 1, target, target + 1].filter((x) => x >= 2 && x <= 12);
+        [a, b] = pairForSum(sums[rnd(sums.length)]);
+      }
+      if (target != null) this.emit({ type: 'gauge', pid: p.id, target, hit: Math.abs(a + b - target) <= 1 });
       this.emit({ type: 'dice', a, b, pid: p.id });
       await this.sleep(850);
       const dbl = a === b;
@@ -307,6 +358,7 @@
         if (this.aborted) return;
         p.pos = (p.pos + 1) % 32;
         if (p.pos === 0) {
+          p.laps++;
           p.money += SALARY; this.float(p, `+${SALARY} 월급`, true); this.sfx('coin');
           this.log(`${this.nm(p)} 출발지 통과! 월급 ${fmt(SALARY)}`);
         }
@@ -414,6 +466,7 @@
         case 'blackhole': p.stuck = 3; this.announce('🌊 버뮤다 삼각지대!'); this.log(`${this.nm(p)} 버뮤다 삼각지대에 표류합니다. (최대 3턴)`); break;
         case 'festival': await this.festivalTile(p); break;
         case 'warp': await this.warpTile(p); break;
+        case 'start': await this.startTile(p); break;
         case 'tax': await this.taxTile(p); break;
         default: break;
       }
@@ -434,6 +487,7 @@
         if (!ok || s.over) return;
       }
       if (t.level >= 4 || t.owner === p.id || t.owner < 0) return;
+      if (p.laps === 0) { this.log(`${this.nm(p)} 첫 바퀴에는 인수할 수 없어요.`); return; }
       const price = takeoverPrice(t);
       if (p.money < price) return;
       const yes = (await this.ask(p, { kind: 'takeover', tile: t.idx, price, owner: owner.id, money: p.money })) === true;
@@ -451,25 +505,29 @@
       const s = this.s;
       if (t.type === 'station') {
         if (!isNew) return;
-        if (p.money < STATION_PRICE) { this.log(`${this.nm(p)} 자금 부족으로 ${t.name} 구매 불가`); return; }
+        if (p.money < t.price) { this.log(`${this.nm(p)} 자금 부족으로 ${t.name} 구매 불가`); return; }
         const n = stationCount(s, p.id) + 1;
-        const yes = (await this.ask(p, { kind: 'station', tile: t.idx, price: STATION_PRICE, nextToll: STATION_TOLL[n], count: n, money: p.money })) === true;
-        if (!yes || s.over || p.money < STATION_PRICE || t.owner !== -1) return;
-        p.money -= STATION_PRICE; t.owner = p.id; t.level = 0;
-        this.sfx('build'); this.float(p, `-${STATION_PRICE}`, false);
+        const yes = (await this.ask(p, { kind: 'station', tile: t.idx, price: t.price, nextToll: t.toll, count: n, money: p.money })) === true;
+        if (!yes || s.over || p.money < t.price || t.owner !== -1) return;
+        p.money -= t.price; t.owner = p.id; t.level = 0;
+        this.sfx('build'); this.float(p, `-${t.price}`, false);
         this.log(`${this.nm(p)} ${t.name} 구매!`); this.sync(); this.checkWin(p);
         return;
       }
       const from = t.level;
       if (from >= 4) return;
-      const maxL = from === 3 ? 4 : 3;
+      let maxL = from === 3 ? 4 : 3;
+      if (p.laps === 0) {
+        maxL = Math.min(maxL, FIRST_LAP_MAX_LEVEL);
+        if (maxL <= from) { this.log(`${this.nm(p)} 첫 바퀴에는 하우스까지만 지을 수 있어요.`); return; }
+      }
       const opts = [];
       for (let L = from + 1; L <= maxL; L++) {
         const cost = cumCost(t, from, L);
         opts.push({ L, cost, toll: tollAt(s, t, L), ok: cost <= p.money });
       }
       if (!opts.some((o) => o.ok)) { if (isNew) this.log(`${this.nm(p)} 자금 부족으로 ${t.name} 구매 불가`); return; }
-      let L = await this.ask(p, { kind: 'build', tile: t.idx, from, maxL, isNew, opts, money: p.money });
+      let L = await this.ask(p, { kind: 'build', tile: t.idx, from, maxL, isNew, opts, money: p.money, firstLap: p.laps === 0 });
       if (s.over) return;
       if (!(Number.isInteger(L) && L > from && L <= maxL && cumCost(t, from, L) <= p.money)) return;
       if (t.owner !== -1 && t.owner !== p.id) return;
@@ -493,21 +551,41 @@
       const s = this.s;
       const mine = s.tiles.filter((t) => t.owner === p.id);
       if (!mine.length) { this.log(`${this.nm(p)} 페스티벌을 열 나라가 없습니다.`); this.announce('🎉 월드 페스티벌'); return; }
-      const idx = await this.pickTile(p, mine.map((t) => t.idx), '🎉 페스티벌을 열 내 나라를 고르세요 (통행료 2배)', true, 'festival');
+      const idx = await this.pickTile(p, mine.map((t) => t.idx), '🎉 페스티벌을 열 내 나라를 고르세요 (같은 곳에서 다시 열면 배율 UP)', true, 'festival');
       if (idx == null || s.over) return;
+      s.festMul = s.festival === idx ? Math.min(FEST_MAX, s.festMul + 1) : 2;
       s.festival = idx;
-      this.announce(`🎉 ${s.tiles[idx].name} 페스티벌 개최!`); this.sfx('build');
-      this.log(`${this.nm(p)} ${s.tiles[idx].name}에서 페스티벌 개최! 통행료 2배`);
+      this.announce(`🎉 ${s.tiles[idx].name} 페스티벌! 통행료 ×${s.festMul}`); this.sfx('build');
+      this.log(`${this.nm(p)} ${s.tiles[idx].name}에서 페스티벌 개최! 통행료 ×${s.festMul}`);
     }
 
     async warpTile(p) {
+      p.warpReady = true;
       this.announce('🌀 워프 게이트!');
+      this.log(`${this.nm(p)} 워프 게이트 도착! 다음 턴에 원하는 곳으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`);
+    }
+    async warpTravel(p) {
+      p.warpReady = false;
+      if (p.pos !== WARP) return;
+      if (p.money < WARP_FEE) { this.log(`${this.nm(p)} 여행비가 부족해서 워프하지 못했어요.`); return; }
       const cands = this.s.tiles.map((t) => t.idx).filter((i) => i !== WARP);
-      const target = await this.pickTile(p, cands, '🌀 이동할 칸을 고르세요 (출발지 통과 시 월급)', true, 'warp');
-      if (target == null || this.s.over) return;
-      this.log(`${this.nm(p)} ${this.s.tiles[target].name}(으)로 워프!`);
+      const target = await this.pickTile(p, cands, `🌀 여행할 곳을 고르세요 (여행비 ${fmt(WARP_FEE)} · 출발지 통과 시 월급)`, true, 'warp');
+      if (target == null || this.s.over) { this.log(`${this.nm(p)} 워프를 취소했습니다.`); return; }
+      p.money -= WARP_FEE; this.float(p, `-${WARP_FEE}`, false);
+      this.log(`${this.nm(p)} 여행비 ${fmt(WARP_FEE)}을 내고 ${this.s.tiles[target].name}(으)로 워프!`);
+      this.sfx('warp');
       await this.moveForwardTo(p, target);
       await this.resolveTile(p);
+    }
+    // 출발지에 딱 도착하면 내 나라 한 곳에 건설
+    async startTile(p) {
+      const s = this.s;
+      const cands = s.tiles.filter((t) => t.type === 'city' && t.owner === p.id && t.level < 4).map((t) => t.idx);
+      if (!cands.length) return;
+      this.announce('🚀 출발지 도착! 내 나라에 건설');
+      const idx = await this.pickTile(p, cands, '🚀 건설할 내 나라를 고르세요', true, 'startBuild');
+      if (idx == null || s.over) return;
+      await this.buildDialog(p, s.tiles[idx], false);
     }
 
     async taxTile(p) {
@@ -570,7 +648,7 @@
   }
 
   return {
-    START_MONEY, SALARY, ESCAPE_FEE, STATION_PRICE, STATION_TOLL, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, MAX_PLAYERS,
+    START_MONEY, SALARY, ESCAPE_FEE, WARP_FEE, FEST_MAX, PCHARS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, MAX_PLAYERS,
     GROUPS, TILE_DEFS, CARDS, esc, fmt, isProp, cityPrice, levelCost, cumCost, invested, sellValue, takeoverPrice,
     stationCount, tollAt, toll, propValue, assets, fullSets, gridPos, makeTiles, expand, Game,
   };

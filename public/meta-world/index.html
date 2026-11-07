@@ -54,7 +54,7 @@ button,input,select{font-family:inherit}
 .tile.owned{background:color-mix(in srgb,var(--own) 30%,#151b45);border-color:var(--own)}
 .tile.owned .tp{color:#fff;font-weight:700}
 .tile.lm{box-shadow:inset 0 0 1.6cqw color-mix(in srgb,var(--own) 80%,#fff)}
-.tile .fest{position:absolute;top:1.3cqw;right:.2cqw;font-size:1.8cqw;display:none;animation:bob 1s infinite alternate}
+.tile .fest{position:absolute;top:1.3cqw;right:.2cqw;font-size:1.3cqw;font-weight:900;color:#ffd43b;text-shadow:0 0 .4cqw #000;display:none;animation:bob 1s infinite alternate}
 .tile.festival .fest{display:block}
 .tile.festival{box-shadow:0 0 1.2cqw #ffcc4d}
 .tile.pickable{outline:.45cqw solid var(--accent);outline-offset:-.2cqw;animation:pulse .8s infinite alternate;z-index:2}
@@ -88,10 +88,19 @@ button,input,select{font-family:inherit}
   transition:opacity .25s,transform .25s;white-space:nowrap;z-index:6;text-shadow:0 0 1cqw #000}
 #announce.show{opacity:1;transform:translate(-50%,0) scale(1)}
 
-.token{position:absolute;width:4.4cqw;height:4.4cqw;border-radius:50%;display:grid;place-items:center;font-size:2.6cqw;
-  border:.35cqw solid #fff;box-shadow:0 .4cqw .8cqw #000a;transform:translate(-50%,-50%);z-index:4;
-  transition:left .16s ease-out,top .16s ease-out;pointer-events:none}
-#board.many .token{width:3.5cqw;height:3.5cqw;font-size:2.1cqw;border-width:.28cqw}
+.token{position:absolute;width:5.6cqw;height:3.9cqw;border-radius:1cqw;display:grid;place-items:center;
+  background:#0b1026e0;border:.3cqw solid var(--pc);box-shadow:0 .4cqw .8cqw #000a;transform:translate(-50%,-50%);z-index:4;
+  transition:left .16s ease-out,top .16s ease-out;pointer-events:none;padding:.15cqw}
+.token svg{width:100%;height:100%}
+#board.many .token{width:4.6cqw;height:3.2cqw;border-width:.25cqw}
+.veh{display:inline-grid;place-items:center;flex:none;background:#0b1026;border:2px solid var(--pc);border-radius:9px;padding:2px}
+.veh svg{width:100%;height:100%}
+#gauge{width:46cqw;display:flex;flex-direction:column;gap:.4cqw}
+#gauge[hidden]{display:none}
+.gbar{position:relative;height:2.6cqw;border-radius:99px;background:linear-gradient(90deg,#4dabf7,#51cf66,#ffd43b,#ff922b,#ff5d73);box-shadow:inset 0 0 0 .25cqw #fff6}
+.gneedle{position:absolute;top:-.8cqw;width:.7cqw;height:4.2cqw;background:#fff;border-radius:.4cqw;box-shadow:0 0 .8cqw #000;transform:translateX(-50%)}
+.glabels{display:flex;justify-content:space-between;font-size:1.4cqw;color:#dfe4ff;font-weight:700;padding:0 .2cqw}
+.gtitle{text-align:center;font-size:1.5cqw;color:var(--muted)}
 .token.cur{animation:tokpulse .7s infinite alternate;z-index:5}
 @keyframes tokpulse{from{box-shadow:0 0 0 0 #fff8}to{box-shadow:0 0 0 .9cqw #fff0}}
 .float{position:absolute;transform:translate(-50%,-50%);font-weight:900;font-size:2.4cqw;pointer-events:none;z-index:7;
@@ -108,7 +117,7 @@ button,input,select{font-family:inherit}
 .pcard.dead{opacity:.4;filter:grayscale(1)}
 .ph{display:flex;align-items:center;gap:5px;font-size:14px;white-space:nowrap;overflow:hidden}
 .ph b{overflow:hidden;text-overflow:ellipsis}
-.pe{font-size:19px}
+.pe{width:34px;height:24px}
 .tag{font-size:10px;background:#3a4699;padding:1px 6px;border-radius:6px;color:#cfd6ff;flex:none}
 .tag.me{background:var(--accent);color:#3a2500}
 .pm{font-size:19px;font-weight:900;color:var(--accent);margin-top:2px}
@@ -143,7 +152,7 @@ button,input,select{font-family:inherit}
 .prow{display:flex;gap:8px;align-items:center;margin-bottom:7px}
 input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);border-radius:8px;padding:9px;font-size:15px}
 .prow input{flex:1;min-width:0}
-.pdot{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:19px;flex:none;border:2px solid #fff}
+.pdot{width:46px;height:34px;flex:none}
 .cntrow{display:flex;gap:6px;margin:8px 0 12px;flex-wrap:wrap}
 .cntrow .btn.sel{background:linear-gradient(#ffd96b,#f0a92e);color:#3a2500}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -175,6 +184,8 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
         <div class="logo">META WORLD<span>DICE EMPIRE</span></div>
         <div id="turnBadge">게임 준비 중</div>
         <div id="diceBox"><div class="die" id="d1"></div><div class="die" id="d2"></div></div>
+        <div id="gauge" hidden><div class="gtitle">🎯 주사위 조절 — 원하는 합에서 굴리기!</div><div class="gbar"><div class="gneedle" id="gNeedle"></div></div>
+          <div class="glabels"><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span></div></div>
         <button id="rollBtn" class="btn gold" disabled>🎲 주사위 굴리기</button>
         <div id="msg"></div>
         <div id="roundInfo"></div>
@@ -257,17 +268,22 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
 <div class="overlay" id="rulesOv" style="z-index:60"><div class="box"><h2>📖 게임 규칙</h2><div class="rules">
   <h4>기본 진행</h4>
   주사위 2개를 굴려 세계를 한 바퀴씩 돕니다. 🚀 출발지를 지나면 <b>월급 200만</b>을 받습니다.<br>
+  🚀 출발지에 <b>딱 도착</b>하면 내 나라 한 곳에 건물을 지을 수 있습니다.<br>
+  🎯 <b>주사위 조절</b>: 움직이는 게이지에서 원하는 합에 맞춰 굴리면, 그 근처 숫자가 나올 확률이 높아집니다.<br>
   <b>더블</b>이 나오면 한 번 더 굴립니다. 단, 3연속 더블이면 🌊 버뮤다 삼각지대로 떠내려갑니다.
+  <h4>캐릭터</h4>
+  🚒 소방차 · 🚑 구급차 · 🚓 경찰차 · 🪖 탱크 · ⚡ 한전 작업차 · 🔥 도시가스차 중 하나로 플레이합니다.
   <h4>나라 &amp; 건설</h4>
   빈 나라에 도착하면 땅을 사고 🏠하우스 · 🏢빌딩 · 🏨호텔까지 한 번에 지을 수 있습니다.<br>
-  호텔까지 지은 내 나라에 다시 도착하면 🌟<b>랜드마크</b>를 세울 수 있습니다. 랜드마크는 통행료가 매우 높고 <b>인수할 수 없습니다</b>.
+  호텔까지 지은 내 나라에 다시 도착하면 🌟<b>랜드마크</b>를 세울 수 있습니다. 랜드마크는 통행료가 매우 높고 <b>인수할 수 없습니다</b>.<br>
+  🔰 <b>첫 바퀴</b>(출발지를 한 번 지나기 전)에는 땅과 하우스까지만 지을 수 있고, 인수도 할 수 없습니다.
   <h4>통행료 &amp; 인수</h4>
   다른 플레이어의 나라에 도착하면 통행료를 냅니다. 통행료를 낸 뒤 <b>투자금의 2배</b>를 내고 그 나라를 인수할 수 있습니다.<br>
-  ✈️ 공항은 건물을 지을 수 없지만, 많이 가질수록 통행료가 올라갑니다 (1곳 50 → 4곳 500).
+  ✈️ 공항(관광지)은 건물을 지을 수 없고, 공항마다 정해진 통행료를 받습니다.
   <h4>특수 칸</h4>
   🌊 <b>버뮤다 삼각지대</b>: 최대 3턴 표류합니다. 더블이 나오거나 100만을 내면 탈출합니다.<br>
-  🎉 <b>월드 페스티벌</b>: 내 나라 하나를 골라 페스티벌을 엽니다. 그 나라 통행료가 2배가 됩니다.<br>
-  🌀 <b>워프 게이트</b>: 원하는 칸으로 즉시 이동합니다.<br>
+  🎉 <b>월드 페스티벌</b>: 내 나라 하나를 골라 페스티벌을 엽니다. 통행료 ×2, 같은 곳에서 또 열면 ×3, ×4, 최대 ×5까지 올라갑니다. 다른 곳에서 열면 이전 페스티벌은 끝납니다.<br>
+  🌀 <b>워프 게이트</b>: 도착하면 <b>다음 턴</b>에 주사위 대신 원하는 칸으로 여행합니다. (여행비 50만)<br>
   🎴 <b>행운 카드</b>: 행운 또는 불운 카드를 뽑습니다. 🛡️여행자 보험·🎟️할인 쿠폰은 보관했다가 자동으로 사용됩니다.<br>
   💸 <b>관세</b>: 부동산 가치의 10%를 냅니다.
   <h4>돈이 부족하면</h4>
@@ -291,7 +307,37 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
 <script src="engine.js"></script>
 <script>
 'use strict';
-const { esc, fmt, GROUPS, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, STATION_TOLL, ESCAPE_FEE, SALARY, STATION_PRICE } = MW;
+const { esc, fmt, GROUPS, TILE_DEFS, CARDS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, PCHARS, ESCAPE_FEE, SALARY, WARP_FEE, FEST_MAX } = MW;
+
+/* ================== 캐릭터 (직접 그린 차량) ================== */
+const WHEELS = (xs, y = 33, r = 5.5) => xs.map(x => `<circle cx="${x}" cy="${y}" r="${r}" fill="#212529"/><circle cx="${x}" cy="${y}" r="${r * 0.42}" fill="#adb5bd"/>`).join('');
+const VEHICLES = [
+  // 0 소방차
+  `<rect x="3" y="13" width="41" height="19" rx="2" fill="#e03131"/><path d="M44 15h9l8 9v8H44z" fill="#c92a2a"/><path d="M47 18h5l5 6h-10z" fill="#a5d8ff"/>
+   <rect x="5" y="7" width="36" height="3" fill="#dee2e6"/><path d="M9 7v3M15 7v3M21 7v3M27 7v3M33 7v3" stroke="#868e96" stroke-width="1.4"/>
+   <rect x="46" y="11" width="7" height="3" rx="1" fill="#4dabf7"/><rect x="3" y="24" width="58" height="2.2" fill="#fff"/>${WHEELS([13, 33, 51])}`,
+  // 1 구급차
+  `<path d="M3 11h41l12 9h5v12H3z" fill="#f8f9fa" stroke="#adb5bd"/><path d="M45 13l9 7h-9z" fill="#a5d8ff"/>
+   <rect x="3" y="24" width="58" height="3" fill="#ff922b"/><path d="M19 13h4v4h4v4h-4v4h-4v-4h-4v-4h4z" fill="#e03131"/>
+   <rect x="12" y="6" width="14" height="5" rx="1.5" fill="#e03131"/>${WHEELS([14, 50])}`,
+  // 2 경찰차
+  `<path d="M3 23l7-9h22l11 9h17v9H3z" fill="#f8f9fa"/><rect x="3" y="26" width="57" height="6" fill="#1c7ed6"/>
+   <path d="M12 22l4.5-6h7.5v6zM26 16h6l8 6H26z" fill="#a5d8ff"/><rect x="15" y="9" width="7" height="5" rx="1" fill="#e03131"/><rect x="22" y="9" width="7" height="5" rx="1" fill="#1c7ed6"/>${WHEELS([14, 49])}`,
+  // 3 탱크
+  `<rect x="3" y="26" width="58" height="11" rx="5.5" fill="#495057"/>${[10, 19, 28, 37, 46, 55].map(x => `<circle cx="${x}" cy="31.5" r="3.4" fill="#868e96"/>`).join('')}
+   <path d="M5 26l5-8h44l6 8z" fill="#5c940d"/><path d="M19 18l4-8h17l4 8z" fill="#74b816"/><rect x="40" y="11.5" width="23" height="3.4" rx="1" fill="#5c940d"/>
+   <circle cx="30" cy="14" r="2" fill="#d8f5a2"/>`,
+  // 4 한전 작업차 (고소 작업 버킷 + 번개 표시)
+  `<rect x="3" y="17" width="37" height="15" rx="2" fill="#1971c2"/><path d="M40 15h11l8 9v8H40z" fill="#f8f9fa" stroke="#adb5bd"/><path d="M43 18h6l6 6H43z" fill="#a5d8ff"/>
+   <path d="M12 17L30 5" stroke="#ced4da" stroke-width="3.2" stroke-linecap="round"/><rect x="27" y="0.5" width="10" height="7" rx="1.5" fill="#ffd43b"/>
+   <path d="M23 19l-6 7h5l-3 6 8-8h-5l3-5z" fill="#ffd43b"/>${WHEELS([12, 48])}`,
+  // 5 도시가스차 (가스 탱크 + 파란 불꽃)
+  `<rect x="3" y="28" width="58" height="4" fill="#495057"/><rect x="3" y="11" width="39" height="17" rx="8.5" fill="#e9ecef" stroke="#868e96"/>
+   <path d="M44 14h9l8 9v9H44z" fill="#fab005"/><path d="M47 17h5l6 6H47z" fill="#a5d8ff"/>
+   <path d="M22 13c5 4 6 8 3 12-4 0-6-3-5-6 1 2 2 2 3 2-1-3-1-5-1-8z" fill="#1c7ed6"/><path d="M22 20c1.5 1.5 1.8 3 .6 4.6-1.5-.2-2-1.4-1.6-2.6z" fill="#74c0fc"/>${WHEELS([13, 51])}`,
+];
+const vehicleSVG = i => `<svg viewBox="0 0 64 40" xmlns="http://www.w3.org/2000/svg">${VEHICLES[i]}</svg>`;
+const vehBox = (i, w, h) => `<span class="veh" style="--pc:${PCOLORS[i]};width:${w}px;height:${h}px">${vehicleSVG(i)}</span>`;
 const $ = s => document.querySelector(s);
 const rnd = n => Math.floor(Math.random() * n);
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
@@ -339,9 +385,9 @@ function buildBoard() {
     el.className = 'tile ' + t.type + (i % 8 === 0 ? ' corner' : '');
     el.style.gridRow = r; el.style.gridColumn = c;
     if (t.type === 'city') {
-      el.innerHTML = `<div class="band" style="background:${GROUPS[t.g].color}"></div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest">🎉</div>`;
+      el.innerHTML = `<div class="band" style="background:${GROUPS[t.g].color}"></div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div>`;
     } else if (t.type === 'station') {
-      el.innerHTML = `<div class="band"></div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest">🎉</div>`;
+      el.innerHTML = `<div class="band"></div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div>`;
     } else {
       el.innerHTML = `<div class="ic">${t.icon}</div><div class="tn">${t.name}</div>${t.sub ? `<div class="sub">${t.sub}</div>` : ''}`;
     }
@@ -355,7 +401,7 @@ function createTokens() {
   tokenEls.forEach(e => e.remove());
   tokenEls = S.players.map(p => {
     const d = document.createElement('div');
-    d.className = 'token'; d.textContent = p.emoji; d.style.background = p.color;
+    d.className = 'token'; d.innerHTML = vehicleSVG(p.id); d.style.setProperty('--pc', p.color);
     $('#board').appendChild(d);
     return d;
   });
@@ -387,6 +433,7 @@ function updateTiles() {
     el.classList.toggle('owned', owned);
     el.classList.toggle('lm', t.level === 4);
     el.classList.toggle('festival', S.festival === i);
+    if (S.festival === i) el.querySelector('.fest').textContent = `🎉×${S.festMul}`;
     el.style.setProperty('--own', owned ? S.players[t.owner].color : 'transparent');
     el.querySelector('.bd').textContent = owned && t.type === 'city' ? LEVEL_ICONS[t.level] : '';
     el.querySelector('.tp').textContent = owned ? `통행 ${fmt(MW.toll(S, t))}` : fmt(MW.cityPrice(t));
@@ -396,12 +443,12 @@ function seatOnline(i) { return mode !== 'online' || !roomInfo || !roomInfo.seat
 function renderPlayers() {
   $('#players').innerHTML = S.players.map((p, i) => {
     const cnt = S.tiles.filter(t => t.owner === p.id).length;
-    const items = [p.shield ? `🛡️×${p.shield}` : '', p.coupon ? `🎟️×${p.coupon}` : '', p.stuck ? `🌊 표류 ${p.stuck}턴` : '',
+    const items = [p.laps === 0 && p.alive ? '🔰 첫 바퀴' : '', p.warpReady ? '🌀 여행 대기' : '', p.shield ? `🛡️×${p.shield}` : '', p.coupon ? `🎟️×${p.coupon}` : '', p.stuck ? `🌊 표류 ${p.stuck}턴` : '',
       !p.alive ? '💀 파산' : '', p.alive && !seatOnline(i) ? '🔌 연결 끊김' : ''].filter(Boolean).join(' · ');
     return `<div class="pcard ${i === S.cur && !S.over ? 'active' : ''} ${p.alive ? '' : 'dead'}" style="--pc:${p.color}">
-      <div class="ph"><span class="pe">${p.emoji}</span><b>${esc(p.name)}</b>${i === mySeat ? '<span class="tag me">나</span>' : ''}${p.isAI ? '<span class="tag">AI</span>' : ''}</div>
+      <div class="ph"><span class="pe">${vehicleSVG(p.id)}</span><b>${esc(p.name)}</b>${i === mySeat ? '<span class="tag me">나</span>' : ''}${p.isAI ? '<span class="tag">AI</span>' : ''}</div>
       <div class="pm">${fmt(p.money)}</div>
-      <div class="ps">총자산 ${fmt(MW.assets(S, p))} · 땅 ${cnt} · 세트 ${MW.fullSets(S, p.id)}/3</div>
+      <div class="ps">${PCHARS[p.id]} · 총자산 ${fmt(MW.assets(S, p))} · 땅 ${cnt} · 세트 ${MW.fullSets(S, p.id)}/3</div>
       <div class="pi">${items}</div></div>`;
   }).join('');
 }
@@ -432,16 +479,16 @@ function showInfo(i) {
     const gr = GROUPS[t.g];
     h += ` <span style="color:${gr.color}">● ${gr.name}</span><br>`;
     h += `소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> (${LEVEL_NAMES[t.level]})` : '없음'}`;
-    if (t.owner >= 0) h += ` · 통행료 <b>${fmt(MW.toll(S, t))}</b>${S.festival === i ? ' 🎉×2' : ''}<br>인수가 ${t.level === 4 ? '인수 불가' : fmt(MW.takeoverPrice(t))}`;
+    if (t.owner >= 0) h += ` · 통행료 <b>${fmt(MW.toll(S, t))}</b>${S.festival === i ? ` 🎉×${S.festMul}` : ''}<br>인수가 ${t.level === 4 ? '인수 불가' : fmt(MW.takeoverPrice(t))}`;
     h += '<table><tr><td>단계</td><td>건설비</td><td>통행료</td></tr>';
     for (let L = 0; L <= 4; L++) h += `<tr><td>${LEVEL_ICONS[L]} ${LEVEL_NAMES[L]}</td><td>${fmt(MW.levelCost(t, L))}</td><td>${fmt(MW.tollAt(S, t, L))}</td></tr>`;
     h += '</table>';
   } else if (t.type === 'station') {
-    h += `<br>가격 ${fmt(STATION_PRICE)} · 소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 통행료 <b>${fmt(MW.toll(S, t))}</b>` : '없음'}`;
-    h += '<br>보유 수별 통행료: ' + STATION_TOLL.slice(1).map((v, k) => `${k + 1}곳 ${v}`).join(' / ');
+    h += `<br>가격 ${fmt(t.price)} · 기본 통행료 ${fmt(t.toll)}<br>소유: ${t.owner >= 0 ? `<b style="color:${S.players[t.owner].color}">${esc(S.players[t.owner].name)}</b> · 현재 통행료 <b>${fmt(MW.toll(S, t))}</b> · 인수가 ${fmt(MW.takeoverPrice(t))}` : '없음'}`;
+    h += '<br>✈️ 공항 4곳을 모두 가지면 공항 독점 승리!';
   } else {
-    h += '<br>' + ({ start: `지나갈 때마다 월급 ${SALARY}만을 받습니다.`, blackhole: `최대 3턴 표류합니다. 더블이 나오거나 ${ESCAPE_FEE}만을 내면 탈출.`,
-      festival: '내 나라(공항) 하나를 골라 페스티벌을 엽니다. 통행료 2배!', warp: '원하는 칸으로 즉시 이동합니다.',
+    h += '<br>' + ({ start: `지나갈 때마다 월급 ${SALARY}만. 딱 도착하면 내 나라 한 곳에 건설할 수 있습니다.`, blackhole: `최대 3턴 표류합니다. 더블이 나오거나 ${ESCAPE_FEE}만을 내면 탈출.`,
+      festival: `내 나라(공항) 하나를 골라 페스티벌을 엽니다. 통행료 ×2, 같은 곳에서 다시 열면 최대 ×${FEST_MAX}까지!`, warp: `다음 턴에 주사위 대신 원하는 칸으로 여행합니다. (여행비 ${fmt(WARP_FEE)})`,
       chance: '행운 카드를 한 장 뽑습니다.', tax: '보유 부동산 가치의 10%를 관세로 냅니다.' }[t.type]);
   }
   $('#info').innerHTML = h;
@@ -473,6 +520,7 @@ function applySync(st) {
   buildBoard();
   if (!prev || tokenEls.length !== S.players.length) createTokens();
   if (prev && prev.players.some((p, i) => S.players[i] && p.pos !== S.players[i].pos)) sfx.step();
+  if (!rollHandler) $('#gauge').hidden = true;
   renderAll();
 }
 function handleEvent(ev) {
@@ -485,6 +533,7 @@ function handleEvent(ev) {
     case 'sfx': if (sfx[ev.name]) sfx[ev.name](); break;
     case 'dice': animateDice(ev.a, ev.b); break;
     case 'focus': showInfo(ev.tile); break;
+    case 'gauge': { const p = S && S.players[ev.pid]; if (p) log(`<b style="color:${p.color}">${p.emoji}${esc(p.name)}</b> 🎯 목표 ${ev.target} ${ev.hit ? '<span class="pos">조절 성공!</span>' : '<span class="neg">빗나감</span>'}`); break; }
     case 'end': showEnd(ev); break;
   }
 }
@@ -536,7 +585,8 @@ function askModal(p, req) {
     case 'build': return {
       title: `${req.isNew ? '🌍' : '🏗️'} ${head}${t.name} ${req.isNew ? '구매' : '건설'}`,
       html: `<span style="color:${GROUPS[t.g].color}">● ${GROUPS[t.g].name}</span> · 현재: <b>${req.from < 0 ? '빈 땅' : LEVEL_NAMES[req.from]}</b><br>보유 현금: <b>${fmt(req.money)}</b>
-        ${req.maxL === 4 ? '<br>🌟 랜드마크는 통행료가 가장 높고 인수당하지 않습니다!' : ''}`,
+        ${req.maxL === 4 ? '<br>🌟 랜드마크는 통행료가 가장 높고 인수당하지 않습니다!' : ''}
+        ${req.firstLap ? '<br>🔰 첫 바퀴에는 하우스까지만 지을 수 있어요.' : ''}`,
       buttons: req.opts.map(o => ({
         label: `${LEVEL_ICONS[o.L]} ${LEVEL_NAMES[o.L]}${o.L > 0 && o.L < 4 ? '까지' : ''} <small>${fmt(o.cost)} · 통행료 ${fmt(o.toll)}</small>`,
         value: o.L, disabled: !o.ok, cls: o.L === 4 ? 'gold' : '',
@@ -544,7 +594,7 @@ function askModal(p, req) {
     };
     case 'station': return {
       title: `✈️ ${t.name}`,
-      html: `가격 <b>${fmt(req.price)}</b><br>구매하면 공항 ${req.count}곳 보유 → 통행료 ${fmt(req.nextToll)}<br>보유 현금: ${fmt(req.money)}`,
+      html: `가격 <b>${fmt(req.price)}</b> · 통행료 <b>${fmt(req.nextToll)}</b><br>구매하면 공항 ${req.count}곳 보유${req.count === 4 ? ' → <b style="color:var(--accent)">공항 독점 승리!</b>' : ' (4곳 모두 가지면 독점 승리)'}<br>보유 현금: ${fmt(req.money)}`,
       buttons: [{ label: `구매하기 <small>-${fmt(req.price)}</small>`, value: true, cls: 'gold' }, { label: '패스', value: false, cls: 'ghost' }],
     };
     case 'takeover': {
@@ -582,10 +632,11 @@ function showAsk(p, req) {
     const who = mode === 'local' && humansHere() > 1 ? `<span style="color:${p.color}">${p.emoji} ${esc(p.name)}</span>의 결정` : '';
     if (req.kind === 'roll') {
       const btn = $('#rollBtn'); btn.disabled = false;
-      setMsg(`${p.emoji} ${esc(p.name)}${p.id === mySeat ? ' (나)' : ''} — 주사위를 굴리세요! <small>(Space)</small>`);
+      setMsg(`${p.emoji} ${esc(p.name)}${p.id === mySeat ? ' (나)' : ''} — 게이지를 원하는 숫자에 맞춰 굴리세요! <small>(Space)</small>`);
       if (mode === 'online') { sfx.turn(); announce('🎲 내 차례!'); }
-      rollHandler = () => { btn.disabled = true; rollHandler = null; done(true); };
-      curAsk = { cancel() { btn.disabled = true; rollHandler = null; } };
+      const stopGauge = startGauge();
+      rollHandler = () => { btn.disabled = true; rollHandler = null; const target = stopGauge(); done({ target }); };
+      curAsk = { cancel() { btn.disabled = true; rollHandler = null; stopGauge(); } };
       return;
     }
     if (req.kind === 'pick') {
@@ -598,6 +649,29 @@ function showAsk(p, req) {
     modal(m).then(done);
     curAsk = { cancel() { $('#modal').classList.remove('show'); } };
   });
+}
+// 주사위 조절 게이지: 바늘이 2~12 사이를 왕복한다. 멈춘 위치가 목표 합
+function startGauge() {
+  const g = $('#gauge'), nd = $('#gNeedle');
+  g.hidden = false;
+  const t0 = performance.now();
+  let pos = 0, alive = true;
+  const tick = now => {
+    if (!alive) return;
+    const ph = ((now - t0) / 1400) % 2;
+    pos = ph < 1 ? ph : 2 - ph;
+    nd.style.left = (pos * 100) + '%';
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+  return () => {
+    if (!alive) return null;
+    alive = false;
+    const target = Math.round(2 + pos * 10);
+    g.hidden = true;
+    setMsg(`🎯 목표 합: <b>${target}</b>`);
+    return target;
+  };
 }
 function humansHere() { return S ? S.players.filter(p => !p.isAI).length : 1; }
 
@@ -631,9 +705,9 @@ function setupLocalUI() {
   $('#cntRow').innerHTML = [2, 3, 4, 5, 6].map(n => `<button class="btn sm" data-n="${n}">${n}명</button>`).join('');
   const rows = $('#pRows');
   for (let i = 0; i < 6; i++) {
-    const nmv = saved && saved.names && saved.names[i] != null ? saved.names[i] : (i === 0 ? '플레이어' : `컴퓨터 ${i}`);
+    const nmv = saved && saved.names && saved.names[i] != null ? saved.names[i] : (i === 0 ? '플레이어' : PCHARS[i]);
     const tp = saved && saved.types && saved.types[i] ? saved.types[i] : (i === 0 ? 'h' : 'ai');
-    rows.insertAdjacentHTML('beforeend', `<div class="prow" id="prow${i}"><span class="pdot" style="background:${PCOLORS[i]}">${PEMOJI[i]}</span>
+    rows.insertAdjacentHTML('beforeend', `<div class="prow" id="prow${i}" title="${PCHARS[i]}">${vehBox(i, 50, 36)}
       <input class="f" id="pn${i}" value="${esc(nmv)}" maxlength="8"><select class="f" id="pt${i}"><option value="h" ${tp === 'h' ? 'selected' : ''}>사람</option><option value="ai" ${tp === 'ai' ? 'selected' : ''}>컴퓨터</option></select></div>`);
   }
   if (saved && saved.count >= 2 && saved.count <= 6) playerCount = saved.count;
@@ -739,8 +813,8 @@ function renderLobby() {
   const r = roomInfo; if (!r) return;
   $('#lbCode').textContent = r.code;
   const isHost = r.host === r.you;
-  let h = r.seats.map((s, i) => `<div class="seat" style="--pc:${s.color}"><span class="pdot" style="background:${s.color};width:30px;height:30px;font-size:16px">${s.emoji}</span>
-    <span class="nm">${esc(s.name)}${i === r.you ? ' (나)' : ''}${i === r.host ? ' 👑' : ''}</span>
+  let h = r.seats.map((s, i) => `<div class="seat" style="--pc:${s.color}">${vehBox(i, 44, 32)}
+    <span class="nm">${esc(s.name)}${i === r.you ? ' (나)' : ''}${i === r.host ? ' 👑' : ''} <small style="color:var(--muted);font-weight:400">${PCHARS[i]}</small></span>
     <span class="st">${s.ai ? '🤖 컴퓨터' : s.online ? '🟢 접속' : '🔌 끊김'}</span>
     ${isHost && i !== r.you ? `<button class="btn sm ghost" data-kick="${i}">✕</button>` : ''}</div>`).join('');
   for (let i = r.seats.length; i < 6; i++) h += `<div class="seat empty"><span class="nm">빈자리</span></div>`;

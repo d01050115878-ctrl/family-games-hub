@@ -11,7 +11,7 @@ const MAX_SEATS = MW.MAX_PLAYERS;
 const ROLL_TIMEOUT = 30000;
 const ASK_TIMEOUT = 45000;
 const EMPTY_ROOM_TTL = 180000;
-const BOT_NAMES = ['여행봇', '탐험봇', '항해봇', '모험봇', '비행봇', '지구봇', '나침반', '배낭봇'];
+const BOT_NAMES = ['구조봇', '출동봇', '순찰봇', '전진봇', '번개봇', '불꽃봇', '든든봇', '씽씽봇'];
 
 const rooms = new Map();      // code → Room
 const tokenRoom = new Map();  // token → Room
