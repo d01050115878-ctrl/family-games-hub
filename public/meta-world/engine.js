@@ -16,7 +16,6 @@
   const LAP_CAP = [1, 2, 3, 4];   // 바퀴 수에 따른 건설 한도: 1바퀴 하우스, 2바퀴 빌딩, 3바퀴 호텔, 4바퀴부터 제한 없음
   const TOUR_MULT = [0, 1, 1.5, 2, 2.5];   // 관광지: 가진 관광지 수에 따라 통행료가 오른다 (기본 통행료 × 배율)
   const TOUR_ICONS = ['', '🚩', '⛱️', '🛖', '🏆'];
-  const GAUGE_CHANCE = 0.55;      // 주사위 조절 게이지 성공 확률
   const COST_MULT = [1, 0.6, 1.2, 1.8, 2.4];      // 땅, 하우스, 빌딩, 호텔, 랜드마크 (나라 가격 대비)
   const ELEM_TOLL = [0.05, 0.15, 0.28, 0.52, 1.0]; // 건물별 통행료 = 호텔 기준 통행료 × 비율 (땅·하우스·빌딩·호텔을 더하면 호텔 통행료, 랜드마크는 그만큼 더)
   const LAND_RATE = 0.3;  // 땅값 = 호텔 통행료 × 0.3
@@ -267,7 +266,7 @@
         case 'blackhole': return p.money > 400 ? 'pay' : 'roll';
         case 'build': return this.aiChooseLevel(p, s.tiles[req.tile], req.from, req.maxL);
         case 'station': return p.money - req.price >= this.reserve();
-        case 'roll': return this.aiLevel === 1 && Math.random() < 0.35 ? {} : { target: this.aiDiceTarget(p) };
+        case 'roll': return {};
         case 'takeover': return this.aiWantsTakeover(p, s.tiles[req.tile], req.price);
         case 'sell': {
           const mine = s.tiles.filter((t) => t.owner === p.id).sort((a, b) => sellValue(a) - sellValue(b));
@@ -415,21 +414,12 @@
     }
 
     async rollDice(p, auto) {
-      let target = null;
       if (!auto) {
-        this.msg(`${p.emoji} ${esc(p.name)}의 차례 — 게이지를 맞춰 주사위를 굴리세요`);
-        const ans = await this.ask(p, { kind: 'roll' });
-        const tg = ans && Number(ans.target);
-        if (Number.isInteger(tg) && tg >= 2 && tg <= 12) target = tg;
+        this.msg(`${p.emoji} ${esc(p.name)}의 차례 — 주사위를 굴리세요`);
+        await this.ask(p, { kind: 'roll' });
       } else await this.sleep(p.isAI ? 600 : 250);
       if (this.s.over) return [1, 2];
-      let a = 1 + rnd(6), b = 1 + rnd(6);
-      if (target != null && Math.random() < GAUGE_CHANCE) {
-        // 게이지 성공: 목표 합 ±1 범위에서 나온다
-        const sums = [target - 1, target, target + 1].filter((x) => x >= 2 && x <= 12);
-        [a, b] = pairForSum(sums[rnd(sums.length)]);
-      }
-      if (target != null) this.emit({ type: 'gauge', pid: p.id, target, hit: Math.abs(a + b - target) <= 1 });
+      const a = 1 + rnd(6), b = 1 + rnd(6);
       this.emit({ type: 'dice', a, b, pid: p.id });
       await this.sleep(850);
       const dbl = a === b;

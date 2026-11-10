@@ -802,39 +802,77 @@
     if (AC && AC.state === 'suspended') AC.resume();
     return AC;
   }
+  const mtof = (n) => 440 * Math.pow(2, (n - 69) / 12);
+  // 효과음 공용 출력: 살짝 눌러 줘서 여러 소리가 겹쳐도 깨지지 않고 단단하게 들린다
+  let sfxBus = null, sfxNoise = null;
+  function sfxOut() {
+    if (!sfxBus) {
+      const c = AC.createDynamicsCompressor();
+      c.threshold.value = -16; c.ratio.value = 4; c.attack.value = 0.002; c.release.value = 0.12;
+      sfxBus = AC.createGain(); sfxBus.gain.value = 1.15;
+      sfxBus.connect(c); c.connect(AC.destination);
+      sfxNoise = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
+      const d = sfxNoise.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return sfxBus;
+  }
+  // 한 음짜리 효과음도 한 옥타브 위 배음을 얹어 반짝이게
   function beep(freq, dur = 0.08, type = 'sine', vol = 0.07) {
     if (!save.sound) return;
     const now = performance.now();
     if (now - lastBeep < 30) return;
     lastBeep = now;
-    try {
-      if (!audio()) return;
-      const o = AC.createOscillator(), g = AC.createGain();
-      o.type = type; o.frequency.value = freq;
-      g.gain.setValueAtTime(vol, AC.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
-      o.connect(g).connect(AC.destination);
-      o.start(); o.stop(AC.currentTime + dur);
-    } catch (e) { /* 오디오 미지원 */ }
+    sfx([[freq, 0, dur, type, vol, freq * 1.03], [freq * 2, 0, dur * 0.7, 'sine', vol * 0.35]]);
   }
 
   // 겹쳐 울려도 되는 효과음: [주파수, 시작(초), 길이, 파형, 볼륨, 끝 주파수]
+  // 파형이 'noise'면 그 주파수 근처만 남긴 잡음 (치익, 와작 소리)
   function sfx(notes) {
     if (!save.sound || !audio()) return;
     try {
-      const t0 = AC.currentTime;
+      const out = sfxOut(), t0 = AC.currentTime;
       for (const [f, at, dur, type = 'sine', vol = 0.06, f2] of notes) {
-        const o = AC.createOscillator(), g = AC.createGain(), a = t0 + at;
-        o.type = type; o.frequency.setValueAtTime(f, a);
-        if (f2) o.frequency.exponentialRampToValueAtTime(f2, a + dur);
+        const g = AC.createGain(), a = t0 + at;
+        let src;
+        if (type === 'noise') {
+          src = AC.createBufferSource(); src.buffer = sfxNoise;
+          const bp = AC.createBiquadFilter();
+          bp.type = 'bandpass'; bp.Q.value = 1.2; bp.frequency.setValueAtTime(f, a);
+          if (f2) bp.frequency.exponentialRampToValueAtTime(f2, a + dur);
+          src.connect(bp); bp.connect(g);
+        } else {
+          src = AC.createOscillator();
+          src.type = type; src.frequency.setValueAtTime(f, a);
+          if (f2) src.frequency.exponentialRampToValueAtTime(f2, a + dur);
+          src.connect(g);
+        }
         g.gain.setValueAtTime(0.0001, a);
-        g.gain.linearRampToValueAtTime(vol, a + 0.008);
+        g.gain.linearRampToValueAtTime(vol, a + 0.006);
         g.gain.exponentialRampToValueAtTime(0.0001, a + dur);
-        o.connect(g).connect(AC.destination);
-        o.start(a); o.stop(a + dur + 0.02);
+        g.connect(out);
+        src.start(a); src.stop(a + dur + 0.02);
       }
     } catch (e) { /* 오디오 미지원 */ }
   }
+  // 게임 속 주요 순간 효과음
+  const SND = {
+    // 꿀꺽!: 목으로 넘어가는 소리 + 뽁 + 반짝이는 화음
+    gulp: [[340, 0, 0.18, 'sine', 0.16, 85], [900, 0, 0.05, 'noise', 0.08], [520, 0.1, 0.1, 'sine', 0.1, 1200],
+      [1319, 0.16, 0.12, 'triangle', 0.06], [1568, 0.22, 0.12, 'triangle', 0.06], [2093, 0.28, 0.3, 'triangle', 0.07], [4186, 0.28, 0.25, 'sine', 0.02]],
+    // 먹혔다: 뿌우우~ 하고 내려가는 소리
+    die: [[120, 0, 0.45, 'sine', 0.16, 40], [1200, 0, 0.12, 'noise', 0.1, 300], [392, 0.05, 0.22, 'sawtooth', 0.045, 370],
+      [370, 0.3, 0.22, 'sawtooth', 0.045, 349], [349, 0.55, 0.7, 'sawtooth', 0.045, 196]],
+    // 와작!: 몸통을 물어뜯었다
+    bite: [[2600, 0, 0.07, 'noise', 0.14, 1200], [260, 0, 0.1, 'square', 0.05, 110], [660, 0.06, 0.09, 'triangle', 0.07, 990], [1320, 0.12, 0.12, 'triangle', 0.05]],
+    // 아야: 내 몸통이 물렸다
+    bitten: [[1600, 0, 0.09, 'noise', 0.12, 500], [220, 0, 0.28, 'sawtooth', 0.06, 70], [110, 0, 0.3, 'sine', 0.12, 50]],
+    // 띠용~: 튕겨 나갔다
+    bump: [[170, 0, 0.16, 'sine', 0.12, 440], [440, 0.05, 0.14, 'triangle', 0.04, 260]],
+    // 선물상자: 반짝반짝 올라가는 소리
+    gift: [[1047, 0, 0.1, 'triangle', 0.06], [1319, 0.07, 0.1, 'triangle', 0.06], [1568, 0.14, 0.1, 'triangle', 0.06],
+      [2093, 0.21, 0.35, 'triangle', 0.07], [6000, 0.21, 0.4, 'noise', 0.025, 9000]],
+  };
   // 아이템마다 다른 소리
   const ITEM_SFX = {
     2: [[300, 0, 0.28, 'sine', 0.07, 900], [900, 0.14, 0.16, 'triangle', 0.05, 1250]],                            // 자석: 웅~
@@ -845,58 +883,77 @@
     7: [[784, 0, 0.1, 'triangle', 0.06], [988, 0.06, 0.1, 'triangle', 0.06], [1175, 0.12, 0.1, 'triangle', 0.06], [1568, 0.18, 0.25, 'triangle', 0.07]], // 별: 반짝
     8: [[2093, 0, 0.25, 'sine', 0.04, 1568], [2637, 0.05, 0.3, 'sine', 0.03, 2093], [1760, 0.1, 0.35, 'triangle', 0.03, 1320]], // 얼음: 차르르
   };
-  // 먹이 먹는 소리: 연달아 먹으면 음이 조금씩 올라간다
+  // 먹이 먹는 소리: 연달아 먹으면 배경음악과 어울리는 음계(C 장조 펜타토닉)를 타고 올라간다
+  const FOOD_SCALE = [72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96, 98, 100];
   const foodSnd = { t: -9, chain: 0 };
   function foodSfx(m) {
     if (T - foodSnd.t < 0.045 && !m) return;
-    foodSnd.chain = T - foodSnd.t < 0.45 ? Math.min(16, foodSnd.chain + 1) : 0;
+    foodSnd.chain = T - foodSnd.t < 0.45 ? Math.min(FOOD_SCALE.length - 1, foodSnd.chain + 1) : 0;
     foodSnd.t = T;
-    const f = 520 * Math.pow(1.045, foodSnd.chain);
-    if (m >= 2) sfx([[f, 0, 0.09, 'sine', 0.07, f * 1.8], [f * 1.5, 0.05, 0.14, 'triangle', 0.06, f * 2.2], [f * 2, 0.11, 0.18, 'sine', 0.04]]);
-    else if (m === 1) sfx([[f, 0, 0.08, 'sine', 0.06, f * 1.7], [f * 1.5, 0.04, 0.1, 'triangle', 0.04]]);
-    else sfx([[f, 0, 0.06, 'sine', 0.045, f * 1.6]]);
+    const f = mtof(FOOD_SCALE[foodSnd.chain]);
+    // 뽁: 살짝 아래에서 제 음으로 튀어 오르는 물방울 소리
+    if (m >= 2) sfx([[f * 0.7, 0, 0.09, 'sine', 0.08, f], [f * 1.5, 0.05, 0.12, 'triangle', 0.05], [f * 2, 0.1, 0.2, 'triangle', 0.05], [f * 4, 0.1, 0.15, 'sine', 0.012]]);
+    else if (m === 1) sfx([[f * 0.7, 0, 0.08, 'sine', 0.07, f], [f * 1.5, 0.05, 0.12, 'triangle', 0.04]]);
+    else sfx([[f * 0.72, 0, 0.07, 'sine', 0.06, f], [f * 2, 0.012, 0.05, 'sine', 0.012]]);
   }
 
-  /* ---------- 배경음악: 직접 만든 펑키 루프 (Em7 ↔ A9, 112 BPM) ---------- */
+  /* ---------- 배경음악: 직접 만든 캐주얼 게임풍 루프 (C → G → Am → F, 140 BPM) ----------
+     8마디 한 바퀴: 0~3마디 A 멜로디 → 4~7마디 한 옥타브 위 B 멜로디 (끝에 다다닥 필인) */
   const Music = (() => {
-    const BPM = 112, STEP = 60 / BPM / 4;
-    const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
-    // 마디별 근음 (E, E, A, A)
-    const ROOTS = [40, 40, 45, 45];
-    const CHORDS = [[64, 67, 71, 74], [64, 67, 71, 74], [61, 64, 67, 71], [61, 64, 67, 71]];
-    // [스텝, 근음에서 반음 거리, 길이(스텝)]
-    const BASS = [[0, 0, 2], [3, 12, 1], [4, 0, 1], [6, 10, 1], [7, 0, 1], [8, -2, 1], [10, 7, 2], [12, 12, 1], [14, 3, 1], [15, 5, 1]];
-    const KICK = [0, 6, 8, 11];
-    const SNARE = { 4: 1, 12: 1, 7: 0.25, 9: 0.2, 15: 0.3 };
-    const STABS = [2, 5, 10, 13];
-    const HOOK = {
-      0: [[0, 76], [2, 79], [3, 81], [6, 79], [8, 76], [10, 74], [11, 76]],
-      2: [[0, 73], [2, 76], [4, 79], [6, 76], [8, 73], [11, 71]],
-    };
-    let master = null, noise = null, timer = null, step = 0, next = 0, loopN = 0;
+    const BPM = 140, STEP = 60 / BPM / 4, BARS = 8;
+    const midi = mtof;
+    // 마디별 근음 (C, G, A, F)
+    const ROOTS = [36, 43, 45, 41];
+    const CHORDS = [[60, 64, 67], [59, 62, 67], [60, 64, 69], [60, 65, 69]];
+    // 쿵짝쿵짝 통통 튀는 베이스: [스텝, 근음에서 반음 거리]
+    const BASS = [[0, 0], [2, 12], [4, 0], [6, 12], [8, 0], [10, 12], [12, 0], [13, 7], [14, 12]];
+    // 장난감 같은 멜로디: [스텝, 음, 길이]
+    const MELODY = [
+      // A: 화음을 따라 깡총깡총
+      [[0, 72, 1], [2, 76, 1], [4, 79, 1], [6, 76, 1], [8, 79, 1], [10, 81, 1], [12, 79, 1], [14, 76, 1]],
+      [[0, 74, 1], [2, 79, 1], [4, 83, 1], [6, 79, 1], [8, 81, 1], [10, 79, 1], [12, 74, 1], [14, 71, 1]],
+      [[0, 72, 1], [2, 76, 1], [4, 81, 1], [6, 76, 1], [8, 79, 1], [10, 76, 1], [12, 72, 1], [14, 74, 1]],
+      [[0, 77, 1], [2, 76, 1], [4, 74, 1], [6, 72, 1], [8, 74, 3], [12, 79, 3]],
+      // B: 짧게 부르고 대답하는 후렴
+      [[0, 84, 1], [1, 84, 1], [3, 79, 2], [6, 84, 1], [7, 86, 1], [8, 88, 2], [10, 86, 1], [12, 84, 3]],
+      [[0, 83, 1], [1, 83, 1], [3, 79, 2], [6, 83, 1], [7, 84, 1], [8, 86, 2], [10, 83, 1], [12, 79, 3]],
+      [[0, 81, 1], [1, 81, 1], [3, 76, 2], [6, 81, 1], [7, 83, 1], [8, 84, 2], [10, 83, 1], [12, 81, 3]],
+      [[0, 81, 1], [2, 79, 1], [4, 77, 1], [6, 76, 1], [8, 74, 1], [10, 72, 1], [12, 74, 1], [13, 76, 1], [14, 79, 1]],
+    ];
+    let master = null, pump = null, noise = null, timer = null, step = 0, next = 0;
 
     function setup(ac) {
       if (master) return;
+      // 마지막에 컴프레서로 묶어 소리를 단단하게
+      const comp = ac.createDynamicsCompressor();
+      comp.threshold.value = -14; comp.ratio.value = 3.5; comp.attack.value = 0.004; comp.release.value = 0.12;
+      comp.connect(ac.destination);
       master = ac.createGain();
-      master.gain.value = 0.16;
-      master.connect(ac.destination);
+      master.gain.value = 0.2;
+      master.connect(comp);
+      // 화음·멜로디는 킥이 칠 때마다 살짝 눌렸다 튀어 오른다
+      pump = ac.createGain();
+      pump.connect(master);
       noise = ac.createBuffer(1, ac.sampleRate * 0.5, ac.sampleRate);
       const d = noise.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
-    function env(ac, t, peak, dur) {
+    function env(ac, t, peak, dur, out = master) {
       const g = ac.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(peak, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(peak, t + 0.004);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      g.connect(master);
+      g.connect(out);
       return g;
     }
     function kick(ac, t) {
       const o = ac.createOscillator();
-      o.frequency.setValueAtTime(150, t);
-      o.frequency.exponentialRampToValueAtTime(42, t + 0.13);
-      o.connect(env(ac, t, 0.9, 0.28)); o.start(t); o.stop(t + 0.3);
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(50, t + 0.08);
+      o.connect(env(ac, t, 0.95, 0.18)); o.start(t); o.stop(t + 0.2);
+      pump.gain.cancelScheduledValues(t);
+      pump.gain.setValueAtTime(0.45, t);
+      pump.gain.linearRampToValueAtTime(1, t + STEP * 2);
     }
     function hit(ac, t, vol, dur, type, freq) {
       const s = ac.createBufferSource();
@@ -906,51 +963,65 @@
       s.connect(f); f.connect(env(ac, t, vol, dur));
       s.start(t); s.stop(t + dur + 0.02);
     }
-    function bass(ac, t, note, len) {
-      const o = ac.createOscillator(), f = ac.createBiquadFilter();
-      o.type = 'sawtooth'; o.frequency.value = midi(note);
-      f.type = 'lowpass'; f.Q.value = 9;
-      f.frequency.setValueAtTime(1900, t);
-      f.frequency.exponentialRampToValueAtTime(260, t + 0.14);
-      o.connect(f); f.connect(env(ac, t, 0.5, STEP * len * 0.95));
-      o.start(t); o.stop(t + STEP * len + 0.05);
+    // 박수: 노이즈를 아주 짧게 세 번 겹쳐 친다
+    function clap(ac, t, vol) {
+      for (let i = 0; i < 3; i++) hit(ac, t + i * 0.01, vol, i === 2 ? 0.13 : 0.025, 'bandpass', 1600);
     }
-    function stab(ac, t, notes) {
-      const f = ac.createBiquadFilter();
-      f.type = 'bandpass'; f.Q.value = 2;
-      f.frequency.setValueAtTime(2600, t);
-      f.frequency.exponentialRampToValueAtTime(900, t + 0.1);
-      f.connect(env(ac, t, 0.16, 0.12));
-      for (const n of notes) {
-        const o = ac.createOscillator();
-        o.type = 'square'; o.frequency.value = midi(n);
-        o.connect(f); o.start(t); o.stop(t + 0.14);
-      }
-    }
-    function lead(ac, t, note) {
+    // 통통 튀는 짧은 베이스
+    function bass(ac, t, note) {
       const o = ac.createOscillator(), f = ac.createBiquadFilter();
       o.type = 'square'; o.frequency.value = midi(note);
-      f.type = 'lowpass'; f.frequency.value = 2400;
-      o.connect(f); f.connect(env(ac, t, 0.09, STEP * 1.8));
-      o.start(t); o.stop(t + STEP * 2);
+      f.type = 'lowpass'; f.Q.value = 4;
+      f.frequency.setValueAtTime(1600, t);
+      f.frequency.exponentialRampToValueAtTime(250, t + 0.08);
+      o.connect(f); f.connect(env(ac, t, 0.42, STEP * 1.6));
+      o.start(t); o.stop(t + STEP * 1.6 + 0.03);
+    }
+    // 엇박에 "착" 하고 찍는 밝은 코드
+    function chop(ac, t, notes) {
+      const f = ac.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.value = 3500;
+      f.connect(env(ac, t, 0.1, 0.09, pump));
+      for (const n of notes) {
+        const o = ac.createOscillator();
+        o.type = 'square'; o.frequency.value = midi(n + 12);
+        o.connect(f); o.start(t); o.stop(t + 0.1);
+      }
+    }
+    // 장난감 같은 멜로디: 짧게 끊는 사각파 + 한 옥타브 위 실로폰 반짝임
+    function toy(ac, t, note, len, bright) {
+      const o = ac.createOscillator(), f = ac.createBiquadFilter();
+      o.type = 'square'; o.frequency.value = midi(note);
+      f.type = 'lowpass'; f.frequency.value = 4200;
+      o.connect(f); f.connect(env(ac, t, 0.085, STEP * (len * 0.85 + 0.4), pump));
+      o.start(t); o.stop(t + STEP * (len + 0.5));
+      const b = ac.createOscillator();
+      b.type = 'sine'; b.frequency.value = midi(note + 12);
+      b.connect(env(ac, t, bright ? 0.09 : 0.045, 0.25, pump));
+      b.start(t); b.stop(t + 0.27);
     }
     function play(ac, s, t) {
-      const bar = Math.floor(s / 16), st = s % 16, root = ROOTS[bar];
-      if (KICK.includes(st)) kick(ac, t);
-      if (SNARE[st] !== undefined) { hit(ac, t, 0.5 * SNARE[st], 0.16, 'bandpass', 1800); }
-      hit(ac, t, st % 4 === 2 ? 0.16 : 0.07, st === 14 ? 0.2 : 0.04, 'highpass', 7500);
-      for (const [bs, off, len] of BASS) if (bs === st) bass(ac, t, root + off, len);
-      if (bar === 3 && st >= 14) bass(ac, t, 38 + (st - 14) * 2, 1);
-      if (STABS.includes(st)) stab(ac, t, CHORDS[bar]);
-      if (loopN % 2 === 1 && HOOK[bar]) for (const [hs, n] of HOOK[bar]) if (hs === st) lead(ac, t, n);
+      const bar = s >> 4, st = s & 15, ch = bar & 3, root = ROOTS[ch];
+      const fill = bar === 7 && st >= 12;
+      // 쿵쿵쿵쿵 정박 킥 + 2·4박 박수
+      if (st % 4 === 0 && !(fill && st > 12)) kick(ac, t);
+      if ((st === 4 || st === 12) && !fill) clap(ac, t, 0.36);
+      // 마지막 마디 끝에서 다다다닥 필인
+      if (fill) hit(ac, t, 0.2 + (st - 12) * 0.07, 0.09, 'bandpass', 1800 + (st - 12) * 350);
+      // 쉐이커: 매 16분음표, 엇박에 힘주기
+      hit(ac, t, st % 4 === 2 ? 0.12 : st % 2 ? 0.05 : 0.03, st % 4 === 2 ? 0.07 : 0.03, 'highpass', 8500);
+      // 한 바퀴의 처음과 B 멜로디 시작에 심벌
+      if (st === 0 && (bar === 0 || bar === 4)) hit(ac, t, 0.2, 0.8, 'highpass', 5500);
+      for (const [bs, off] of BASS) if (bs === st) bass(ac, t, root + off);
+      if (st % 4 === 2) chop(ac, t, CHORDS[ch]);
+      for (const [ms, n, len] of MELODY[bar]) if (ms === st) toy(ac, t, n, len, bar >= 4);
     }
     function tick() {
       const ac = AC;
       while (next < ac.currentTime + 0.15) {
         play(ac, step, next);
         next += STEP;
-        step = (step + 1) % 64;
-        if (step === 0) loopN++;
+        step = (step + 1) % (BARS * 16);
       }
     }
     return {
@@ -1910,13 +1981,13 @@
         floatText(ev.x, ev.y - 50, '팡!', '#ff8787');
         if (ev.a === myId) {
           floatText(ev.x, ev.y, `꿀꺽! ${nameOf(ev.b)}`, '#ffd43b');
-          beep(520, 0.2, 'triangle', 0.09); setTimeout(() => beep(780, 0.18, 'square', 0.06), 70);
+          sfx(SND.gulp);
           shake = Math.max(shake, 0.18);
           if (game.mode === 'stage') addCombo(ev);
           else game.kills++;
         } else if (ev.b === myId) {
           shake = 0.45;
-          beep(140, 0.4, 'sawtooth', 0.07);
+          sfx(SND.die);
           game.killer = ev.a;
         }
       } else if (ev.e === 'part') {
@@ -1938,8 +2009,8 @@
         pulses.set(ev.a, 1.2); hurts.set(ev.b, 1.4);
         const eh = headPos.get(ev.a);
         if (eh && ev.n > 0) { floatText(eh.x, eh.y - 40, '+' + fmtN(ev.n), '#8ce99a'); floats[floats.length - 1].big = true; }
-        if (ev.a === myId) { shake = Math.max(shake, 0.16); beep(330, 0.08, 'square', 0.06); setTimeout(() => beep(620, 0.1, 'triangle', 0.06), 60); }
-        if (ev.b === myId) { shake = Math.max(shake, 0.35); beep(120, 0.18, 'sawtooth', 0.07); }
+        if (ev.a === myId) { shake = Math.max(shake, 0.16); sfx(SND.bite); }
+        if (ev.b === myId) { shake = Math.max(shake, 0.35); sfx(SND.bitten); }
       } else if (ev.e === 'item') {
         const info = ITEM_INFO[ev.k];
         burst(ev.x, ev.y, info.col, 14);
@@ -1956,12 +2027,12 @@
           parts.push({ x: ev.x, y: ev.y, vx: (p.x - ev.x) / d * 900, vy: (p.y - ev.y) / d * 900, life: Math.min(0.3, d / 900), max: 0.3, color: '#ffe066', s: 12 });
         }
       } else if (ev.e === 'bump' && ev.a === myId) {
-        shake = Math.max(shake, 0.12); beep(200, 0.06, 'square', 0.04);
+        shake = Math.max(shake, 0.12); sfx(SND.bump);
       } else if (ev.e === 'skin' && ev.id === myId) {
         game.gifts = (game.gifts || 0) + 1;
         const p = posOf(myId);
         if (p) { pang(p.x, p.y, 20); floatText(p.x, p.y - 40, '🎁 선물상자!', '#ff8fb8'); }
-        beep(660, 0.15, 'triangle', 0.09); setTimeout(() => beep(990, 0.25, 'triangle', 0.09), 140);
+        sfx(SND.gift);
         toast(`🎁 선물상자 ${game.gifts}개! 경기가 끝나면 열어요`, 1800);
       }
     }
@@ -2539,7 +2610,7 @@
     let lv0 = startLevel();
     let boosted = false;
     if (save.autoBoost && save.inv.boost > 0) { save.inv.boost--; persist(); lv0 = lv0 * 2 + 10; boosted = true; }
-    const playerOpts = { name: '나', skin: save.skin, isHuman: true, speed: 261 * spd * (1 + 0.03 * save.up.speed), foodMul: foodMulOf() };
+    const playerOpts = { name: '나', skin: save.skin, isHuman: true, speed: 313 * spd * (1 + 0.03 * save.up.speed), foodMul: foodMulOf() };
     const player = world.addSnake(Object.assign({ level: lv0, x: 0, y: 0 }, playerOpts));
     game = {
       playerOpts, lastEvo: evoOf(lv0), reviveWait: 0,
@@ -2569,7 +2640,7 @@
     const names = BOT_NAMES.filter((n) => !used.has(n));
     w.addSnake({
       name: names[randInt(0, names.length - 1)] || '뱀', skin: botSkin(),
-      isBot: true, x: p.x, y: p.y, level, speed: rand(230, 250) * g.spd,
+      isBot: true, x: p.x, y: p.y, level, speed: rand(276, 300) * g.spd,
       aggro: clamp(0.3 + g.stage * 0.03, 0.3, 0.85), humanBias: 60, foodMul: 0.7,
     });
   }

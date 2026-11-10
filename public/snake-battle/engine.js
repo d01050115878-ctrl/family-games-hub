@@ -69,7 +69,9 @@
   // 레벨 상한 (원작처럼 숫자가 끝없이 커지지 않게)
   const MAX_LEVEL = 9999;
   // 몸 앞쪽 이 비율까지는 머리로 친다 (여기에 부딪혀야 먹고 먹힌다)
-  const HEAD_ZONE = 0.15;
+  const HEAD_ZONE = 0.2;
+  // 머리끼리 / 머리-목 판정 반경 배율 (두 뱀 반지름 합 기준)
+  const HEAD_HIT = 1.6, NECK_HIT = 1.3;
   // 몸통을 먹었을 때: 먹은 양 중 얻는 비율, 남은 몸통이 다시 물리지 않는 시간 (머리는 언제든 먹힐 수 있다)
   const BITE_GAIN = 0.8, BITE_COOL = 2;
   // 몸통·꼬리를 물리면 머리만 남기고 몸 전체가 떨어져 나간다: 레벨은 BITE_LOSS 비율만큼 줄고,
@@ -190,7 +192,7 @@
     const s = {
       id, name: o.name || '뱀', skin: o.skin || 'basic', level, best: level,
       x: o.x || 0, y: o.y || 0, dir, want: dir,
-      speed: o.speed || 210, foodMul: o.foodMul || 1,
+      speed: o.speed || 252, foodMul: o.foodMul || 1,
       isBot: !!o.isBot, isBoss: !!o.isBoss, isHuman: !!o.isHuman,
       aggro: o.aggro !== undefined ? o.aggro : 0.6, chase: o.chase || 480, humanBias: o.humanBias || 0,
       think: rand(0, 0.3), bounceT: 0, latch: 0, dying: null, alive: true,
@@ -378,12 +380,14 @@
         const neck = Math.max(3, Math.ceil(n * HEAD_ZONE));
         let hit = -1;
         // 화면의 머리가 몸보다 크게 그려지므로 머리끼리 판정도 넉넉하게
-        if (Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * 1.2) hit = 0;
+        if (Math.hypot(B.x - A.x, B.y - A.y) < (rA + rB) * HEAD_HIT) hit = 0;
         else {
+          // 목 부분도 머리만큼 넉넉하게, 몸통은 원래대로
+          const nlim = (rA + rB) * NECK_HIT, nlim2 = nlim * nlim;
           const lim = rA + rB * 0.8, lim2 = lim * lim;
-          for (let j = 2; j < n; j++) {
+          for (let j = 1; j < n; j++) {
             const dx = pts[2 * j] - A.x, dy = pts[2 * j + 1] - A.y;
-            if (dx * dx + dy * dy < lim2) { hit = j; break; }
+            if (dx * dx + dy * dy < (j < neck ? nlim2 : lim2)) { hit = j; break; }
           }
         }
         if (hit < 0) continue;
