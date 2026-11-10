@@ -64,6 +64,7 @@ b { font-weight: normal; color: var(--main); }
 .quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
 .quick button { background: var(--soft); border-radius: 18px; padding: 14px 10px; font-size: 18px; box-shadow: 0 4px 0 color-mix(in srgb, var(--main2) 60%, #fff); }
 .quick button small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.pts { display: inline-block; background: #f3e8ff; color: #9c36b5; border-radius: 999px; padding: 0 10px; margin-left: 4px; }
 .levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .lv { position: relative; text-align: left; background: #fff; border-radius: 22px; padding: 16px; box-shadow: 0 5px 0 var(--line); display: flex; gap: 12px; align-items: center; min-height: 96px; }
 .lv:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
@@ -239,6 +240,7 @@ b { font-weight: normal; color: var(--main); }
    재미있는 수학놀이
    - 7살: 덧셈 탐험대 (합 20까지 + 곱셈 맛보기)
    - 10살: 곱셈·나눗셈 챌린지 (구구단 · 나눗셈 · 나머지)
+           + 스페셜 60초 도전 (어른도 함께! 두 자리 수 사칙연산)
    ========================================================= */
 const $ = (s, r = document) => r.querySelector(s);
 const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
@@ -362,6 +364,23 @@ const STORIES = [
   () => { const d = rnd(3, 6), q = rnd(2, 7), r = rnd(1, d - 1), n = d * q + r; return { text: `🍬 사탕 <b>${n}</b>개를 <b>${d}</b>명이 똑같이 나누어 가지면<br>한 명이 몇 개씩 갖고, 몇 개가 남을까요?`, ans: [q, r], d, labels: ['한 명에', '남는 것'], f: `${n} ÷ ${d}` }; },
 ];
 
+// 스페셜 60초 도전: 덧셈·뺄셈·곱셈·나눗셈이 섞여 나오고, 식에 나오는 수는 모두 두 자리 이하
+const SPECIAL = { id: 'special', emoji: '🌟', title: '60초 도전 (스페셜모드 매우어려움)', desc: '어른도 함께! + − × ÷ 두 자리 수', special: true,
+  gen() {
+    const op = pick(['+', '−', '×', '÷']);
+    if (op === '+') { const a = rnd(11, 99), b = rnd(11, 99), s = a + b;
+      return { key: `${a}+${b}`, eq: [a, '+', b, '=', '{B0}'], ans: [s], pts: 1, near: [s + 10, s - 10, s + 1, s - 1] }; }
+    if (op === '−') { const a = rnd(30, 99), b = rnd(11, a - 5), d = a - b;
+      return { key: `${a}-${b}`, eq: [a, '−', b, '=', '{B0}'], ans: [d], pts: 1, near: [d + 10, d - 10, d + 1, d - 1] }; }
+    if (op === '×') {
+      const two = Math.random() < 0.35;
+      const a = two ? rnd(11, 39) : rnd(12, 99), b = two ? rnd(11, 19) : rnd(3, 9), m = a * b;
+      return { key: `${a}x${b}`, eq: [a, '×', b, '=', '{B0}'], ans: [m], pts: two ? 3 : 2, near: [m + 10, m - 10, m + b, m - b, m + a] }; }
+    const d = Math.random() < 0.4 ? rnd(11, 33) : rnd(3, 9);
+    const q = rnd(Math.max(2, Math.ceil(12 / d)), Math.floor(99 / d)), n = d * q;
+    return { key: `${n}/${d}`, eq: [n, '÷', d, '=', '{B0}'], ans: [q], pts: 2, near: [q + 1, q - 1, q + 2, q - 2] };
+  } };
+
 const BIG = [
   { id: 'b1', emoji: '🍩', title: '묶음 곱셈', desc: '몇 개씩 몇 묶음 = 곱셈!',
     gen() { const n = rnd(2, 5), g = rnd(2, 5), e = pick(FOODS);
@@ -402,6 +421,7 @@ const BIG = [
     gen() { const t = rnd(1, 4), o = rnd(1, 9), a = t * 10 + o, b = rnd(2, t >= 3 ? 4 : 6);
       return { key: `${a}x${b}`, eq: [a, '×', b, '=', '{B0}'], ans: [a * b], near: [a * b + 10, a * b - 10, t * 10 * b + o, a * b + b],
         hint: `<p>${eul(a)} ${gwa(t * 10)} ${o}로 나눠요<br>${t * 10} × ${b} = ${t * 10 * b}<br>${o} × ${b} = ${o * b}<br>${t * 10 * b} + ${o * b} = ?</p>` }; } },
+  SPECIAL,
 ];
 const WEAK = { id: 'weak', emoji: '🩹', title: '약한 구구단 연습',
   gen() { const list = weakFacts();
@@ -448,7 +468,7 @@ function recordFact(fact, ok) {
 }
 function unlocked(tid, i) {
   const T = S.tracks[tid];
-  return i === 0 || T.open || (T.stars[TRACKS[tid].levels[i - 1].id] || 0) > 0;
+  return i === 0 || T.open || TRACKS[tid].levels[i].special || (T.stars[TRACKS[tid].levels[i - 1].id] || 0) > 0;
 }
 function award(tid) {
   const T = S.tracks[tid], left = TRACKS[tid].stickers.filter((s) => !T.stickers.includes(s));
@@ -484,7 +504,7 @@ function speak(text) {
     u.lang = 'ko-KR'; u.rate = 0.9; speechSynthesis.speak(u);
   } catch (e) { /* 무시 */ }
 }
-const SAY_OP = { '+': '더하기', '×': '곱하기', '÷': '나누기', '=': '는', '…': '나머지', ',': ',' };
+const SAY_OP = { '+': '더하기', '−': '빼기', '×': '곱하기', '÷': '나누기', '=': '는', '…': '나머지', ',': ',' };
 function sayQ(q) {
   const eqs = q.eq.map((p) => (/^\{B/.test(p) ? '네모' : SAY_OP[p] || String(p).replace(/^u:/, ''))).join(' ');
   speak((q.say ? q.say + ' ' : '') + (q.sayEq === false ? '' : eqs));
@@ -560,7 +580,7 @@ function renderLevels() {
         return `<button class="lv ${ok ? '' : 'locked'}" data-act="start" data-l="${L.id}" ${ok ? '' : 'data-locked="1"'}>
           ${ok ? '' : '<span class="lock">🔒</span>'}
           <div class="le">${L.emoji}</div>
-          <div><div class="ln">${i + 1}단계</div><div class="lt">${L.title}</div><div class="ld">${L.desc}</div>
+          <div><div class="ln">${i + 1}단계</div><div class="lt">${L.title}</div><div class="ld">${L.desc}${L.special ? ` · ⏱️ 60초 · 최고 ${st.sbest || 0}점` : ''}</div>
           <div class="ls">${[1, 2, 3].map((k) => `<span class="${k <= s ? '' : 'off'}">★</span>`).join('')}</div></div>
         </button>`; }).join('')}
     </div>
@@ -610,8 +630,8 @@ function renderBoard() {
 
 /* ---------- 플레이 ---------- */
 function startLevel(tid, lid) {
-  const T = TRACKS[tid], time = lid === 'time';
-  const level = time ? null : lid === 'weak' ? WEAK : T.levels.find((l) => l.id === lid);
+  const T = TRACKS[tid], time = lid === 'time' || lid === 'special';
+  const level = lid === 'special' ? SPECIAL : time ? null : lid === 'weak' ? WEAK : T.levels.find((l) => l.id === lid);
   play = { tid, lid, level, time, idx: 0, total: time ? Infinity : 10, results: [], mistakes: 0, combo: 0, maxCombo: 0, score: 0, firstOk: 0, recent: [], solved: 0, times: [] };
   view = { name: 'play', t: tid };
   document.body.className = 't-' + tid;
@@ -630,7 +650,7 @@ function startLevel(tid, lid) {
 }
 function timeLevels(tid) {
   const L = TRACKS[tid].levels, out = [];
-  L.forEach((l, i) => { if (unlocked(tid, i)) out.push(l); });
+  L.forEach((l, i) => { if (unlocked(tid, i) && !l.special) out.push(l); });
   return out;
 }
 // 최근에 푼 문제는 피하고, 안 풀어 본 문제(없으면 가장 오래전에 푼 문제)를 고른다. 기록은 이 기기에 저장된다.
@@ -653,7 +673,7 @@ function pickFresh(make, bucketId, recent, keep) {
 }
 function genQ() {
   const p = play;
-  return pickFresh(() => (p.time ? pick(timeLevels(p.tid)) : p.level).gen(), `${p.tid}:${p.time ? 'time' : p.level.id}`, p.recent, 6);
+  return pickFresh(() => (p.level || pick(timeLevels(p.tid))).gen(), `${p.tid}:${p.lid}`, p.recent, 6);
 }
 const label = (v) => (v.length === 2 ? `${v[0]} … ${v[1]}` : `${v[0]}`);
 function makeChoices(q) {
@@ -675,7 +695,7 @@ function makeChoices(q) {
 
 function renderPlayShell() {
   const p = play, T = TRACKS[p.tid];
-  const title = p.time ? '⏱️ 60초 도전' : `${p.level.emoji} ${p.level.title}`;
+  const title = p.lid === 'special' ? '🌟 60초 도전 (스페셜모드 매우어려움)' : p.time ? '⏱️ 60초 도전' : `${p.level.emoji} ${p.level.title}`;
   app.innerHTML = `<div class="screen play">
     <div class="topbar"><button class="icon" data-act="quit">✕</button><div class="ttl">${title}</div>
       <button class="icon" data-act="speak" title="문제 읽어주기">🔊</button><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
@@ -765,7 +785,7 @@ function onKey(k) {
     if (p.slot < n - 1) { p.slot++; updateBlanks(); return; }
     if (p.input.slice(0, n).some((v) => v === '')) { p.slot = p.input.findIndex((v) => v === ''); updateBlanks(); return; }
     return submit(p.input.slice(0, n).map(Number));
-  } else if (p.input[p.slot].length < 3) {
+  } else if (p.input[p.slot].length < 4) {
     p.input[p.slot] = (p.input[p.slot] + k).replace(/^0+(?=\d)/, '');
   }
   updateBlanks();
@@ -790,7 +810,12 @@ function onCorrect(btn) {
   let msg = pick(PRAISE) + ` <span class="sec ${sec < 3 ? 'fast' : ''}">${sec < 3 ? '⚡' : '⏱️'} ${sec.toFixed(1)}초</span>`;
   if (first && p.combo >= 3) msg += ` <span class="combo">🔥 ${p.combo}연속!</span>`;
   confetti(first && p.combo >= 3 ? 14 : 6);
-  if (p.time) { p.score += 1 + (p.combo >= 5 ? 1 : 0); const s = $('#score'); if (s) s.textContent = p.score; fb(msg, 'good'); later(nextQ, 450); return; }
+  if (p.time) {
+    const pts = (q.pts || 1) + (p.combo >= 5 ? 1 : 0);
+    p.score += pts; const s = $('#score'); if (s) s.textContent = p.score;
+    if (q.pts) msg += ` <span class="pts">+${pts}점</span>`;
+    fb(msg, 'good'); later(nextQ, 450); return;
+  }
   fb(msg, 'good');
   if (q.teach && q.explain) { showNext(true); return; }
   later(nextQ, 1000);
@@ -826,7 +851,9 @@ function finish() {
   if (p.timer) clearInterval(p.timer);
   const r = { tid: p.tid, lid: p.lid, time: p.time, score: p.score, firstOk: p.firstOk, total: p.total, maxCombo: p.maxCombo, avg: p.times.length ? p.times.reduce((a, b) => a + b, 0) / p.times.length : 0, fastest: p.times.length ? Math.min(...p.times) : 0, stickers: [], stars: 0, newBest: false };
   if (p.time) {
-    if (p.score > T.best) { r.newBest = true; T.best = p.score; if (p.score >= 8) r.stickers.push(award(p.tid)); }
+    const bk = p.lid === 'special' ? 'sbest' : 'best';
+    if (p.score > (T[bk] || 0)) { r.newBest = true; T[bk] = p.score; if (p.score >= 8) r.stickers.push(award(p.tid)); }
+    if (p.lid === 'special') { r.stars = p.score >= 25 ? 3 : p.score >= 12 ? 2 : 1; T.stars.special = Math.max(T.stars.special || 0, r.stars); }
   } else {
     r.stars = p.mistakes <= 1 ? 3 : p.mistakes <= 3 ? 2 : 1;
     const prev = T.stars[p.lid] || 0;
@@ -835,7 +862,7 @@ function finish() {
     if (r.stars === 3 && prev < 3 && p.lid !== 'weak') r.stickers.push(award(p.tid));
     const L = TRACKS[p.tid].levels, i = L.findIndex((l) => l.id === p.lid);
     r.next = i >= 0 && i < L.length - 1 ? L[i + 1].id : null;
-    r.unlockedNew = r.next && prev === 0;
+    r.unlockedNew = r.next && prev === 0 && !L[i + 1].special;
   }
   r.stickers = r.stickers.filter(Boolean);
   save(); sfx.win(); confetti(50);
@@ -846,13 +873,13 @@ function finish() {
 function renderResult() {
   const r = view.r, T = TRACKS[r.tid];
   document.body.className = 't-' + r.tid;
-  const lvTitle = r.time ? '60초 도전' : r.lid === 'weak' ? WEAK.title : T.levels.find((l) => l.id === r.lid).title;
+  const lvTitle = r.lid === 'special' ? '60초 도전 (스페셜모드 매우어려움)' : r.time ? '60초 도전' : r.lid === 'weak' ? WEAK.title : T.levels.find((l) => l.id === r.lid).title;
   const msgs = { 3: '완벽해요! 수학 왕이에요 👑', 2: '아주 잘했어요! 조금만 더 하면 별 3개! 💪', 1: '끝까지 해냈어요! 다시 하면 더 잘할 거예요 😊' };
   app.innerHTML = `<div class="screen result">
     <div class="re">${r.time ? '⏱️' : r.stars === 3 ? '🏆' : '🎉'}</div>
     <h2>${lvTitle} ${r.time ? '끝!' : '완료!'}</h2>
     ${r.time
-      ? `<div class="bigscore">${r.score}점</div><p>${r.newBest ? '🎊 새로운 최고 기록이에요!' : `최고 기록: ${S.tracks[r.tid].best}점`}</p><p>최고 연속 정답 🔥 ${r.maxCombo}</p>`
+      ? `<div class="bigscore">${r.score}점</div><p>${r.newBest ? '🎊 새로운 최고 기록이에요!' : `최고 기록: ${S.tracks[r.tid][r.lid === 'special' ? 'sbest' : 'best'] || 0}점`}</p>${r.lid === 'special' ? `<div class="stars">${[1, 2, 3].map((k) => `<span class="${k <= r.stars ? '' : 'off'}" style="animation-delay:${k * 0.25}s">★</span>`).join('')}</div><p style="font-size:16px;color:var(--muted)">+ − 1점 · × ÷ 2점 · 두 자리×두 자리 3점 · 5연속부터 +1점<br>⭐ 12점 이상 별 2개 · 25점 이상 별 3개</p>` : ''}<p>최고 연속 정답 🔥 ${r.maxCombo}</p>`
       : `<div class="stars">${[1, 2, 3].map((k) => `<span class="${k <= r.stars ? '' : 'off'}" style="animation-delay:${k * 0.25}s">★</span>`).join('')}</div>
          <p>${msgs[r.stars]}</p><p>한 번에 맞힌 문제 ${r.firstOk} / ${r.total} · 최고 연속 🔥 ${r.maxCombo}</p>
          ${r.unlockedNew ? '<p>🔓 다음 단계가 열렸어요!</p>' : ''}`}
