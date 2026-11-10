@@ -427,7 +427,7 @@ function load() {
   const d = defState();
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && s.tracks) { for (const id in d.tracks) d.tracks[id] = Object.assign(d.tracks[id], s.tracks[id] || {}); d.sound = s.sound !== false; }
+    if (s && s.tracks) { for (const id in d.tracks) d.tracks[id] = Object.assign(d.tracks[id], s.tracks[id] || {}); d.sound = s.sound !== false; d.seen = s.seen || {}; d.seenN = s.seenN || 0; }
   } catch (e) { /* 저장소를 못 쓰면 새로 시작 */ }
   return d;
 }
@@ -633,12 +633,27 @@ function timeLevels(tid) {
   L.forEach((l, i) => { if (unlocked(tid, i)) out.push(l); });
   return out;
 }
+// 최근에 푼 문제는 피하고, 안 풀어 본 문제(없으면 가장 오래전에 푼 문제)를 고른다. 기록은 이 기기에 저장된다.
+function pickFresh(make, bucketId, recent, keep) {
+  S.seen = S.seen || {}; S.seenN = S.seenN || 0;
+  const b = S.seen[bucketId] = S.seen[bucketId] || {};
+  let best = null, bestScore = Infinity;
+  for (let k = 0; k < 40; k++) {
+    const q = make();
+    if (recent.includes(q.key)) { if (!best) best = q; continue; }
+    const sc = b[q.key] === undefined ? -1 : b[q.key];
+    if (sc < bestScore) { best = q; bestScore = sc; if (sc === -1) break; }
+  }
+  recent.push(best.key); if (recent.length > keep) recent.shift();
+  b[best.key] = ++S.seenN;
+  const keys = Object.keys(b);
+  if (keys.length > 400) keys.sort((x, y) => b[x] - b[y]).slice(0, 100).forEach((x) => delete b[x]);
+  save();
+  return best;
+}
 function genQ() {
   const p = play;
-  for (let k = 0; k < 30; k++) {
-    const l = p.time ? pick(timeLevels(p.tid)) : p.level, q = l.gen();
-    if (!p.recent.includes(q.key) || k === 29) { p.recent.push(q.key); if (p.recent.length > 6) p.recent.shift(); return q; }
-  }
+  return pickFresh(() => (p.time ? pick(timeLevels(p.tid)) : p.level).gen(), `${p.tid}:${p.time ? 'time' : p.level.id}`, p.recent, 6);
 }
 const label = (v) => (v.length === 2 ? `${v[0]} … ${v[1]}` : `${v[0]}`);
 function makeChoices(q) {

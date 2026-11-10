@@ -243,7 +243,11 @@ const GAMES = [
     } },
   { id: 'match', emoji: '🃏', title: '짝 맞추기', desc: '한자와 훈음 카드 짝 찾기', type: 'match', total: 3,
     stars: (m) => (m <= 2 ? 3 : m <= 6 ? 2 : 1),
-    gen(G) { const set = sample(G.list, 6); return { key: set.map((c) => c.h).join(''), set }; } },
+    gen(G) {
+      const b = (S.seen && S.seen[`${G.id}:mean`]) || {}, sc = (c) => (b[c.h] === undefined ? -1 : b[c.h]) + Math.random() * 3;
+      const set = shuffle(G.list.slice().sort((x, y) => sc(x) - sc(y)).slice(0, 6));
+      return { key: set.map((c) => c.h).join(''), set };
+    } },
   { id: 'trace', emoji: '✏️', title: '한자 따라쓰기', desc: '손가락으로 따라 써요', type: 'trace', total: 5,
     gen(G) { const c = pick(G.list); return { key: c.h, target: c.h, mean: c.mean, say: c.mean }; } },
 ];
@@ -379,12 +383,27 @@ function startGame(gid, gameId) {
   </div>`;
   newQ();
 }
+// 최근에 푼 문제는 피하고, 안 풀어 본 문제(없으면 가장 오래전에 푼 문제)를 고른다. 기록은 이 기기에 저장된다.
+function pickFresh(make, bucketId, recent, keep) {
+  S.seen = S.seen || {}; S.seenN = S.seenN || 0;
+  const b = S.seen[bucketId] = S.seen[bucketId] || {};
+  let best = null, bestScore = Infinity;
+  for (let k = 0; k < 40; k++) {
+    const q = make();
+    if (recent.includes(q.key)) { if (!best) best = q; continue; }
+    const sc = b[q.key] === undefined ? -1 : b[q.key];
+    if (sc < bestScore) { best = q; bestScore = sc; if (sc === -1) break; }
+  }
+  recent.push(best.key); if (recent.length > keep) recent.shift();
+  b[best.key] = ++S.seenN;
+  const keys = Object.keys(b);
+  if (keys.length > 400) keys.sort((x, y) => b[x] - b[y]).slice(0, 100).forEach((x) => delete b[x]);
+  save();
+  return best;
+}
 function genQ() {
   const p = play;
-  for (let k = 0; k < 30; k++) {
-    const q = p.g.gen(p.G);
-    if (!p.recent.includes(q.key) || k === 29) { p.recent.push(q.key); if (p.recent.length > Math.min(8, p.G.list.length - 2)) p.recent.shift(); return q; }
-  }
+  return pickFresh(() => p.g.gen(p.G), `${p.G.id}:${p.g.id}`, p.recent, Math.min(8, p.G.list.length - 2));
 }
 function renderPath() {
   const p = play; let h = '';
