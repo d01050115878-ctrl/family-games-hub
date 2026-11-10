@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#ffb703">
+<title>재미있는 수학놀이 🧮</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.85em' font-size='90'>🧮</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #2b2d42; --muted: #7a7f99; --card: #ffffff; --line: #e6e8f0;
+  --good: #2fb36d; --bad: #ff5a5f;
+  --main: #ff9f1c; --main2: #ffbf69; --soft: #fff1d6;
+}
+.t-little { --main: #ff9f1c; --main2: #ffbf69; --soft: #fff1d6; }
+.t-big    { --main: #4f6bed; --main2: #8aa0ff; --soft: #e7ecff; }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  background: linear-gradient(160deg, #fff7e6 0%, #e8f4ff 55%, #f3e8ff 100%) fixed;
+  color: var(--ink); min-height: 100vh; overflow-x: hidden;
+  user-select: none; -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: 0; color: inherit; }
+b { font-weight: normal; color: var(--main); }
+
+.screen { max-width: 760px; margin: 0 auto; padding: 16px 16px 32px; min-height: 100vh; }
+
+/* ---------- 공통 ---------- */
+.topbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.topbar .ttl { flex: 1; font-size: 20px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon { width: 46px; height: 46px; border-radius: 14px; background: #fff; font-size: 22px; box-shadow: 0 3px 0 var(--line); flex: none; text-decoration: none; display: grid; place-items: center; }
+.icon:active { transform: translateY(2px); box-shadow: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 14px 22px; border-radius: 18px; font-size: 20px; background: var(--main); color: #fff; box-shadow: 0 5px 0 color-mix(in srgb, var(--main) 70%, #000); }
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 color-mix(in srgb, var(--main) 70%, #000); }
+.btn.ghost { background: #fff; color: var(--ink); box-shadow: 0 5px 0 var(--line); }
+
+/* ---------- 홈 ---------- */
+.home-hero { text-align: center; margin: 18px 0 22px; }
+.home-hero .logo { font-size: 64px; animation: bob 2.4s ease-in-out infinite; }
+.home-hero h1 { font-size: 36px; margin: 6px 0 4px; font-weight: normal; }
+.home-hero p { color: var(--muted); margin: 0; font-size: 17px; }
+.tracks { display: grid; gap: 16px; }
+.track-card { position: relative; text-align: left; background: #fff; border-radius: 28px; padding: 22px 22px 20px; box-shadow: 0 8px 0 var(--main2), 0 14px 30px rgba(0,0,0,.08); border: 3px solid var(--main2); display: flex; gap: 16px; align-items: center; width: 100%; }
+.track-card:active { transform: translateY(4px); box-shadow: 0 4px 0 var(--main2); }
+.track-card .te { font-size: 64px; flex: none; animation: bob 2.8s ease-in-out infinite; }
+.track-card .age { display: inline-block; background: var(--main); color: #fff; border-radius: 999px; padding: 3px 12px; font-size: 15px; }
+.track-card h2 { font-size: 27px; margin: 6px 0 2px; font-weight: normal; }
+.track-card .ts { color: var(--muted); font-size: 15px; }
+.track-card .tstat { margin-top: 8px; font-size: 16px; }
+.track-card .who { font-size: 16px; color: var(--main); }
+.edit-name { position: absolute; top: 12px; right: 12px; background: var(--soft); border-radius: 12px; padding: 6px 10px; font-size: 14px; }
+.home-foot { display: flex; justify-content: center; gap: 10px; margin-top: 26px; flex-wrap: wrap; }
+
+/* ---------- 단계 목록 ---------- */
+.track-head { background: #fff; border-radius: 24px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 6px 0 var(--main2); margin-bottom: 14px; }
+.track-head .te { font-size: 46px; }
+.track-head h2 { margin: 0; font-size: 24px; font-weight: normal; }
+.track-head p { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+.quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.quick button { background: var(--soft); border-radius: 18px; padding: 14px 10px; font-size: 18px; box-shadow: 0 4px 0 color-mix(in srgb, var(--main2) 60%, #fff); }
+.quick button small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.levels { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.lv { position: relative; text-align: left; background: #fff; border-radius: 22px; padding: 16px; box-shadow: 0 5px 0 var(--line); display: flex; gap: 12px; align-items: center; min-height: 96px; }
+.lv:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.lv .le { font-size: 40px; flex: none; width: 52px; text-align: center; }
+.lv .ln { font-size: 13px; color: var(--main); }
+.lv .lt { font-size: 19px; line-height: 1.2; }
+.lv .ld { font-size: 13px; color: var(--muted); margin-top: 3px; line-height: 1.3; }
+.lv .ls { font-size: 17px; margin-top: 4px; letter-spacing: 1px; color: #ffc107; }
+.lv .ls .off { color: #dde1ea; }
+.lv.locked { opacity: .55; }
+.lv.locked .le { filter: grayscale(1); }
+.lv .lock { position: absolute; right: 12px; top: 10px; font-size: 20px; }
+.settings { margin-top: 18px; background: #fff; border-radius: 20px; padding: 14px 16px; display: grid; gap: 10px; }
+.settings .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 17px; }
+.seg { display: inline-flex; background: #f1f3f8; border-radius: 14px; padding: 4px; }
+.seg button { background: transparent; padding: 8px 14px; border-radius: 10px; font-size: 16px; color: var(--muted); }
+.seg button.on { background: var(--main); color: #fff; }
+
+/* ---------- 플레이 ---------- */
+.play { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 16px; }
+.path { display: flex; align-items: center; gap: 4px; background: #fff; border-radius: 999px; padding: 6px 10px; margin-bottom: 12px; }
+.path .step { flex: 1; height: 30px; border-radius: 999px; background: #f1f3f8; display: grid; place-items: center; font-size: 15px; position: relative; }
+.path .step.done { background: var(--soft); }
+.path .step.cur { background: var(--main2); }
+.path .runner { position: absolute; font-size: 26px; top: -8px; animation: hop .6s ease-in-out infinite alternate; }
+.path .goal { font-size: 26px; flex: none; }
+.timebox { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.timebar { flex: 1; height: 22px; border-radius: 999px; background: #fff; overflow: hidden; }
+.timebar div { height: 100%; width: 100%; background: linear-gradient(90deg, #ff6b6b, var(--main)); transition: width .1s linear; border-radius: 999px; }
+.timebox .tn { font-size: 22px; min-width: 120px; text-align: right; }
+
+.qcard { background: #fff; border-radius: 28px; padding: 18px 16px 14px; box-shadow: 0 8px 0 var(--main2); text-align: center; position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 10px; min-height: 260px; }
+.qtext { font-size: 22px; line-height: 1.45; }
+.qtext:empty, .visual:empty { display: none; }
+.visual { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.vt { margin: 0; font-size: 18px; color: var(--muted); }
+.eq { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 10px; font-size: clamp(38px, 10vw, 62px); line-height: 1.1; }
+.eq.small { font-size: clamp(30px, 8vw, 50px); gap: 4px 6px; }
+.eq .op { color: var(--main); }
+.eq .comma { color: var(--muted); margin-left: -8px; }
+.eq .unit { font-size: .55em; color: var(--muted); }
+.blank { position: relative; min-width: 1.5em; height: 1.25em; padding: 0 .15em; border-radius: 16px; border: 4px dashed var(--main2); background: var(--soft); display: inline-flex; align-items: center; justify-content: center; }
+.blank b { color: var(--ink); }
+.blank:empty::after, .blank b:empty::after { content: '?'; color: var(--main2); }
+.blank.active { border-style: solid; border-color: var(--main); animation: glow 1s ease-in-out infinite alternate; }
+.blank small { position: absolute; top: -1.35em; left: 50%; transform: translateX(-50%); font-size: 15px; color: var(--muted); white-space: nowrap; }
+.blank.good { border: 4px solid var(--good); background: #e3f9ec; }
+.blank.good b { color: var(--good); }
+.blank.reveal { border: 4px solid var(--bad); background: #ffeceb; }
+.blank.reveal b { color: var(--bad); }
+.eq.has-label { margin-top: 18px; }
+
+.hintbtn { position: absolute; right: 12px; top: 12px; background: #fff8d6; border-radius: 14px; padding: 6px 12px; font-size: 16px; box-shadow: 0 3px 0 #f2e2a0; }
+.hintbox { background: #fffbea; border: 2px dashed #ffd666; border-radius: 18px; padding: 10px 12px; font-size: 18px; line-height: 1.5; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.hintbox p { margin: 0; }
+.hintbox[hidden] { display: none; }
+.explain { font-size: 20px; line-height: 1.6; }
+.explain small { color: var(--muted); font-size: 16px; }
+.feedback { min-height: 30px; font-size: 22px; }
+.feedback.good { color: var(--good); animation: pop .35s ease; }
+.feedback.bad { color: var(--bad); }
+.combo { display: inline-block; background: #fff0e0; color: #ff6b00; border-radius: 999px; padding: 0 10px; margin-left: 4px; }
+
+.answer { margin-top: 14px; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.choice { font-size: clamp(30px, 8vw, 44px); padding: 16px 8px; border-radius: 22px; color: #fff; }
+.choice.c0 { background: #ff6b6b; box-shadow: 0 6px 0 #d94848; }
+.choice.c1 { background: #4dabf7; box-shadow: 0 6px 0 #2f87d1; }
+.choice.c2 { background: #51cf66; box-shadow: 0 6px 0 #34a84a; }
+.choice.c3 { background: #b197fc; box-shadow: 0 6px 0 #8c6fe0; }
+.choice:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.2); }
+.choice.wrongc, .choice:disabled { opacity: .3; transform: scale(.94); }
+.choice.rightc { outline: 5px solid var(--good); outline-offset: 3px; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pad button { font-size: 32px; padding: 12px 0; border-radius: 18px; background: #fff; box-shadow: 0 5px 0 var(--line); }
+.pad button:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.pad .ok { background: var(--good); color: #fff; box-shadow: 0 5px 0 #1f8a51; }
+.pad .del { background: #f1f3f8; }
+.nextbtn { width: 100%; font-size: 26px; padding: 18px; }
+
+/* ---------- 시각 자료 ---------- */
+.items { display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 2px; font-size: 30px; max-width: 240px; line-height: 1.15; }
+.items.sm { font-size: 24px; max-width: 220px; }
+.items.xs { font-size: 20px; max-width: 260px; }
+.items i { font-style: normal; animation: pop .3s ease backwards; }
+.pics { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.pics > .items { background: #f6f8fc; border: 2px solid #e3e8f2; border-radius: 18px; padding: 6px 10px; max-width: 42%; font-size: 26px; }
+.pics:has(.pplus) { flex-wrap: nowrap; }
+.pics > .items:only-child { max-width: 100%; }
+.pplus { font-size: 36px; color: var(--main); }
+.tf-wrap { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.tf { display: grid; grid-template-columns: repeat(5, 26px); gap: 4px; padding: 6px; background: #fff; border: 3px solid #cfd6e6; border-radius: 10px; }
+.tf span { width: 26px; height: 26px; border-radius: 50%; background: #f1f3f8; }
+.tf .dot.a { background: #ff6b6b; }
+.tf .dot.b { background: #4dabf7; }
+.tf .dot.c { background: #51cf66; }
+.tf .dot.ghost { background: #fff; border: 3px dashed #ffb703; }
+.groups { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.plate { background: radial-gradient(ellipse at center, #fff 40%, #eef1f7 100%); border: 3px solid #dde3ef; border-radius: 50%; min-width: 92px; min-height: 80px; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.plate .items { font-size: 22px; max-width: 80px; }
+.plate .kid { font-size: 28px; }
+.friends { font-size: 38px; letter-spacing: 4px; }
+.arr { display: grid; gap: 4px; }
+.arr i { width: 16px; height: 16px; border-radius: 50%; background: #4dabf7; }
+.arr i.r1 { background: #ff8787; }
+
+/* ---------- 결과 / 스티커 / 구구단판 ---------- */
+.result { text-align: center; padding-top: 40px; }
+.result .re { font-size: 90px; animation: bob 2s ease-in-out infinite; }
+.result h2 { font-size: 32px; margin: 8px 0; font-weight: normal; }
+.result .stars { font-size: 64px; letter-spacing: 6px; color: #ffc107; }
+.result .stars span { display: inline-block; animation: starIn .5s ease backwards; }
+.result .stars .off { color: #dde1ea; }
+.result p { font-size: 20px; margin: 8px 0; }
+.result .bigscore { font-size: 72px; color: var(--main); }
+.newsticker { margin: 18px auto; background: #fff; border-radius: 24px; padding: 14px 20px; display: inline-block; box-shadow: 0 6px 0 var(--main2); font-size: 20px; }
+.newsticker span { font-size: 56px; display: inline-block; animation: spinIn .8s ease backwards; margin: 0 4px; }
+.result .acts { display: flex; flex-direction: column; gap: 12px; max-width: 360px; margin: 22px auto 0; }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 10px; }
+.sgrid div { background: #fff; border-radius: 18px; aspect-ratio: 1; display: grid; place-items: center; font-size: 42px; box-shadow: 0 4px 0 var(--line); }
+.sgrid div.no { font-size: 26px; color: #c9cede; background: #f6f7fb; }
+.board { width: 100%; border-collapse: separate; border-spacing: 4px; font-size: 16px; }
+.board th { color: var(--muted); font-weight: normal; }
+.board td { background: #f1f3f8; border-radius: 10px; text-align: center; padding: 8px 0; cursor: pointer; }
+.board td.g1 { background: #d3f9d8; }
+.board td.g2 { background: #51cf66; color: #fff; }
+.board td.y { background: #fff3bf; }
+.board td.r { background: #ffc9c9; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: 14px; color: var(--muted); margin: 10px 0; }
+.legend span::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 4px; vertical-align: -2px; background: var(--c); }
+.factmsg { text-align: center; font-size: 24px; min-height: 44px; margin: 6px 0; }
+.panel { background: #fff; border-radius: 24px; padding: 16px; box-shadow: 0 6px 0 var(--line); }
+
+/* ---------- 효과 ---------- */
+#fx { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
+.cf { position: absolute; top: -50px; animation: fall linear forwards; }
+.shake { animation: shake .4s ease; }
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-12px); } 40% { transform: translateX(12px); } 60% { transform: translateX(-8px); } 80% { transform: translateX(8px); } }
+@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes hop { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+@keyframes glow { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--main) 40%, transparent); } to { box-shadow: 0 0 0 8px color-mix(in srgb, var(--main) 10%, transparent); } }
+@keyframes starIn { from { transform: scale(0) rotate(-90deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spinIn { from { transform: scale(0) rotate(-360deg); } to { transform: scale(1) rotate(0); } }
+
+@media (max-width: 480px) {
+  .track-card .te { font-size: 50px; }
+  .track-card h2 { font-size: 23px; }
+  .levels { grid-template-columns: 1fr 1fr; }
+  .lv { flex-direction: column; text-align: center; padding: 12px 8px; gap: 4px; }
+  .lv .lt { font-size: 17px; }
+  .qtext { font-size: 19px; }
+  .tf { grid-template-columns: repeat(5, 20px); }
+  .tf span { width: 20px; height: 20px; }
+  .pad button { font-size: 28px; padding: 10px 0; }
+}
+@media (min-height: 800px) and (min-width: 600px) {
+  .choice { padding: 24px 8px; }
+  .pad button { padding: 16px 0; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="fx"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   재미있는 수학놀이
+   - 7살: 덧셈 탐험대 (합 20까지 + 곱셈 맛보기)
+   - 10살: 곱셈·나눗셈 챌린지 (구구단 · 나눗셈 · 나머지)
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+// 받침 있는 숫자인지 (조사 고르기용): 0(십·백·영) 1(일) 3(삼) 6(육) 7(칠) 8(팔)
+const jb = (n) => [0, 1, 3, 6, 7, 8].includes(Math.abs(n) % 10);
+const eun = (n) => n + (jb(n) ? '은' : '는');
+const eul = (n) => n + (jb(n) ? '을' : '를');
+const gwa = (n) => n + (jb(n) ? '과' : '와');
+
+const FOODS = ['🍎', '🍓', '🍊', '🍌', '🍇', '🍒', '🍑', '🥕', '🍪', '🧁', '🍩', '⭐', '🐟', '🎈', '🌸', '🍬'];
+const KIDS = ['🧒', '👧', '👦', '🐻', '🐰'];
+const PRAISE = ['딩동댕! 🎉', '최고야! 👍', '우와, 천재다! 🌟', '정답! 잘했어 😄', '짝짝짝! 👏', '대단해! 💯', '멋져요! ✨'];
+const RETRY = ['아깝다! 다시 생각해 볼까? 💪', '괜찮아, 한 번 더! 🙂', '거의 다 왔어! 힌트를 봐요 💡'];
+
+/* ---------- 그림 도우미 ---------- */
+function items(n, e) {
+  const cls = n > 15 ? 'xs' : n > 9 ? 'sm' : '';
+  return `<span class="items ${cls}">${Array.from({ length: n }, (_, i) => `<i style="animation-delay:${i * 0.03}s">${e}</i>`).join('')}</span>`;
+}
+function tenFrame(parts) {
+  const seq = [];
+  parts.forEach((p) => { for (let i = 0; i < p.n; i++) seq.push(p.c); });
+  const frames = Math.max(1, Math.ceil(seq.length / 10));
+  let h = '<div class="tf-wrap">';
+  for (let f = 0; f < frames; f++) {
+    h += '<div class="tf">';
+    for (let i = 0; i < 10; i++) { const c = seq[f * 10 + i]; h += `<span class="${c ? 'dot ' + c : ''}"></span>`; }
+    h += '</div>';
+  }
+  return h + '</div>';
+}
+function groups(g, n, e) {
+  return `<div class="groups">${Array.from({ length: g }, () => `<div class="plate">${items(n, e)}</div>`).join('')}</div>`;
+}
+function arrayDots(rows, cols) {
+  let h = `<div class="arr" style="grid-template-columns:repeat(${cols},16px)">`;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) h += `<i class="r${r % 2}"></i>`;
+  return h + '</div>';
+}
+const dan = (d, upto) => Array.from({ length: upto }, (_, i) => d * (i + 1)).join(', ');
+
+/* ---------- 문제 만들기: 7살 ---------- */
+function tenHint(a, b) {
+  const s = a + b;
+  let t;
+  if (a < 10 && s > 10) { const need = 10 - a; t = `<p>${a}에 <b>${eul(need)}</b> 먼저 더하면 딱 10!<br>남은 <b>${b - need}</b>${jb(b - need) ? '을' : '를'} 더 더하면? 10 + ${b - need} = ?</p>`; }
+  else if (a >= 10) t = `<p>${eun(a)} 10과 ${a - 10}<br>${a - 10} + ${b} 먼저 해 봐요!</p>`;
+  else t = '<p>점을 하나씩 세어 봐요! 👆</p>';
+  return tenFrame([{ n: a, c: 'a' }, { n: b, c: 'b' }]) + t;
+}
+
+const LITTLE = [
+  { id: 'l1', emoji: '🍎', title: '그림 보고 더하기', desc: '합이 10까지 · 그림을 세어요',
+    gen() { const a = rnd(1, 6), b = rnd(1, 10 - a), e = pick(FOODS);
+      return { key: `${a}+${b}`, visual: `<div class="pics">${items(a, e)}<span class="pplus">+</span>${items(b, e)}</div>`, eq: [a, '+', b, '=', '{B0}'], ans: [a + b],
+        hint: tenFrame([{ n: a, c: 'a' }, { n: b, c: 'b' }]) + '<p>점을 하나씩 세어 봐요! 👆</p>' }; } },
+  { id: 'l2', emoji: '🔟', title: '10 만들기', desc: '몇을 더하면 10이 될까?',
+    gen() { const a = rnd(1, 9);
+      return { key: 'm' + a, visual: tenFrame([{ n: a, c: 'a' }]) + '<p class="vt">10칸을 꽉 채우려면?</p>', eq: [a, '+', '{B0}', '=', 10], ans: [10 - a],
+        hint: '<p>빈 칸을 하나씩 세어 봐요! 👆</p>' }; } },
+  { id: 'l3', emoji: '🐟', title: '합이 20까지', desc: '10을 넘는 덧셈도 척척',
+    gen() { let a, b; const cross = Math.random() < 0.7;
+      do { a = rnd(2, 15); b = rnd(1, 18); } while (a + b > 20 || a + b < 6 || (cross && !(a < 10 && a + b > 10)));
+      return { key: `${a}+${b}`, eq: [a, '+', b, '=', '{B0}'], ans: [a + b], hint: tenHint(a, b) }; } },
+  { id: 'l4', emoji: '🎈', title: '빈칸 채우기', desc: '□에 들어갈 수는?',
+    gen() { const s = rnd(6, 20), a = rnd(1, s - 1), b = s - a;
+      return Math.random() < 0.5
+        ? { key: `?+${b}=${s}`, eq: ['{B0}', '+', b, '=', s], ans: [a], hint: tenFrame([{ n: b, c: 'b' }, { n: a, c: 'ghost' }]) + `<p>${b}에서 ${s}까지 몇 칸 더 가야 할까?<br>노란 점선 칸을 세어 봐요!</p>` }
+        : { key: `${a}+?=${s}`, eq: [a, '+', '{B0}', '=', s], ans: [b], hint: tenFrame([{ n: a, c: 'a' }, { n: b, c: 'ghost' }]) + `<p>${a}에서 ${s}까지 세어 봐요: ${a + 1}, ${a + 2} …<br>노란 점선 칸을 세어 봐요!</p>` }; } },
+  { id: 'l5', emoji: '🐸', title: '세 수 더하기', desc: '세 개를 한꺼번에!',
+    gen() { let a, b, c; do { a = rnd(1, 9); b = rnd(1, 9); c = rnd(1, 9); } while (a + b + c > 20 || a + b + c < 6);
+      return { key: `${a}+${b}+${c}`, eq: [a, '+', b, '+', c, '=', '{B0}'], ans: [a + b + c],
+        hint: tenFrame([{ n: a, c: 'a' }, { n: b, c: 'b' }, { n: c, c: 'c' }]) + `<p>앞의 두 수부터! ${a} + ${b} = ${a + b}<br>그 다음 ${a + b} + ${c} = ?</p>` }; } },
+  { id: 'l6', emoji: '🦘', title: '뛰어 세기', desc: '2씩, 5씩, 10씩 폴짝!',
+    gen() { const step = pick([2, 2, 5, 5, 10, 10, 3]), start = step * rnd(0, 4);
+      const seq = [0, 1, 2, 3, 4].map((i) => start + step * i), bi = rnd(1, 4), eq = [];
+      seq.forEach((v, i) => { if (i) eq.push(','); eq.push(i === bi ? '{B0}' : v); });
+      return { key: `s${step}-${start}-${bi}`, text: `🦘 캥거루가 <b>${step}</b>씩 폴짝폴짝!`, say: `${step}씩 뛰어 세기! 네모에 들어갈 수는?`, sayEq: false, eq, small: true, ans: [seq[bi]],
+        hint: `<p>${step}씩 커져요!<br>${seq[bi - 1]} 다음에 ${step}만큼 더 가면?</p>` }; } },
+  { id: 'l7', emoji: '🍪', title: '묶어 세기', desc: '곱셈 맛보기 · 몇 개씩 몇 묶음',
+    gen() { const g = rnd(2, 4), n = rnd(2, 5), e = pick(FOODS), eq = [];
+      for (let i = 0; i < g; i++) { if (i) eq.push('+'); eq.push(n); }
+      eq.push('=', '{B0}');
+      const hops = Array.from({ length: g - 1 }, (_, i) => n * (i + 1)).join(', ');
+      return { key: `g${g}x${n}`, text: `접시 <b>${g}</b>개에 ${e} <b>${n}</b>개씩!<br>모두 몇 개일까?`, say: `접시 ${g}개에 ${n}개씩 있어요. 모두 몇 개일까?`, sayEq: false,
+        visual: groups(g, n, e), eq, small: g > 3, ans: [g * n],
+        hint: `<p>${n}씩 뛰어 세어 봐요!<br>${hops}, ?</p>`, teach: true,
+        explain: `<div class="explain">${n}씩 ${g}묶음은 ${g * n}개!<br>이걸 곱셈으로 <b>${n} × ${g} = ${g * n}</b> 이라고 써요 ✨<br><small>“${n} 곱하기 ${g}”라고 읽어요</small></div>` }; } },
+  { id: 'l8', emoji: '🦖', title: '두 자리 덧셈', desc: '도전! 큰 수 더하기',
+    gen() {
+      if (Math.random() < 0.3) { const a = rnd(1, 5) * 10, b = rnd(1, 4) * 10;
+        return { key: `${a}+${b}`, eq: [a, '+', b, '=', '{B0}'], ans: [a + b], hint: `<p>🪙10이 ${a / 10}개, 🪙10이 ${b / 10}개<br>모두 10이 몇 개일까?</p>` }; }
+      const a = rnd(11, 39), b = rnd(2, 9), t = a - (a % 10), o = a % 10;
+      return { key: `${a}+${b}`, eq: [a, '+', b, '=', '{B0}'], ans: [a + b],
+        hint: `<p>${eun(a)} ${gwa(t)} ${o}<br>${o} + ${b} = ${o + b}<br>${t} + ${o + b} = ?</p>` }; } },
+];
+
+/* ---------- 문제 만들기: 10살 ---------- */
+function mulQ(a, b) {
+  return { key: `${a}x${b}`, eq: [a, '×', b, '=', '{B0}'], ans: [a * b], fact: [a, b], near: [a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b],
+    hint: (b === 1 ? '<p>어떤 수에 1을 곱하면 그대로예요!</p>' : `<p>${a}단을 떠올려 봐요 🎵<br>${a} × ${b - 1} = ${a * (b - 1)}<br>여기에 ${eul(a)} 하나 더 더하면?</p>`) + arrayDots(b, a) };
+}
+function divQ(d, q) {
+  const n = d * q;
+  return { key: `${n}/${d}`, eq: [n, '÷', d, '=', '{B0}'], ans: [q], fact: [d, q], near: [q + 1, q - 1, q + 2, d],
+    hint: `<p>곱셈으로 바꿔 생각해요!<br><b>${d} × ? = ${n}</b><br>${d}단: ${dan(d, Math.min(9, q + 1))}</p>` };
+}
+const STORIES = [
+  () => { const a = rnd(3, 9), b = rnd(2, 9), e = pick(['🍪', '🍬', '🧁', '🍩']); return { text: `한 상자에 ${e} <b>${a}</b>개씩 들어 있어요.<br><b>${b}</b>상자에는 모두 몇 개일까요?`, ans: [a * b], unit: '개', f: `${a} × ${b}`, fact: [a, b] }; },
+  () => { const d = rnd(2, 6), q = rnd(2, 9); return { text: `🍓 딸기 <b>${d * q}</b>개를 <b>${d}</b>명이 똑같이 나누어 먹으면<br>한 명이 몇 개씩 먹을까요?`, ans: [q], unit: '개', f: `${d * q} ÷ ${d}`, fact: [d, q] }; },
+  () => { const d = rnd(3, 8), q = rnd(2, 9); return { text: `🔮 구슬 <b>${d * q}</b>개를 한 봉지에 <b>${d}</b>개씩 담으면<br>봉지는 몇 개 필요할까요?`, ans: [q], unit: '봉지', f: `${d * q} ÷ ${d}`, fact: [d, q] }; },
+  () => { const b = rnd(2, 9); return { text: `🐞 무당벌레 한 마리는 다리가 <b>6</b>개!<br>무당벌레 <b>${b}</b>마리의 다리는 모두 몇 개일까요?`, ans: [6 * b], unit: '개', f: `6 × ${b}`, fact: [6, b] }; },
+  () => { const b = rnd(2, 9); return { text: `🐙 문어 한 마리는 다리가 <b>8</b>개!<br>문어 <b>${b}</b>마리의 다리는 모두 몇 개일까요?`, ans: [8 * b], unit: '개', f: `8 × ${b}`, fact: [8, b] }; },
+  () => { const q = rnd(2, 9); return { text: `🚗 자동차 한 대에는 바퀴가 <b>4</b>개!<br>바퀴가 <b>${4 * q}</b>개라면 자동차는 몇 대일까요?`, ans: [q], unit: '대', f: `${4 * q} ÷ 4`, fact: [4, q] }; },
+  () => { const a = rnd(2, 9), b = rnd(3, 9); return { text: `🚌 버스 한 줄에 <b>${a}</b>명씩 앉아요.<br><b>${b}</b>줄에는 모두 몇 명이 앉을까요?`, ans: [a * b], unit: '명', f: `${a} × ${b}`, fact: [a, b] }; },
+  () => { const a = rnd(2, 5), b = rnd(3, 9); return { text: `⚽ 축구공이 <b>${b}</b>개 있어요.<br>농구공은 축구공의 <b>${a}</b>배예요. 농구공은 몇 개일까요?`, ans: [a * b], unit: '개', f: `${b} × ${a}`, fact: [b, a] }; },
+  () => { const d = rnd(2, 5), q = rnd(3, 9); return { text: `📒 색종이 <b>${d * q}</b>장을 한 사람에게 <b>${d}</b>장씩 주면<br>몇 명에게 줄 수 있을까요?`, ans: [q], unit: '명', f: `${d * q} ÷ ${d}`, fact: [d, q] }; },
+  () => { const d = rnd(3, 6), q = rnd(2, 7), r = rnd(1, d - 1), n = d * q + r; return { text: `🍬 사탕 <b>${n}</b>개를 <b>${d}</b>명이 똑같이 나누어 가지면<br>한 명이 몇 개씩 갖고, 몇 개가 남을까요?`, ans: [q, r], d, labels: ['한 명에', '남는 것'], f: `${n} ÷ ${d}` }; },
+];
+
+const BIG = [
+  { id: 'b1', emoji: '🍩', title: '묶음 곱셈', desc: '몇 개씩 몇 묶음 = 곱셈!',
+    gen() { const n = rnd(2, 5), g = rnd(2, 5), e = pick(FOODS);
+      return { key: `${n}x${g}`, text: `${e} <b>${n}</b>개씩 <b>${g}</b>묶음`, say: `${n}개씩 ${g}묶음은 모두 몇 개일까?`, visual: groups(g, n, e), eq: [n, '×', g, '=', '{B0}'], ans: [n * g], fact: [n, g], near: [n * (g + 1), n * (g - 1), n + g],
+        hint: `<p>${n}씩 ${g}번 더해요<br>${Array(g).fill(n).join(' + ')} = ?</p>` }; } },
+  { id: 'b2', emoji: '✌️', title: '구구단 2~5단', desc: '쉬운 단부터 차근차근',
+    gen() { return mulQ(rnd(2, 5), rnd(1, 9)); } },
+  { id: 'b3', emoji: '🔥', title: '구구단 6~9단', desc: '어려운 단 정복하기',
+    gen() { return mulQ(rnd(6, 9), rnd(1, 9)); } },
+  { id: 'b4', emoji: '🍕', title: '똑같이 나누기', desc: '나눗셈 맛보기 · 그림으로',
+    gen() { const k = rnd(2, 4), q = rnd(2, 5), n = k * q, e = pick(FOODS), kids = shuffle(KIDS.slice()).slice(0, k);
+      return { key: `s${n}/${k}`, text: `${e} <b>${n}</b>개를 <b>${k}</b>명이 똑같이 나눠요.<br>한 명이 몇 개씩?`, say: `${n}개를 ${k}명이 똑같이 나누면 한 명이 몇 개씩 가질까?`, sayEq: false,
+        visual: `<div class="pics">${items(n, e)}</div><div class="friends">${kids.join('')}</div>`, eq: [n, '÷', k, '=', '{B0}'], ans: [q], fact: [k, q],
+        hint: `<p>한 명에게 하나씩 차례로 나눠 줘 봐요!<br>또는 <b>${k} × ? = ${n}</b></p>`, teach: true,
+        explain: `<div class="explain"><div class="groups">${kids.map((kd) => `<div class="plate"><div class="kid">${kd}</div>${items(q, e)}</div>`).join('')}</div>한 명이 <b>${q}</b>개씩!<br><small>${k} × ${q} = ${n} 이니까 ${n} ÷ ${k} = ${q}</small></div>` }; } },
+  { id: 'b5', emoji: '➗', title: '나눗셈 ÷2~÷5', desc: '곱셈을 거꾸로!',
+    gen() { return divQ(rnd(2, 5), rnd(1, 9)); } },
+  { id: 'b6', emoji: '🎯', title: '나눗셈 ÷6~÷9', desc: '큰 수로 나누기',
+    gen() { return divQ(rnd(6, 9), rnd(1, 9)); } },
+  { id: 'b7', emoji: '🧩', title: '빈칸 채우기', desc: '□ × 4 = 28 · 36 ÷ □ = 6',
+    gen() { const a = rnd(2, 9), b = rnd(2, 9), p = a * b, t = rnd(0, 3);
+      if (t === 0) return { key: `?x${b}=${p}`, eq: ['{B0}', '×', b, '=', p], ans: [a], fact: [a, b], hint: `<p>${b}단에서 ${eul(p)} 찾아봐요!<br>${dan(b, 9)}</p>` };
+      if (t === 1) return { key: `${a}x?=${p}`, eq: [a, '×', '{B0}', '=', p], ans: [b], fact: [a, b], hint: `<p>${a}단에서 ${eul(p)} 찾아봐요!<br>${dan(a, 9)}</p>` };
+      if (t === 2) return { key: `${p}/?=${a}`, eq: [p, '÷', '{B0}', '=', a], ans: [b], fact: [b, a], hint: `<p>곱셈으로 바꾸면<br><b>${a} × ? = ${p}</b></p>` };
+      return { key: `?/${b}=${a}`, eq: ['{B0}', '÷', b, '=', a], ans: [p], fact: [b, a], hint: `<p>나눗셈의 반대는 곱셈!<br><b>${b} × ${a} = ?</b></p>` }; } },
+  { id: 'b8', emoji: '🍭', title: '나머지 있는 나눗셈', desc: '17 ÷ 5 = 3 … 2',
+    gen() { const d = rnd(2, 9), q = rnd(1, 9), r = rnd(1, d - 1), n = d * q + r;
+      return { key: `${n}r${d}`, eq: [n, '÷', d, '=', '{B0}', '…', '{B1}'], small: true, labels: ['몫', '나머지'], ans: [q, r], d,
+        hint: `<p>${d}단에서 ${n}보다 크지 않은 가장 큰 수를 찾아요<br>${dan(d, Math.min(9, q + 1))}<br>나머지 = ${n} − 그 수</p>`,
+        explain: `<div class="explain">${d} × ${q} = ${d * q}, ${n} − ${d * q} = ${r}<br><b>${n} ÷ ${d} = ${q} … ${r}</b><br><small>나머지 ${eun(r)} 나누는 수 ${d}보다 작아야 해요 ✔</small></div>` }; } },
+  { id: 'b9', emoji: '📖', title: '이야기 문제', desc: '곱셈일까? 나눗셈일까?',
+    gen() { const s = pick(STORIES)();
+      const eq = s.ans.length === 2 ? ['{B0}', 'u:개씩,', '{B1}', 'u:개 남음'] : ['{B0}', 'u:' + s.unit];
+      return { key: s.text, text: s.text, say: s.text.replace(/<[^>]+>/g, ' '), sayEq: false, eq, ans: s.ans, fact: s.fact, d: s.d, labels: s.labels,
+        hint: `<p>‘~씩 ~묶음’, ‘~배’는 곱셈 ✖️<br>‘똑같이 나누기’, ‘~씩 담기’는 나눗셈 ➗<br>식으로 쓰면 <b>${s.f} = ?</b></p>`,
+        explain: `<div class="explain">식: <b>${s.f} = ${s.ans.length === 2 ? s.ans[0] + ' … ' + s.ans[1] : s.ans[0]}</b></div>` }; } },
+  { id: 'b10', emoji: '🏆', title: '두 자리 × 한 자리', desc: '도전! 23 × 3',
+    gen() { const t = rnd(1, 4), o = rnd(1, 9), a = t * 10 + o, b = rnd(2, t >= 3 ? 4 : 6);
+      return { key: `${a}x${b}`, eq: [a, '×', b, '=', '{B0}'], ans: [a * b], near: [a * b + 10, a * b - 10, t * 10 * b + o, a * b + b],
+        hint: `<p>${eul(a)} ${gwa(t * 10)} ${o}로 나눠요<br>${t * 10} × ${b} = ${t * 10 * b}<br>${o} × ${b} = ${o * b}<br>${t * 10 * b} + ${o * b} = ?</p>` }; } },
+];
+const WEAK = { id: 'weak', emoji: '🩹', title: '약한 구구단 연습',
+  gen() { const list = weakFacts();
+    if (list.length < 3) return mulQ(rnd(2, 9), rnd(2, 9));
+    const [a, b] = pick(list);
+    return Math.random() < 0.6 ? mulQ(a, b) : divQ(a, b); } };
+
+const TRACKS = {
+  little: { id: 'little', age: '7살', emoji: '🐣', goal: '🏠', title: '덧셈 탐험대', sub: '합이 20까지 · 곱셈 맛보기', levels: LITTLE, defInput: 'choice',
+    stickers: ['🐶', '🐱', '🐰', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🐧', '🐤', '🦊', '🐮', '🐷', '🐹', '🦄', '🐳', '🐬', '🦋', '🐞', '🐢', '🦖', '🦕', '🐙', '🦀', '🐠', '🦒', '🐘', '🦔', '🦩', '🦜', '🐿️', '🦦', '🐝', '🌈'] },
+  big: { id: 'big', age: '10살', emoji: '🚀', goal: '🪐', title: '곱셈·나눗셈 챌린지', sub: '구구단 · 나눗셈 · 나머지', levels: BIG, defInput: 'pad',
+    stickers: ['🚀', '🛸', '🪐', '🌍', '🌙', '☄️', '🛰️', '👽', '🤖', '🦾', '⚡', '🔥', '💎', '👑', '🏆', '🥇', '🎯', '🧩', '🎮', '🕹️', '🏎️', '🚁', '🚂', '⛵', '🏰', '🗿', '🐉', '🦅', '🦈', '🐺', '🦂', '🕷️', '🦖', '🌋', '🌌', '🌠'] },
+};
+
+/* ---------- 저장 ---------- */
+const KEY = 'mathplay.v1';
+function defState() {
+  const t = {};
+  for (const id in TRACKS) t[id] = { name: '', stars: {}, best: 0, input: TRACKS[id].defInput, open: false, stickers: [], facts: {} };
+  return { sound: true, tracks: t };
+}
+function load() {
+  const d = defState();
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (s && s.tracks) { for (const id in d.tracks) d.tracks[id] = Object.assign(d.tracks[id], s.tracks[id] || {}); d.sound = s.sound !== false; }
+  } catch (e) { /* 저장소를 못 쓰면 새로 시작 */ }
+  return d;
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* 무시 */ } }
+let S = load();
+
+function weakFacts() {
+  const f = S.tracks.big.facts;
+  return Object.keys(f).map((k) => ({ k, s: f[k].bad * 2 - f[k].ok })).filter((x) => x.s > 0)
+    .sort((a, b) => b.s - a.s).slice(0, 12).map((x) => x.k.split('x').map(Number));
+}
+function recordFact(fact, ok) {
+  const [a, b] = fact;
+  if (!(a >= 1 && a <= 9 && b >= 1 && b <= 9)) return;
+  const f = S.tracks.big.facts, k = `${a}x${b}`;
+  f[k] = f[k] || { ok: 0, bad: 0 };
+  ok ? f[k].ok++ : f[k].bad++;
+}
+function unlocked(tid, i) {
+  const T = S.tracks[tid];
+  return i === 0 || T.open || (T.stars[TRACKS[tid].levels[i - 1].id] || 0) > 0;
+}
+function award(tid) {
+  const T = S.tracks[tid], left = TRACKS[tid].stickers.filter((s) => !T.stickers.includes(s));
+  if (!left.length) return null;
+  const s = pick(left); T.stickers.push(s); return s;
+}
+const totalStars = (tid) => Object.values(S.tracks[tid].stars).reduce((a, b) => a + b, 0);
+const displayName = (tid) => S.tracks[tid].name || (TRACKS[tid].age + ' 친구');
+
+/* ---------- 소리 ---------- */
+let actx = null;
+function tone(freq, dur, type = 'sine', when = 0, vol = 0.15) {
+  if (!S.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur);
+  } catch (e) { /* 소리 없이 진행 */ }
+}
+const sfx = {
+  ok() { tone(660, 0.12, 'triangle'); tone(880, 0.2, 'triangle', 0.1); },
+  bad() { tone(240, 0.22, 'sawtooth', 0, 0.07); tone(180, 0.25, 'sawtooth', 0.12, 0.07); },
+  tap() { tone(520, 0.05, 'sine', 0, 0.06); },
+  win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.28, 'triangle', i * 0.13)); },
+};
+function speak(text) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR'; u.rate = 0.9; speechSynthesis.speak(u);
+  } catch (e) { /* 무시 */ }
+}
+const SAY_OP = { '+': '더하기', '×': '곱하기', '÷': '나누기', '=': '는', '…': '나머지', ',': ',' };
+function sayQ(q) {
+  const eqs = q.eq.map((p) => (/^\{B/.test(p) ? '네모' : SAY_OP[p] || String(p).replace(/^u:/, ''))).join(' ');
+  speak((q.say ? q.say + ' ' : '') + (q.sayEq === false ? '' : eqs));
+}
+
+/* ---------- 효과 ---------- */
+function confetti(n = 40) {
+  const fx = $('#fx'), em = ['🎉', '⭐', '🎈', '✨', '💛', '🌟', '🍬', '💜'];
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('span');
+    s.className = 'cf'; s.textContent = pick(em);
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.animationDuration = 1.6 + Math.random() * 1.6 + 's';
+    s.style.animationDelay = Math.random() * 0.4 + 's';
+    s.style.fontSize = 18 + Math.random() * 22 + 'px';
+    fx.appendChild(s); setTimeout(() => s.remove(), 3800);
+  }
+}
+function shake(el) { if (!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+
+/* =========================================================
+   화면
+   ========================================================= */
+const app = $('#app');
+let view = { name: 'home' };
+let play = null;
+
+function go(v) {
+  if (play && play.timer) clearInterval(play.timer);
+  if (v.name !== 'play') play = null;
+  view = v; render(); window.scrollTo(0, 0);
+}
+function render() {
+  const f = { home: renderHome, levels: renderLevels, stickers: renderStickers, board: renderBoard, result: renderResult }[view.name];
+  if (f) f();
+}
+
+function renderHome() {
+  document.body.className = '';
+  app.innerHTML = `<div class="screen">
+    <div class="topbar"><a class="icon" href="/" title="게임 모음">🏠</a><div class="ttl"></div><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
+    <div class="home-hero"><div class="logo">🧮</div><h1>재미있는 수학놀이</h1><p>누가 할까요? 골라 주세요!</p></div>
+    <div class="tracks">
+      ${Object.values(TRACKS).map((T) => `
+        <button class="track-card t-${T.id}" data-act="track" data-t="${T.id}">
+          <span class="edit-name" data-act="rename" data-t="${T.id}">✏️ 이름</span>
+          <div class="te">${T.emoji}</div>
+          <div>
+            <span class="age">${T.age}</span> <span class="who">${displayName(T.id)}</span>
+            <h2>${T.title}</h2>
+            <div class="ts">${T.sub}</div>
+            <div class="tstat">⭐ ${totalStars(T.id)} / ${T.levels.length * 3} · 🎁 스티커 ${S.tracks[T.id].stickers.length}개</div>
+          </div>
+        </button>`).join('')}
+    </div>
+    <div class="home-foot"><a class="btn ghost" href="/" style="text-decoration:none">🏠 게임 모음으로</a></div>
+  </div>`;
+}
+
+function renderLevels() {
+  const tid = view.t, T = TRACKS[tid], st = S.tracks[tid];
+  document.body.className = 't-' + tid;
+  app.innerHTML = `<div class="screen">
+    <div class="topbar"><button class="icon" data-act="home">←</button><div class="ttl">${T.emoji} ${T.title}</div><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
+    <div class="track-head"><div class="te">${T.emoji}</div><div><h2>${displayName(tid)}의 ${T.title}</h2><p>⭐ ${totalStars(tid)} / ${T.levels.length * 3} · 별을 모아서 다음 단계를 열어요!</p></div></div>
+    <div class="quick">
+      <button data-act="start" data-l="time">⏱️ 60초 도전<small>최고 기록 ${st.best}점</small></button>
+      <button data-act="stickers">🎁 스티커북<small>${st.stickers.length} / ${T.stickers.length}</small></button>
+      ${tid === 'big' ? `<button data-act="board">📊 구구단 판<small>잘하는 단·약한 단 보기</small></button>` : ''}
+    </div>
+    <div class="levels">
+      ${T.levels.map((L, i) => { const ok = unlocked(tid, i), s = st.stars[L.id] || 0;
+        return `<button class="lv ${ok ? '' : 'locked'}" data-act="start" data-l="${L.id}" ${ok ? '' : 'data-locked="1"'}>
+          ${ok ? '' : '<span class="lock">🔒</span>'}
+          <div class="le">${L.emoji}</div>
+          <div><div class="ln">${i + 1}단계</div><div class="lt">${L.title}</div><div class="ld">${L.desc}</div>
+          <div class="ls">${[1, 2, 3].map((k) => `<span class="${k <= s ? '' : 'off'}">★</span>`).join('')}</div></div>
+        </button>`; }).join('')}
+    </div>
+    <div class="settings">
+      <div class="row">✍️ 답 하는 방법
+        <span class="seg"><button class="${st.input === 'choice' ? 'on' : ''}" data-act="input" data-v="choice">보기 고르기</button><button class="${st.input === 'pad' ? 'on' : ''}" data-act="input" data-v="pad">숫자 쓰기</button></span></div>
+      <div class="row">🔓 모든 단계 열기 <small style="color:var(--muted)">(부모님용)</small>
+        <span class="seg"><button class="${st.open ? '' : 'on'}" data-act="open" data-v="0">끄기</button><button class="${st.open ? 'on' : ''}" data-act="open" data-v="1">켜기</button></span></div>
+    </div>
+  </div>`;
+}
+
+function renderStickers() {
+  const tid = view.t, T = TRACKS[tid], own = S.tracks[tid].stickers;
+  document.body.className = 't-' + tid;
+  app.innerHTML = `<div class="screen">
+    <div class="topbar"><button class="icon" data-act="back">←</button><div class="ttl">🎁 ${displayName(tid)}의 스티커북</div><span class="icon" style="visibility:hidden"></span></div>
+    <p style="text-align:center;font-size:20px;margin:6px 0 14px">${own.length} / ${T.stickers.length}개 모았어요! ${own.length === T.stickers.length ? '🏆 전부 다 모았어요!' : '단계를 깨면 스티커를 받아요 ✨'}</p>
+    <div class="sgrid">${T.stickers.map((s) => own.includes(s) ? `<div>${s}</div>` : '<div class="no">❔</div>').join('')}</div>
+  </div>`;
+}
+
+function renderBoard() {
+  document.body.className = 't-big';
+  const f = S.tracks.big.facts;
+  const cls = (k) => { const v = f[k]; if (!v) return ''; if (v.ok >= 3 && v.ok >= v.bad * 3) return 'g2'; if (v.bad > v.ok) return 'r'; if (v.bad > 0) return 'y'; return 'g1'; };
+  let rows = '';
+  for (let a = 2; a <= 9; a++) {
+    rows += `<tr><th>${a}단</th>`;
+    for (let b = 1; b <= 9; b++) rows += `<td class="${cls(a + 'x' + b)}" data-act="fact" data-a="${a}" data-b="${b}">×${b}</td>`;
+    rows += '</tr>';
+  }
+  const weak = weakFacts().length;
+  app.innerHTML = `<div class="screen">
+    <div class="topbar"><button class="icon" data-act="back">←</button><div class="ttl">📊 구구단 판</div><span class="icon" style="visibility:hidden"></span></div>
+    <div class="panel">
+      <div class="factmsg" id="factmsg">칸을 누르면 답을 알려줘요 👆</div>
+      <table class="board">${rows}</table>
+      <div class="legend"><span style="--c:#51cf66">완벽해요</span><span style="--c:#d3f9d8">맞혔어요</span><span style="--c:#fff3bf">가끔 틀려요</span><span style="--c:#ffc9c9">연습이 필요해요</span><span style="--c:#f1f3f8">아직 안 풀었어요</span></div>
+    </div>
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn" data-act="start" data-l="weak">🩹 약한 구구단 연습${weak >= 3 ? ` (${weak}개)` : ''}</button>
+      ${weak < 3 ? '<p style="color:var(--muted)">아직 틀린 문제가 적어서 섞어서 연습해요</p>' : ''}
+    </div>
+  </div>`;
+}
+
+/* ---------- 플레이 ---------- */
+function startLevel(tid, lid) {
+  const T = TRACKS[tid], time = lid === 'time';
+  const level = time ? null : lid === 'weak' ? WEAK : T.levels.find((l) => l.id === lid);
+  play = { tid, lid, level, time, idx: 0, total: time ? Infinity : 10, results: [], mistakes: 0, combo: 0, maxCombo: 0, score: 0, firstOk: 0, recent: [], solved: 0 };
+  view = { name: 'play', t: tid };
+  document.body.className = 't-' + tid;
+  renderPlayShell();
+  newQ();
+  if (time) {
+    const p = play; p.end = Date.now() + 60000;
+    p.timer = setInterval(() => {
+      if (play !== p) return clearInterval(p.timer);
+      const left = Math.max(0, (p.end - Date.now()) / 1000);
+      const fill = $('#tfill'); if (fill) fill.style.width = (left / 60) * 100 + '%';
+      const tl = $('#tleft'); if (tl) tl.textContent = Math.ceil(left);
+      if (left <= 0) { clearInterval(p.timer); finish(); }
+    }, 100);
+  }
+}
+function timeLevels(tid) {
+  const L = TRACKS[tid].levels, out = [];
+  L.forEach((l, i) => { if (unlocked(tid, i)) out.push(l); });
+  return out;
+}
+function genQ() {
+  const p = play;
+  for (let k = 0; k < 30; k++) {
+    const l = p.time ? pick(timeLevels(p.tid)) : p.level, q = l.gen();
+    if (!p.recent.includes(q.key) || k === 29) { p.recent.push(q.key); if (p.recent.length > 6) p.recent.shift(); return q; }
+  }
+}
+const label = (v) => (v.length === 2 ? `${v[0]} … ${v[1]}` : `${v[0]}`);
+function makeChoices(q) {
+  const ans = q.ans, seen = new Set([label(ans)]), out = [ans];
+  let cands;
+  if (ans.length === 2) {
+    const [a, b] = ans, d = q.d || 99;
+    cands = shuffle([[a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1], [a + 1, b - 1], [a - 1, b + 1], [a + 2, b]]).filter(([x, y]) => x >= 0 && y >= 0 && y < d);
+  } else {
+    const x = ans[0];
+    cands = [...shuffle((q.near || []).slice()), ...shuffle([x + 1, x - 1, x + 2, x - 2]), ...shuffle([x + 10, x - 10, x + 3, x - 3])]
+      .filter((v) => v >= 0).map((v) => [v]);
+  }
+  for (const c of cands) { if (out.length >= 4) break; const k = label(c); if (!seen.has(k)) { seen.add(k); out.push(c); } }
+  let extra = 4;
+  while (out.length < 4) { const c = ans.length === 2 ? [ans[0] + extra, ans[1]] : [ans[0] + extra]; if (!seen.has(label(c))) { seen.add(label(c)); out.push(c); } extra++; }
+  return shuffle(out);
+}
+
+function renderPlayShell() {
+  const p = play, T = TRACKS[p.tid];
+  const title = p.time ? '⏱️ 60초 도전' : `${p.level.emoji} ${p.level.title}`;
+  app.innerHTML = `<div class="screen play">
+    <div class="topbar"><button class="icon" data-act="quit">✕</button><div class="ttl">${title}</div>
+      <button class="icon" data-act="speak" title="문제 읽어주기">🔊</button><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
+    ${p.time
+      ? `<div class="timebox"><div class="timebar"><div id="tfill"></div></div><div class="tn">⏰<span id="tleft">60</span> · ⭐<span id="score">0</span></div></div>`
+      : '<div class="path" id="path"></div>'}
+    <div class="qcard" id="qcard"></div>
+    <div class="answer" id="answer"></div>
+  </div>`;
+}
+function renderPath() {
+  const p = play, el = $('#path');
+  if (!el) return;
+  const T = TRACKS[p.tid];
+  let h = '';
+  for (let i = 0; i < p.total; i++) {
+    const done = i < p.idx;
+    h += `<span class="step ${done ? 'done' : ''} ${i === p.idx ? 'cur' : ''}">${done ? (p.results[i] ? '⭐' : '🌱') : ''}${i === p.idx ? `<span class="runner">${T.emoji}</span>` : ''}</span>`;
+  }
+  el.innerHTML = h + `<span class="goal">${T.goal}</span>`;
+}
+function renderEq(q) {
+  return q.eq.map((part) => {
+    const m = /^\{B(\d)\}$/.exec(part);
+    if (m) return `<span class="blank" data-slot="${m[1]}" data-act="slot">${q.labels ? `<small>${q.labels[m[1]]}</small>` : ''}<b></b></span>`;
+    if (part === ',') return '<span class="comma">,</span>';
+    if (SAY_OP[part]) return `<span class="op">${part}</span>`;
+    if (typeof part === 'string' && part.startsWith('u:')) return `<span class="unit">${part.slice(2)}</span>`;
+    return `<span class="num">${part}</span>`;
+  }).join('');
+}
+function newQ() {
+  const p = play, q = genQ();
+  Object.assign(p, { q, tries: 0, input: ['', ''], slot: 0, locked: false });
+  const mode = S.tracks[p.tid].input;
+  p.choices = mode === 'choice' ? makeChoices(q) : null;
+  renderPath();
+  $('#qcard').innerHTML = `
+    ${!p.time && q.hint ? '<button class="hintbtn" data-act="hint">💡 힌트</button>' : ''}
+    <div class="qtext">${q.text || ''}</div>
+    <div class="visual">${q.visual || ''}</div>
+    <div class="eq ${q.small ? 'small' : ''} ${q.labels ? 'has-label' : ''}" id="eq">${renderEq(q)}</div>
+    <div class="hintbox" id="hint" hidden></div>
+    <div class="feedback" id="fb"></div>`;
+  renderAnswer();
+  updateBlanks();
+}
+function renderAnswer() {
+  const p = play, el = $('#answer');
+  if (p.choices) {
+    el.innerHTML = `<div class="choices">${p.choices.map((c, i) => `<button class="choice c${i}" data-act="choose" data-i="${i}">${label(c)}</button>`).join('')}</div>`;
+  } else {
+    el.innerHTML = `<div class="pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-act="key" data-k="${n}">${n}</button>`).join('')}
+      <button class="del" data-act="key" data-k="del">⌫</button><button data-act="key" data-k="0">0</button><button class="ok" data-act="key" data-k="ok">✔</button></div>`;
+  }
+}
+function updateBlanks() {
+  const p = play;
+  document.querySelectorAll('#eq .blank').forEach((b) => {
+    const i = +b.dataset.slot;
+    b.querySelector('b').textContent = p.input[i];
+    b.classList.toggle('active', !p.choices && !p.locked && i === p.slot);
+  });
+}
+function fillAnswer(cls) {
+  const q = play.q;
+  document.querySelectorAll('#eq .blank').forEach((b) => { const i = +b.dataset.slot; b.querySelector('b').textContent = q.ans[i]; b.classList.remove('active'); b.classList.add(cls); });
+}
+function fb(html, cls) { const el = $('#fb'); if (el) { el.className = 'feedback ' + cls; el.innerHTML = html; } }
+function showHint() { const q = play.q, h = $('#hint'); if (h && q.hint) { h.innerHTML = q.hint; h.hidden = false; } }
+function later(fn, ms) { const p = play; setTimeout(() => { if (play === p) fn(); }, ms); }
+function showNext(explain) {
+  const q = play.q;
+  if (explain && q.explain) { const h = $('#hint'); h.innerHTML = q.explain; h.hidden = false; }
+  $('#answer').innerHTML = '<button class="btn nextbtn" data-act="next">다음 ▶</button>';
+}
+
+function onKey(k) {
+  const p = play;
+  if (!p || p.locked || p.choices) return;
+  const n = p.q.ans.length;
+  sfx.tap();
+  if (k === 'del') {
+    if (p.input[p.slot] === '' && p.slot > 0) p.slot--;
+    p.input[p.slot] = p.input[p.slot].slice(0, -1);
+  } else if (k === 'ok') {
+    if (p.input[p.slot] === '') { shake($('#eq')); return; }
+    if (p.slot < n - 1) { p.slot++; updateBlanks(); return; }
+    if (p.input.slice(0, n).some((v) => v === '')) { p.slot = p.input.findIndex((v) => v === ''); updateBlanks(); return; }
+    return submit(p.input.slice(0, n).map(Number));
+  } else if (p.input[p.slot].length < 3) {
+    p.input[p.slot] = (p.input[p.slot] + k).replace(/^0+(?=\d)/, '');
+  }
+  updateBlanks();
+}
+function submit(arr, btn) {
+  const p = play, q = p.q;
+  if (!p || p.locked) return;
+  const ok = arr.length === q.ans.length && arr.every((v, i) => v === q.ans[i]);
+  if (p.tid === 'big' && q.fact && p.tries === 0) { recordFact(q.fact, ok); save(); }
+  if (ok) onCorrect(btn); else onWrong(arr, btn);
+}
+function onCorrect(btn) {
+  const p = play, q = p.q;
+  p.locked = true; sfx.ok();
+  if (btn) btn.classList.add('rightc');
+  const first = p.tries === 0;
+  p.results[p.idx] = first;
+  if (first) { p.firstOk++; p.combo++; p.maxCombo = Math.max(p.maxCombo, p.combo); }
+  fillAnswer('good');
+  let msg = pick(PRAISE);
+  if (first && p.combo >= 3) msg += ` <span class="combo">🔥 ${p.combo}연속!</span>`;
+  confetti(first && p.combo >= 3 ? 14 : 6);
+  if (p.time) { p.score += 1 + (p.combo >= 5 ? 1 : 0); const s = $('#score'); if (s) s.textContent = p.score; fb(msg, 'good'); later(nextQ, 450); return; }
+  fb(msg, 'good');
+  if (q.teach && q.explain) { showNext(true); return; }
+  later(nextQ, 1000);
+}
+function onWrong(arr, btn) {
+  const p = play, q = p.q;
+  sfx.bad(); p.combo = 0; shake($('#qcard'));
+  if (btn) { btn.classList.add('wrongc'); btn.disabled = true; }
+  if (p.time) { p.locked = true; fillAnswer('reveal'); fb(`정답은 <b>${label(q.ans)}</b>`, 'bad'); later(nextQ, 900); return; }
+  p.tries++;
+  if (p.tries === 1) {
+    p.mistakes++;
+    let m = pick(RETRY);
+    if (q.ans.length === 2 && arr[0] === q.ans[0]) m = (q.labels[0] === '몫' ? '몫은 맞았어요! 👍' : '앞의 답은 맞았어요! 👍') + ' 나머지를 다시 봐요';
+    if (q.d && arr.length === 2 && arr[1] >= q.d) m = `나머지는 ${q.d}보다 작아야 해요! 🤔`;
+    fb(m, 'bad'); showHint();
+    p.input = ['', '']; p.slot = 0; updateBlanks();
+    return;
+  }
+  p.locked = true; p.results[p.idx] = false;
+  fillAnswer('reveal');
+  fb(`정답은 <b>${label(q.ans)}</b> 이에요. 다음엔 꼭 맞힐 수 있어! 💪`, 'bad');
+  showNext(true);
+}
+function nextQ() {
+  const p = play;
+  p.idx++;
+  if (!p.time && p.idx >= p.total) return finish();
+  newQ();
+}
+function finish() {
+  const p = play, T = S.tracks[p.tid];
+  if (p.timer) clearInterval(p.timer);
+  const r = { tid: p.tid, lid: p.lid, time: p.time, score: p.score, firstOk: p.firstOk, total: p.total, maxCombo: p.maxCombo, stickers: [], stars: 0, newBest: false };
+  if (p.time) {
+    if (p.score > T.best) { r.newBest = true; T.best = p.score; if (p.score >= 8) r.stickers.push(award(p.tid)); }
+  } else {
+    r.stars = p.mistakes <= 1 ? 3 : p.mistakes <= 3 ? 2 : 1;
+    const prev = T.stars[p.lid] || 0;
+    if (p.lid !== 'weak') T.stars[p.lid] = Math.max(prev, r.stars);
+    r.stickers.push(award(p.tid));
+    if (r.stars === 3 && prev < 3 && p.lid !== 'weak') r.stickers.push(award(p.tid));
+    const L = TRACKS[p.tid].levels, i = L.findIndex((l) => l.id === p.lid);
+    r.next = i >= 0 && i < L.length - 1 ? L[i + 1].id : null;
+    r.unlockedNew = r.next && prev === 0;
+  }
+  r.stickers = r.stickers.filter(Boolean);
+  save(); sfx.win(); confetti(50);
+  play = null;
+  view = { name: 'result', t: r.tid, r };
+  render();
+}
+function renderResult() {
+  const r = view.r, T = TRACKS[r.tid];
+  document.body.className = 't-' + r.tid;
+  const lvTitle = r.time ? '60초 도전' : r.lid === 'weak' ? WEAK.title : T.levels.find((l) => l.id === r.lid).title;
+  const msgs = { 3: '완벽해요! 수학 왕이에요 👑', 2: '아주 잘했어요! 조금만 더 하면 별 3개! 💪', 1: '끝까지 해냈어요! 다시 하면 더 잘할 거예요 😊' };
+  app.innerHTML = `<div class="screen result">
+    <div class="re">${r.time ? '⏱️' : r.stars === 3 ? '🏆' : '🎉'}</div>
+    <h2>${lvTitle} ${r.time ? '끝!' : '완료!'}</h2>
+    ${r.time
+      ? `<div class="bigscore">${r.score}점</div><p>${r.newBest ? '🎊 새로운 최고 기록이에요!' : `최고 기록: ${S.tracks[r.tid].best}점`}</p><p>최고 연속 정답 🔥 ${r.maxCombo}</p>`
+      : `<div class="stars">${[1, 2, 3].map((k) => `<span class="${k <= r.stars ? '' : 'off'}" style="animation-delay:${k * 0.25}s">★</span>`).join('')}</div>
+         <p>${msgs[r.stars]}</p><p>한 번에 맞힌 문제 ${r.firstOk} / ${r.total} · 최고 연속 🔥 ${r.maxCombo}</p>
+         ${r.unlockedNew ? '<p>🔓 다음 단계가 열렸어요!</p>' : ''}`}
+    ${r.stickers.length ? `<div class="newsticker">새 스티커를 받았어요!<br>${r.stickers.map((s) => `<span>${s}</span>`).join('')}</div>` : ''}
+    <div class="acts">
+      ${r.next ? `<button class="btn" data-act="start" data-l="${r.next}">다음 단계로 ▶</button>` : ''}
+      <button class="btn ${r.next ? 'ghost' : ''}" data-act="start" data-l="${r.lid}">🔁 다시 하기</button>
+      <button class="btn ghost" data-act="levels">📋 단계 고르기</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- 입력 처리 ---------- */
+app.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act, t = el.dataset.t;
+  switch (act) {
+    case 'rename': {
+      e.stopPropagation();
+      const n = prompt(`${TRACKS[t].age} 친구의 이름을 알려 주세요`, S.tracks[t].name);
+      if (n !== null) { S.tracks[t].name = n.trim().slice(0, 8); save(); render(); }
+      return;
+    }
+    case 'track': sfx.tap(); go({ name: 'levels', t }); return;
+    case 'home': go({ name: 'home' }); return;
+    case 'levels': case 'back': go({ name: 'levels', t: view.t }); return;
+    case 'sound': S.sound = !S.sound; save(); el.textContent = S.sound ? '🔔' : '🔕'; sfx.tap(); return;
+    case 'stickers': go({ name: 'stickers', t: view.t }); return;
+    case 'board': go({ name: 'board', t: 'big' }); return;
+    case 'input': S.tracks[view.t].input = el.dataset.v; save(); render(); return;
+    case 'open': S.tracks[view.t].open = el.dataset.v === '1'; save(); render(); return;
+    case 'start':
+      if (el.dataset.locked) { shake(el); sfx.bad(); return; }
+      sfx.tap(); startLevel(view.t, el.dataset.l); return;
+    case 'fact': {
+      const a = +el.dataset.a, b = +el.dataset.b, v = S.tracks.big.facts[`${a}x${b}`];
+      $('#factmsg').innerHTML = `${a} × ${b} = <b>${a * b}</b> <small style="font-size:15px;color:var(--muted)">${v ? `(맞힘 ${v.ok} · 틀림 ${v.bad})` : ''}</small>`;
+      speak(`${a} 곱하기 ${b}는 ${a * b}`);
+      return;
+    }
+    case 'quit':
+      if (play && (play.time || play.idx > 0) && !confirm('그만하고 나갈까요?')) return;
+      go({ name: 'levels', t: view.t }); return;
+    case 'speak': if (play) sayQ(play.q); return;
+    case 'hint': showHint(); el.remove(); return;
+    case 'choose': if (play && !play.locked) submit(play.choices[+el.dataset.i], el); return;
+    case 'key': onKey(el.dataset.k); return;
+    case 'slot': if (play && !play.locked && !play.choices) { play.slot = +el.dataset.slot; updateBlanks(); } return;
+    case 'next': if (play) nextQ(); return;
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (!play) return;
+  if (play.locked) { if ((e.key === 'Enter' || e.key === ' ') && $('[data-act="next"]')) { e.preventDefault(); nextQ(); } return; }
+  if (play.choices) { const i = '1234'.indexOf(e.key); if (i >= 0) { const b = document.querySelectorAll('.choice')[i]; if (b && !b.disabled) b.click(); } return; }
+  if (/^\d$/.test(e.key)) onKey(e.key);
+  else if (e.key === 'Backspace') { e.preventDefault(); onKey('del'); }
+  else if (e.key === 'Enter') onKey('ok');
+  else if (e.key === 'Tab' && play.q.ans.length === 2) { e.preventDefault(); play.slot = 1 - play.slot; updateBlanks(); }
+});
+
+render();
+</script>
+</body>
+</html>
