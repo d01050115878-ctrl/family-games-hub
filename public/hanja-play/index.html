@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#e8590c">
+<title>재미있는 한자놀이 🀄</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.85em' font-size='90'>🀄</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Serif+KR:wght@700&family=Noto+Sans+KR:wght@700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #2b2d42; --muted: #7a7f99; --line: #e6e8f0;
+  --good: #2fb36d; --bad: #ff5a5f;
+  --main: #e8590c; --main2: #ffa94d; --soft: #fff0e0;
+  --hanja: 'Noto Serif KR', 'Batang', 'Malgun Gothic', serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  background: linear-gradient(160deg, #fff4e6 0%, #fff9db 45%, #ebfbee 100%) fixed;
+  color: var(--ink); min-height: 100vh; overflow-x: hidden;
+  user-select: none; -webkit-user-select: none;
+}
+button { font-family: inherit; cursor: pointer; border: 0; color: inherit; }
+b { font-weight: normal; color: var(--main); }
+.hz { font-family: var(--hanja); font-weight: 700; }
+.screen { max-width: 760px; margin: 0 auto; padding: 16px 16px 32px; min-height: 100vh; }
+
+.topbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.topbar .ttl { flex: 1; font-size: 20px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon { width: 46px; height: 46px; border-radius: 14px; background: #fff; font-size: 22px; box-shadow: 0 3px 0 var(--line); flex: none; text-decoration: none; display: grid; place-items: center; }
+.icon:active { transform: translateY(2px); box-shadow: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 14px 22px; border-radius: 18px; font-size: 20px; background: var(--main); color: #fff; box-shadow: 0 5px 0 #b8460a; text-decoration: none; }
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8460a; }
+.btn.ghost { background: #fff; color: var(--ink); box-shadow: 0 5px 0 var(--line); }
+.btn.green { background: var(--good); box-shadow: 0 5px 0 #1f8a51; }
+
+/* 홈 */
+.hero { text-align: center; margin: 10px 0 18px; }
+.hero .logo { font-size: 72px; animation: bob 2.4s ease-in-out infinite; line-height: 1; }
+.hero h1 { font-size: 34px; margin: 8px 0 4px; font-weight: normal; }
+.hero p { margin: 0; color: var(--muted); font-size: 17px; }
+.who { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.chip { background: #fff; border-radius: 999px; padding: 8px 14px; font-size: 16px; box-shadow: 0 3px 0 var(--line); }
+.grades { display: grid; gap: 12px; }
+.grade { --c: #e8590c; display: flex; align-items: center; gap: 16px; text-align: left; background: #fff; border-radius: 24px; padding: 16px 18px; box-shadow: 0 6px 0 color-mix(in srgb, var(--c) 45%, #fff); border: 3px solid color-mix(in srgb, var(--c) 30%, #fff); }
+.grade:active { transform: translateY(4px); box-shadow: 0 2px 0 color-mix(in srgb, var(--c) 45%, #fff); }
+.grade .gb { flex: none; width: 76px; height: 76px; border-radius: 22px; background: var(--c); color: #fff; display: grid; place-items: center; font-size: 26px; line-height: 1; text-align: center; }
+.grade .gb small { display: block; font-size: 13px; opacity: .9; margin-top: 2px; }
+.grade h2 { margin: 0; font-size: 23px; font-weight: normal; }
+.grade p { margin: 3px 0 0; color: var(--muted); font-size: 14px; }
+.grade .sample { font-size: 24px; margin-top: 4px; letter-spacing: 4px; color: var(--ink); }
+.grade .gs { margin-left: auto; text-align: right; font-size: 15px; color: #f59f00; white-space: nowrap; }
+.foot { display: flex; justify-content: center; margin-top: 24px; }
+
+/* 급 화면 */
+.ghead { background: #fff; border-radius: 24px; padding: 18px; text-align: center; box-shadow: 0 6px 0 var(--main2); margin-bottom: 14px; }
+.ghead h2 { margin: 4px 0; font-size: 26px; font-weight: normal; }
+.ghead p { margin: 0; color: var(--muted); }
+.games { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.game { text-align: left; background: #fff; border-radius: 22px; padding: 16px; box-shadow: 0 5px 0 var(--line); display: flex; gap: 12px; align-items: center; }
+.game:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--line); }
+.game .ge { font-size: 40px; flex: none; }
+.game h3 { margin: 0; font-size: 20px; font-weight: normal; }
+.game p { margin: 3px 0 0; font-size: 13px; color: var(--muted); }
+.game .ls { font-size: 17px; color: #ffc107; margin-top: 3px; }
+.off { color: #dde1ea !important; }
+
+/* 공부 카드 */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+.hcard { background: #fff; border-radius: 18px; padding: 10px 6px 8px; text-align: center; box-shadow: 0 4px 0 var(--line); }
+.hcard:active, .hcard.on { background: var(--soft); box-shadow: 0 4px 0 var(--main2); }
+.hcard .h { font-size: 52px; line-height: 1.15; }
+.hcard .m { font-size: 16px; color: var(--muted); }
+.hcard.on .m { color: var(--main); }
+
+/* 플레이 */
+.play { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 16px; }
+.path { display: flex; align-items: center; gap: 4px; background: #fff; border-radius: 999px; padding: 6px 10px; margin-bottom: 12px; }
+.path .step { flex: 1; height: 28px; border-radius: 999px; background: #f1f3f8; display: grid; place-items: center; font-size: 14px; position: relative; }
+.path .step.done { background: var(--soft); }
+.path .step.cur { background: var(--main2); }
+.path .runner { position: absolute; font-size: 24px; top: -8px; animation: hop .6s ease-in-out infinite alternate; }
+.path .goal { font-size: 24px; flex: none; }
+.qcard { background: #fff; border-radius: 28px; padding: 18px 14px 14px; box-shadow: 0 8px 0 var(--main2); text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; min-height: 250px; }
+.qtext { font-size: 21px; line-height: 1.45; color: var(--muted); }
+.bighz { font-size: clamp(110px, 34vw, 170px); line-height: 1.1; animation: pop .35s ease; }
+.wordhz { font-size: clamp(56px, 16vw, 92px); line-height: 1.2; letter-spacing: 4px; animation: pop .35s ease; }
+.meaning { font-size: clamp(40px, 11vw, 60px); color: var(--ink); }
+.feedback { min-height: 30px; font-size: 22px; }
+.feedback.good { color: var(--good); animation: pop .35s ease; }
+.feedback.bad { color: var(--bad); }
+.sec { display: inline-block; background: #e7f5ff; color: #1c7ed6; border-radius: 999px; padding: 0 10px; margin-left: 4px; }
+.sec.fast { background: #fff3bf; color: #e67700; }
+.combo { display: inline-block; background: #fff0e0; color: #ff6b00; border-radius: 999px; padding: 0 10px; margin-left: 4px; }
+.explain { font-size: 19px; line-height: 1.6; background: #fff8e1; border-radius: 16px; padding: 10px 14px; }
+
+.answer { margin-top: 14px; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.choice { font-size: clamp(24px, 7vw, 36px); padding: 18px 6px; border-radius: 22px; color: #fff; line-height: 1.15; }
+.choice.hz { font-size: clamp(40px, 12vw, 60px); padding: 10px 6px; }
+.choice.c0 { background: #ff6b6b; box-shadow: 0 6px 0 #d94848; }
+.choice.c1 { background: #4dabf7; box-shadow: 0 6px 0 #2f87d1; }
+.choice.c2 { background: #51cf66; box-shadow: 0 6px 0 #34a84a; }
+.choice.c3 { background: #b197fc; box-shadow: 0 6px 0 #8c6fe0; }
+.choice:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.2); }
+.choice:disabled { opacity: .3; transform: scale(.94); }
+.choice.rightc { outline: 5px solid var(--good); outline-offset: 3px; }
+.nextbtn { width: 100%; font-size: 26px; padding: 18px; }
+
+/* 짝 맞추기 */
+.mgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+.mcard { background: #fff; border: 3px solid #ffd8a8; border-radius: 18px; min-height: 86px; display: grid; place-items: center; font-size: 20px; box-shadow: 0 5px 0 #ffd8a8; padding: 4px; }
+.mcard.hz { font-size: 46px; }
+.mcard.sel { background: #fff3bf; border-color: #fab005; transform: translateY(-3px); }
+.mcard.done { background: #e3f9ec; border-color: var(--good); box-shadow: none; opacity: .45; pointer-events: none; }
+.mcard.no { background: #ffeceb; border-color: var(--bad); }
+
+/* 따라쓰기 */
+.tinfo { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 22px; }
+.board { position: relative; width: 100%; }
+.board canvas { display: block; width: 100%; height: auto; border-radius: 20px; }
+.board canvas.ink { position: absolute; inset: 0; touch-action: none; cursor: crosshair; }
+.tbtns { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+.tbtns .btn { font-size: 22px; padding: 16px; }
+.colors { display: flex; justify-content: center; gap: 10px; }
+.colors button { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 3px 0 rgba(0,0,0,.15); }
+.colors button.on { outline: 4px solid var(--ink); outline-offset: 2px; }
+
+/* 결과 / 스티커 */
+.result { text-align: center; padding-top: 40px; }
+.result .re { font-size: 90px; animation: bob 2s ease-in-out infinite; }
+.result h2 { font-size: 30px; margin: 8px 0; font-weight: normal; }
+.result .stars { font-size: 64px; letter-spacing: 6px; color: #ffc107; }
+.result .stars span { display: inline-block; animation: starIn .5s ease backwards; }
+.result p { font-size: 20px; margin: 8px 0; }
+.newsticker { margin: 16px auto; background: #fff; border-radius: 24px; padding: 14px 20px; display: inline-block; box-shadow: 0 6px 0 var(--main2); font-size: 20px; }
+.newsticker span { font-size: 56px; display: inline-block; animation: spinIn .8s ease backwards; margin: 0 4px; }
+.acts { display: flex; flex-direction: column; gap: 12px; max-width: 360px; margin: 22px auto 0; }
+.sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 10px; }
+.sgrid div { background: #fff; border-radius: 18px; aspect-ratio: 1; display: grid; place-items: center; font-size: 42px; box-shadow: 0 4px 0 var(--line); }
+.sgrid div.no { font-size: 26px; color: #c9cede; background: #f6f7fb; }
+
+#fx { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
+.cf { position: absolute; top: -50px; animation: fall linear forwards; }
+.shake { animation: shake .4s ease; }
+@keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-12px); } 40% { transform: translateX(12px); } 60% { transform: translateX(-8px); } 80% { transform: translateX(8px); } }
+@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes hop { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+@keyframes starIn { from { transform: scale(0) rotate(-90deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes spinIn { from { transform: scale(0) rotate(-360deg); } to { transform: scale(1) rotate(0); } }
+@media (max-width: 480px) {
+  .games { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .game { flex-direction: column; text-align: center; padding: 14px 8px; gap: 4px; }
+  .grade { padding: 14px; gap: 12px; }
+  .grade .gb { width: 64px; height: 64px; font-size: 22px; }
+  .grade .sample { font-size: 20px; letter-spacing: 2px; }
+  .mcard { min-height: 74px; font-size: 18px; }
+  .mcard.hz { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="fx"></div>
+<script>
+'use strict';
+/* =========================================================
+   재미있는 한자놀이 (10급 ~ 6급)
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sample = (arr, n) => shuffle(arr.slice()).slice(0, n);
+
+/* ---------- 급수별 한자 (훈 음) ---------- */
+const GRADES = [
+  { id: 10, color: '#40c057', theme: '숫자와 자연', chars:
+    '一 한 일|二 두 이|三 석 삼|四 넉 사|五 다섯 오|六 여섯 륙|七 일곱 칠|八 여덟 팔|九 아홉 구|十 열 십|日 날 일|月 달 월|火 불 화|水 물 수|木 나무 목|金 쇠 금|土 흙 토|人 사람 인|山 메 산|大 큰 대',
+    words: '山水 산수|火山 화산|大人 대인|日月 일월|一月 일월|三月 삼월|四月 사월|五月 오월|七月 칠월|八月 팔월|九月 구월|三日 삼일|十日 십일|土木 토목|一日 일일|二十 이십|三十 삼십|五十 오십' },
+  { id: 9, color: '#15aabf', theme: '가족과 몸', chars:
+    '小 작을 소|上 윗 상|下 아래 하|中 가운데 중|口 입 구|目 눈 목|手 손 수|足 발 족|子 아들 자|女 계집 녀|父 아비 부|母 어미 모|兄 형 형|弟 아우 제|王 임금 왕|白 흰 백|川 내 천|田 밭 전|天 하늘 천|力 힘 력|入 들 입|出 날 출',
+    words: '父母 부모|兄弟 형제|女子 여자|子女 자녀|母女 모녀|父子 부자|上下 상하|大小 대소|白人 백인|天下 천하|王子 왕자|手足 수족|人口 인구|山川 산천|女王 여왕|下山 하산|火力 화력|水力 수력|天子 천자|白金 백금|大王 대왕|母子 모자|入口 입구|出口 출구|出入 출입|日出 일출|月出 월출' },
+  { id: 8, color: '#4c6ef5', theme: '학교와 나라', chars:
+    '校 학교 교|敎 가르칠 교|國 나라 국|軍 군사 군|南 남녘 남|年 해 년|東 동녘 동|萬 일만 만|門 문 문|民 백성 민|北 북녘 북|西 서녘 서|先 먼저 선|生 날 생|室 집 실|外 바깥 외|長 긴 장|靑 푸를 청|寸 마디 촌|學 배울 학|韓 한국 한|石 돌 석|立 설 립|牛 소 우|馬 말 마|魚 물고기 어|鳥 새 조|犬 개 견',
+    words: '學校 학교|校門 교문|校長 교장|先生 선생|生日 생일|國民 국민|韓國 한국|南北 남북|東西 동서|外國 외국|萬一 만일|三寸 삼촌|大門 대문|水門 수문|敎室 교실|軍人 군인|生水 생수|大韓民國 대한민국|東大門 동대문|南大門 남대문|靑年 청년|中年 중년|長女 장녀|入學 입학|人魚 인어|白鳥 백조|白馬 백마|國立 국립|北韓 북한|南韓 남한|靑山 청산|王室 왕실|外出 외출' },
+  { id: 7, color: '#ae3ec9', theme: '생활과 계절', chars:
+    '家 집 가|歌 노래 가|間 사이 간|江 강 강|車 수레 거|工 장인 공|空 빌 공|氣 기운 기|男 사내 남|農 농사 농|答 대답 답|道 길 도|冬 겨울 동|同 한가지 동|來 올 래|老 늙을 로|林 수풀 림|每 매양 매|名 이름 명|文 글월 문|問 물을 문|物 물건 물|百 일백 백|夫 지아비 부|算 셈 산|色 빛 색|夕 저녁 석|姓 성 성|少 적을 소|數 셈 수|時 때 시|食 밥 식|心 마음 심|安 편안 안|語 말씀 어|午 낮 오|右 오른 우|左 왼 좌|有 있을 유|育 기를 육|自 스스로 자|字 글자 자|場 마당 장|前 앞 전|後 뒤 후|電 번개 전|正 바를 정|祖 할아비 조|主 주인 주|住 살 주|地 땅 지|紙 종이 지|直 곧을 직|千 일천 천|草 풀 초|村 마을 촌|春 봄 춘|夏 여름 하|秋 가을 추|花 꽃 화|話 말씀 화|海 바다 해|孝 효도 효|休 쉴 휴|平 평평할 평|全 온전 전|不 아닐 불|方 모 방|面 낯 면|世 인간 세|事 일 사|市 저자 시',
+    words: '家門 가문|江山 강산|空氣 공기|男女 남녀|農夫 농부|道場 도장|春夏秋冬 춘하추동|文字 문자|安心 안심|午前 오전|午後 오후|左右 좌우|電氣 전기|花草 화초|海水 해수|休日 휴일|千年 천년|平安 평안|世上 세상|時間 시간|正直 정직|祖父 조부|祖母 조모|村長 촌장|人間 인간|老人 노인|百姓 백성|食事 식사|主人 주인|每日 매일|名人 명인|數學 수학|算數 산수|地下 지하|天地 천지|前後 전후|間食 간식|不安 불안|春秋 춘추|電車 전차|有名 유명|不足 부족|正午 정오|歌手 가수|木工 목공|千萬 천만|同生 동생|下車 하차|入場 입장' },
+  { id: 6, color: '#e8590c', theme: '마음과 배움', chars:
+    '各 각각 각|角 뿔 각|感 느낄 감|強 강할 강|開 열 개|京 서울 경|計 셀 계|高 높을 고|苦 쓸 고|古 예 고|公 공평할 공|共 한가지 공|科 과목 과|果 실과 과|光 빛 광|交 사귈 교|球 공 구|今 이제 금|急 급할 급|多 많을 다|短 짧을 단|代 대신할 대|圖 그림 도|讀 읽을 독|童 아이 동|頭 머리 두|樂 즐길 락|路 길 로|綠 푸를 록|明 밝을 명|聞 들을 문|米 쌀 미|美 아름다울 미|半 반 반|發 필 발|放 놓을 방|病 병 병|本 근본 본|分 나눌 분|書 글 서|線 줄 선|雪 눈 설|成 이룰 성|速 빠를 속|樹 나무 수|習 익힐 습|始 비로소 시|身 몸 신|新 새 신|信 믿을 신|愛 사랑 애|夜 밤 야|弱 약할 약|藥 약 약|言 말씀 언|永 길 영|溫 따뜻할 온|用 쓸 용|勇 날랠 용|遠 멀 원|音 소리 음|衣 옷 의|意 뜻 의|作 지을 작|昨 어제 작|朝 아침 조|族 겨레 족|集 모을 집|窓 창 창|體 몸 체|親 친할 친|風 바람 풍|合 합할 합|行 다닐 행|和 화할 화|畵 그림 화|會 모일 회|訓 가르칠 훈',
+    words: '讀書 독서|童話 동화|新聞 신문|美人 미인|發明 발명|放學 방학|病室 병실|本心 본심|雪山 설산|成長 성장|速力 속력|學習 학습|始作 시작|身體 신체|新年 신년|信用 신용|愛國 애국|夜間 야간|藥草 약초|言語 언어|永遠 영원|溫水 온수|勇氣 용기|音樂 음악|衣食住 의식주|作家 작가|昨年 작년|家族 가족|集中 집중|窓門 창문|體力 체력|風力 풍력|和合 화합|畵家 화가|會話 회화|訓長 훈장|光明 광명|球場 구장|今年 금년|強力 강력|開學 개학|苦生 고생|高空 고공|明月 명월|半月 반월|多數 다수|科學 과학|果樹 과수|急行 급행|代身 대신|圖書 도서|各自 각자' },
+];
+GRADES.forEach((G, gi) => {
+  G.list = G.chars.split('|').map((s) => { const [h, hun, eum] = s.trim().split(/\s+/); return { h, hun, eum, mean: `${hun} ${eum}` }; });
+  G.wordList = G.words.split('|').map((s) => { const [w, r] = s.trim().split(/\s+/); return { w, r }; });
+  // 이 급까지 배운 한자 (아래 급 포함)
+  G.known = GRADES.slice(0, gi + 1).flatMap((x) => x.list || []);
+});
+const ALL_CHARS = GRADES.flatMap((G) => G.list);
+const charInfo = (h) => ALL_CHARS.find((c) => c.h === h);
+const gradeOf = (id) => GRADES.find((G) => G.id === id);
+const wordsUpTo = (G) => GRADES.slice(0, GRADES.indexOf(G) + 1).flatMap((x) => x.wordList);
+const wordMeaning = (w) => [...w].map((h) => { const c = charInfo(h); return c ? `${h}(${c.mean})` : h; }).join(' + ');
+
+/* ---------- 놀이 ---------- */
+function choiceQ(base, ans, wrongs) {
+  const set = [ans];
+  for (const w of wrongs) if (set.length < 4 && !set.includes(w)) set.push(w);
+  return Object.assign(base, { ans, choices: shuffle(set) });
+}
+const GAMES = [
+  { id: 'mean', emoji: '🔤', title: '훈음 맞히기', desc: '이 한자의 뜻과 소리는?',
+    gen(G) {
+      const c = pick(G.list), pool = G.list.length >= 8 ? G.list : G.known;
+      const wrongs = sample(pool.filter((x) => x.h !== c.h && x.mean !== c.mean), 3).map((x) => x.mean);
+      return choiceQ({ key: c.h, html: `<div class="qtext">이 한자의 뜻과 소리는?</div><div class="bighz hz">${c.h}</div>`, say: '이 한자의 뜻과 소리는?', after: c.mean }, c.mean, wrongs);
+    } },
+  { id: 'find', emoji: '🀄', title: '한자 찾기', desc: '뜻과 소리에 맞는 한자는?',
+    gen(G) {
+      const c = pick(G.list), pool = G.list.length >= 8 ? G.list : G.known;
+      const wrongs = sample(pool.filter((x) => x.h !== c.h && x.mean !== c.mean), 3).map((x) => x.h);
+      return choiceQ({ key: c.h, html: `<div class="qtext">알맞은 한자를 골라요</div><div class="meaning">${c.mean}</div>`, say: `${c.mean}. 알맞은 한자를 골라요`, after: c.mean, hzChoices: true }, c.h, wrongs);
+    } },
+  { id: 'word', emoji: '📖', title: '한자어 읽기', desc: '한자로 된 낱말을 읽어요',
+    gen(G) {
+      const all = wordsUpTo(G), x = Math.random() < 0.7 ? pick(G.wordList) : pick(all);
+      const same = all.filter((y) => y.w !== x.w && y.r !== x.r);
+      const explain = `<div class="explain"><span class="hz">${x.w}</span> = <b>${x.r}</b><br><small>${wordMeaning(x.w)}</small></div>`;
+      if (Math.random() < 0.6) {
+        const near = same.filter((y) => y.r.length === x.r.length);
+        const wrongs = [...sample(near, 3), ...sample(same, 3)].map((y) => y.r);
+        return choiceQ({ key: x.w, html: `<div class="qtext">이 낱말은 어떻게 읽을까요?</div><div class="wordhz hz">${x.w}</div>`, say: '이 낱말은 어떻게 읽을까요?', after: x.r, explain }, x.r, wrongs);
+      }
+      const near = same.filter((y) => y.w.length === x.w.length && [...y.w].some((h) => x.w.includes(h)));
+      const wrongs = [...sample(near, 2), ...sample(same.filter((y) => y.w.length === x.w.length), 3), ...sample(same, 3)].map((y) => y.w);
+      return choiceQ({ key: 'r' + x.w, html: `<div class="qtext">이 낱말을 한자로 쓰면?</div><div class="meaning">${x.r}</div>`, say: `${x.r}. 이 낱말을 한자로 쓰면?`, after: x.r, hzChoices: true, explain }, x.w, wrongs);
+    } },
+  { id: 'match', emoji: '🃏', title: '짝 맞추기', desc: '한자와 훈음 카드 짝 찾기', type: 'match', total: 3,
+    stars: (m) => (m <= 2 ? 3 : m <= 6 ? 2 : 1),
+    gen(G) { const set = sample(G.list, 6); return { key: set.map((c) => c.h).join(''), set }; } },
+  { id: 'trace', emoji: '✏️', title: '한자 따라쓰기', desc: '손가락으로 따라 써요', type: 'trace', total: 5,
+    gen(G) { const c = pick(G.list); return { key: c.h, target: c.h, mean: c.mean, say: c.mean }; } },
+];
+
+/* ---------- 저장 ---------- */
+const KEY = 'hanjaplay.v1';
+const STICKERS = ['🐉', '🐯', '🐼', '🦁', '🐲', '🏯', '🎎', '🏮', '🎐', '🪭', '🧧', '🥟', '🍵', '🎋', '🌸', '🦚', '🐢', '🦊', '🐒', '🐎', '🐑', '🐓', '🐕', '🐖', '🐀', '🐂', '🐇', '🐍', '⛰️', '🌕', '☀️', '🔥', '💧', '🌳', '🪙', '🏆', '👑', '📜', '🖌️', '🀄'];
+function load() {
+  const d = { name: '', sound: true, voice: true, stars: {}, stickers: [] };
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s) Object.assign(d, s); } catch (e) { /* 새로 시작 */ }
+  return d;
+}
+let S = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* 무시 */ } }
+const starOf = (gid, game) => S.stars[gid + ':' + game] || 0;
+const gradeStars = (G) => GAMES.reduce((a, g) => a + starOf(G.id, g.id), 0);
+function award() { const left = STICKERS.filter((s) => !S.stickers.includes(s)); if (!left.length) return null; const s = pick(left); S.stickers.push(s); return s; }
+const nameOf = () => S.name || '한자 친구';
+
+/* ---------- 소리 · 효과 ---------- */
+let actx = null;
+function tone(freq, dur, type = 'sine', when = 0, vol = 0.15) {
+  if (!S.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur);
+  } catch (e) { /* 소리 없이 */ }
+}
+const sfx = {
+  ok() { tone(660, 0.12, 'triangle'); tone(880, 0.2, 'triangle', 0.1); },
+  bad() { tone(240, 0.22, 'sawtooth', 0, 0.07); tone(180, 0.25, 'sawtooth', 0.12, 0.07); },
+  tap() { tone(520, 0.05, 'sine', 0, 0.06); },
+  win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.28, 'triangle', i * 0.13)); },
+};
+function speak(text, force) {
+  if (!S.voice && !force) return;
+  try {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR'; u.rate = 0.85;
+    const v = speechSynthesis.getVoices().find((x) => /ko/i.test(x.lang));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) { /* 무시 */ }
+}
+function confetti(n = 40) {
+  const fx = $('#fx'), em = ['🎉', '⭐', '🏮', '✨', '🧧', '🌟', '🌸', '🀄'];
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('span');
+    s.className = 'cf'; s.textContent = pick(em);
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.animationDuration = 1.6 + Math.random() * 1.6 + 's';
+    s.style.animationDelay = Math.random() * 0.4 + 's';
+    s.style.fontSize = 18 + Math.random() * 22 + 'px';
+    fx.appendChild(s); setTimeout(() => s.remove(), 3800);
+  }
+}
+function shake(el) { if (!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+const PRAISE = ['딩동댕! 🎉', '최고야! 👍', '한자 박사! 🌟', '정답! 😄', '짝짝짝! 👏', '대단해! 💯', '멋져요! ✨'];
+const RETRY = ['아깝다! 다시 해 볼까? 💪', '괜찮아, 한 번 더! 🙂', '천천히 다시 봐요 🤔'];
+
+/* =========================================================
+   화면
+   ========================================================= */
+const app = $('#app');
+let view = { name: 'home' };
+let play = null;
+function go(v) { play = null; view = v; render(); window.scrollTo(0, 0); }
+function render() { ({ home: renderHome, grade: renderGrade, study: renderStudy, stickers: renderStickers, result: renderResult })[view.name](); }
+
+function renderHome() {
+  app.innerHTML = `<div class="screen">
+    <div class="topbar"><a class="icon" href="/" title="게임 모음">🏠</a><div class="ttl"></div>
+      <button class="icon" data-act="voice" title="읽어주기">${S.voice ? '🗣️' : '🤐'}</button><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
+    <div class="hero"><div class="logo hz">漢字</div><h1>재미있는 한자놀이</h1><p>${nameOf()}, 몇 급에 도전할까요?</p>
+      <div class="who"><button class="chip" data-act="rename">✏️ 이름 바꾸기</button><button class="chip" data-act="stickers">🎁 스티커북 ${S.stickers.length}/${STICKERS.length}</button></div></div>
+    <div class="grades">
+      ${GRADES.map((G) => `<button class="grade" style="--c:${G.color}" data-act="grade" data-g="${G.id}">
+        <div class="gb">${G.id}급<small>${G.list.length}자</small></div>
+        <div><h2>${G.id}급 · ${G.theme}</h2><div class="sample hz">${G.list.slice(0, 6).map((c) => c.h).join('')}…</div></div>
+        <div class="gs">⭐ ${gradeStars(G)}<br><small style="color:var(--muted)">/ ${GAMES.length * 3}</small></div></button>`).join('')}
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:16px">10급이 가장 쉽고, 6급으로 갈수록 어려워요.<br>훈음은 한자능력검정시험 표기를 따랐어요.</p>
+    <div class="foot"><a class="btn ghost" href="/">🏠 게임 모음으로</a></div>
+  </div>`;
+}
+function renderGrade() {
+  const G = gradeOf(view.g);
+  app.innerHTML = `<div class="screen">
+    <div class="topbar"><button class="icon" data-act="home">←</button><div class="ttl">${G.id}급 · ${G.theme}</div><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
+    <div class="ghead"><h2>${G.id}급 한자 ${G.list.length}자</h2><p>먼저 카드로 공부하고 놀이에 도전해요!</p></div>
+    <div class="games">
+      <button class="game" data-act="study"><div class="ge">📚</div><div><h3>한자 카드 공부</h3><p>누르면 뜻과 소리를 읽어 줘요</p></div></button>
+      ${GAMES.map((g) => { const s = starOf(G.id, g.id);
+        return `<button class="game" data-act="start" data-game="${g.id}"><div class="ge">${g.emoji}</div><div><h3>${g.title}</h3><p>${g.desc}</p>
+          <div class="ls">${[1, 2, 3].map((k) => `<span class="${k <= s ? '' : 'off'}">★</span>`).join('')}</div></div></button>`; }).join('')}
+    </div>
+  </div>`;
+}
+function renderStudy() {
+  const G = gradeOf(view.g);
+  app.innerHTML = `<div class="screen">
+    <div class="topbar"><button class="icon" data-act="back">←</button><div class="ttl">📚 ${G.id}급 한자 카드</div><span class="icon" style="visibility:hidden"></span></div>
+    <p style="text-align:center;color:var(--muted);margin:4px 0 12px">카드를 누르면 뜻과 소리를 읽어 줘요 🔊</p>
+    <div class="cards">${G.list.map((c) => `<button class="hcard" data-act="say" data-t="${c.mean}"><div class="h hz">${c.h}</div><div class="m">${c.mean}</div></button>`).join('')}</div>
+    <h3 style="margin:22px 0 10px;font-weight:normal">📖 ${G.id}급 한자어</h3>
+    <div class="cards">${G.wordList.map((x) => `<button class="hcard" data-act="say" data-t="${x.r}"><div class="h hz" style="font-size:${x.w.length > 2 ? 26 : 34}px">${x.w}</div><div class="m">${x.r}</div></button>`).join('')}</div>
+  </div>`;
+}
+function renderStickers() {
+  app.innerHTML = `<div class="screen">
+    <div class="topbar"><button class="icon" data-act="home">←</button><div class="ttl">🎁 ${nameOf()}의 스티커북</div><span class="icon" style="visibility:hidden"></span></div>
+    <p style="text-align:center;font-size:20px;margin:6px 0 14px">${S.stickers.length} / ${STICKERS.length}개 모았어요!</p>
+    <div class="sgrid">${STICKERS.map((s) => (S.stickers.includes(s) ? `<div>${s}</div>` : '<div class="no">❔</div>')).join('')}</div>
+  </div>`;
+}
+
+/* ---------- 플레이 공통 ---------- */
+function startGame(gid, gameId) {
+  const G = gradeOf(gid), g = GAMES.find((x) => x.id === gameId);
+  play = { G, g, idx: 0, total: g.total || 10, results: [], mistakes: 0, combo: 0, maxCombo: 0, firstOk: 0, recent: [], times: [] };
+  view = { name: 'play', g: gid };
+  app.innerHTML = `<div class="screen play">
+    <div class="topbar"><button class="icon" data-act="quit">✕</button><div class="ttl">${G.id}급 · ${g.emoji} ${g.title}</div>
+      <button class="icon" data-act="speak">🔊</button><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
+    <div class="path" id="path"></div>
+    <div class="qcard" id="qcard"></div>
+    <div class="answer" id="answer"></div>
+  </div>`;
+  newQ();
+}
+function genQ() {
+  const p = play;
+  for (let k = 0; k < 30; k++) {
+    const q = p.g.gen(p.G);
+    if (!p.recent.includes(q.key) || k === 29) { p.recent.push(q.key); if (p.recent.length > Math.min(8, p.G.list.length - 2)) p.recent.shift(); return q; }
+  }
+}
+function renderPath() {
+  const p = play; let h = '';
+  for (let i = 0; i < p.total; i++) {
+    const done = i < p.idx;
+    h += `<span class="step ${done ? 'done' : ''} ${i === p.idx ? 'cur' : ''}">${done ? (p.results[i] ? '⭐' : '🌱') : ''}${i === p.idx ? '<span class="runner">🐉</span>' : ''}</span>`;
+  }
+  $('#path').innerHTML = h + '<span class="goal">🏯</span>';
+}
+function newQ() {
+  const p = play, q = genQ();
+  Object.assign(p, { q, tries: 0, locked: false, qStart: Date.now() });
+  renderPath();
+  if (p.g.type === 'trace') return traceQ();
+  if (p.g.type === 'match') return matchQ();
+  $('#qcard').innerHTML = `${q.html}<div class="feedback" id="fb"></div>`;
+  $('#answer').innerHTML = `<div class="choices">${q.choices.map((c, i) => `<button class="choice c${i} ${q.hzChoices ? 'hz' : ''}" data-act="choose" data-i="${i}">${c}</button>`).join('')}</div>`;
+}
+function fb(html, cls) { const el = $('#fb'); if (el) { el.className = 'feedback ' + cls; el.innerHTML = html; } }
+function later(fn, ms) { const p = play; setTimeout(() => { if (play === p) fn(); }, ms); }
+function timeTag() {
+  const sec = (Date.now() - play.qStart) / 1000;
+  play.times.push(sec);
+  return ` <span class="sec ${sec < 3 ? 'fast' : ''}">${sec < 3 ? '⚡' : '⏱️'} ${sec.toFixed(1)}초</span>`;
+}
+function markCorrect() {
+  const p = play, first = p.tries === 0;
+  p.locked = true; p.results[p.idx] = first; sfx.ok();
+  if (first) { p.firstOk++; p.combo++; p.maxCombo = Math.max(p.maxCombo, p.combo); }
+  let msg = pick(PRAISE) + timeTag();
+  if (first && p.combo >= 3) msg += ` <span class="combo">🔥 ${p.combo}연속!</span>`;
+  confetti(first && p.combo >= 3 ? 14 : 6);
+  return msg;
+}
+function showNextBtn() { $('#answer').innerHTML = '<button class="btn nextbtn" data-act="next">다음 ▶</button>'; }
+function nextQ() { const p = play; p.idx++; if (p.idx >= p.total) return finish(); newQ(); }
+
+function choose(i, btn) {
+  const p = play, q = p.q;
+  if (p.locked) return;
+  if (q.choices[i] === q.ans) {
+    btn.classList.add('rightc');
+    fb(markCorrect(), 'good');
+    speak(q.after);
+    if (q.explain) { $('#fb').insertAdjacentHTML('afterend', q.explain); later(nextQ, 2300); return; }
+    later(nextQ, 1300);
+    return;
+  }
+  sfx.bad(); p.combo = 0; shake($('#qcard'));
+  btn.disabled = true;
+  p.tries++;
+  if (p.tries === 1) { p.mistakes++; fb(pick(RETRY), 'bad'); return; }
+  p.locked = true; p.results[p.idx] = false;
+  document.querySelectorAll('.choice').forEach((b, k) => { if (q.choices[k] === q.ans) b.classList.add('rightc'); });
+  fb(`정답은 <b class="${q.hzChoices ? 'hz' : ''}">${q.ans}</b> 이에요. 다음엔 꼭 맞힐 수 있어! 💪`, 'bad');
+  if (q.explain) $('#fb').insertAdjacentHTML('afterend', q.explain);
+  speak(q.after);
+  showNextBtn();
+}
+
+/* ---------- 짝 맞추기 ---------- */
+function matchQ() {
+  const p = play, q = p.q;
+  p.cards = shuffle([...q.set.map((c) => ({ k: c.h, t: c.h, hz: true })), ...q.set.map((c) => ({ k: c.h, t: c.mean }))]);
+  p.sel = null; p.matched = 0;
+  $('#qcard').innerHTML = `<div class="qtext">한자와 뜻·소리 카드의 짝을 찾아요!</div><div class="mgrid">${p.cards.map((c, i) => `<button class="mcard ${c.hz ? 'hz' : ''}" data-act="mcard" data-i="${i}">${c.t}</button>`).join('')}</div><div class="feedback" id="fb"></div>`;
+  $('#answer').innerHTML = '';
+}
+function tapCard(i, el) {
+  const p = play;
+  if (p.locked || el.classList.contains('done') || p.busy) return;
+  if (p.sel === null) { p.sel = i; el.classList.add('sel'); sfx.tap(); return; }
+  if (p.sel === i) { p.sel = null; el.classList.remove('sel'); return; }
+  const a = p.cards[p.sel], b = p.cards[i], elA = document.querySelector(`.mcard[data-i="${p.sel}"]`);
+  if (a.k === b.k && a.hz !== b.hz) {
+    sfx.ok(); elA.classList.remove('sel'); elA.classList.add('done'); el.classList.add('done');
+    p.sel = null; p.matched++;
+    speak(charInfo(a.k).mean);
+    if (p.matched === p.q.set.length) { p.tries = p.boardMiss || 0; p.boardMiss = 0; fb(markCorrect(), 'good'); later(nextQ, 1500); }
+    return;
+  }
+  sfx.bad(); p.mistakes++; p.combo = 0; p.boardMiss = (p.boardMiss || 0) + 1;
+  el.classList.add('no'); elA.classList.add('no'); p.busy = true;
+  setTimeout(() => { el.classList.remove('no'); elA.classList.remove('no', 'sel'); p.busy = false; }, 600);
+  p.sel = null;
+}
+
+/* ---------- 따라쓰기 ---------- */
+const CELL = 300, TFONT = "700 225px 'Noto Sans KR', 'Malgun Gothic', sans-serif";
+const PENS = ['#e8590c', '#4dabf7', '#51cf66', '#ff6b9a', '#9775fa'];
+let pen = PENS[0];
+function drawGlyph(ctx, t, color, strokeW) {
+  ctx.font = TFONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineJoin = 'round'; ctx.lineWidth = strokeW || 1;
+  ctx.fillText(t, CELL / 2, CELL * 0.52); if (strokeW) ctx.strokeText(t, CELL / 2, CELL * 0.52);
+}
+function drawGuide(ctx, t) {
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, CELL, CELL);
+  ctx.strokeStyle = '#ffc9a8'; ctx.lineWidth = 4; ctx.setLineDash([]); ctx.strokeRect(6, 6, CELL - 12, CELL - 12);
+  ctx.strokeStyle = '#ffe8d6'; ctx.lineWidth = 3; ctx.setLineDash([12, 10]);
+  ctx.beginPath(); ctx.moveTo(CELL / 2, 12); ctx.lineTo(CELL / 2, CELL - 12); ctx.moveTo(12, CELL / 2); ctx.lineTo(CELL - 12, CELL / 2);
+  ctx.moveTo(12, 12); ctx.lineTo(CELL - 12, CELL - 12); ctx.moveTo(CELL - 12, 12); ctx.lineTo(12, CELL - 12); ctx.stroke();
+  ctx.setLineDash([]);
+  drawGlyph(ctx, t, '#e9ecf2');
+  ctx.setLineDash([8, 6]); ctx.lineWidth = 2.5; ctx.strokeStyle = '#aab3c5'; ctx.strokeText(t, CELL / 2, CELL * 0.52); ctx.setLineDash([]);
+}
+function drawStrokes(ctx, strokes, w) {
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = w; ctx.strokeStyle = '#000';
+  for (const s of strokes) {
+    ctx.beginPath(); ctx.moveTo(s.pts[0][0], s.pts[0][1]);
+    if (s.pts.length === 1) ctx.lineTo(s.pts[0][0] + 0.1, s.pts[0][1]);
+    for (const pt of s.pts) ctx.lineTo(pt[0], pt[1]);
+    ctx.stroke();
+  }
+}
+function traceQ() {
+  const p = play, q = p.q;
+  p.strokes = [];
+  $('#qcard').innerHTML = `
+    <div class="tinfo"><span>회색 한자를 따라 써요!</span> <b>${q.mean}</b></div>
+    <div class="board" style="max-width:340px"><canvas id="guide" width="${CELL}" height="${CELL}"></canvas><canvas class="ink" id="ink" width="${CELL}" height="${CELL}"></canvas></div>
+    <div class="colors">${PENS.map((c) => `<button style="background:${c}" class="${c === pen ? 'on' : ''}" data-act="pen" data-c="${c}"></button>`).join('')}</div>
+    <div class="feedback" id="fb"></div>`;
+  $('#answer').innerHTML = `<div class="tbtns"><button class="btn ghost" data-act="erase">🧽 지우기</button><button class="btn green" data-act="check">다 썼어요 ✔</button></div>`;
+  const draw = () => drawGuide($('#guide').getContext('2d'), q.target);
+  draw();
+  if (document.fonts && document.fonts.load) document.fonts.load(TFONT, q.target).then(() => { if (play && play.q === q) draw(); }).catch(() => {});
+  setupInk($('#ink'));
+  speak(q.say);
+}
+function setupInk(cv) {
+  const ctx = cv.getContext('2d');
+  let cur = null;
+  const pos = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; };
+  cv.addEventListener('pointerdown', (e) => {
+    if (!play || play.locked) return;
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    cur = { pts: [pos(e)] }; play.strokes.push(cur);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = CELL * 0.06; ctx.strokeStyle = pen;
+    ctx.beginPath(); ctx.moveTo(cur.pts[0][0], cur.pts[0][1]); ctx.lineTo(cur.pts[0][0] + 0.1, cur.pts[0][1]); ctx.stroke();
+  });
+  cv.addEventListener('pointermove', (e) => {
+    if (!cur) return;
+    const a = cur.pts[cur.pts.length - 1], b = pos(e);
+    cur.pts.push(b);
+    ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  });
+  const end = () => { cur = null; };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+}
+function scoreTrace() {
+  const q = play.q, W = CELL, H = CELL;
+  const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c.getContext('2d', { willReadFrequently: true }); };
+  const g = mk(); drawGlyph(g, q.target, '#000');
+  const gx = mk(); drawGlyph(gx, q.target, '#000', CELL * 0.07);
+  const thick = mk(); drawStrokes(thick, play.strokes, CELL * 0.14);
+  const thin = mk(); drawStrokes(thin, play.strokes, CELL * 0.06);
+  const gd = g.getImageData(0, 0, W, H).data, gxd = gx.getImageData(0, 0, W, H).data, td = thick.getImageData(0, 0, W, H).data, nd = thin.getImageData(0, 0, W, H).data;
+  let gl = 0, cov = 0, ink = 0, out = 0;
+  for (let i = 3; i < gd.length; i += 8) {
+    if (gd[i] > 128) { gl++; if (td[i] > 0) cov++; }
+    if (nd[i] > 128) { ink++; if (gxd[i] === 0) out++; }
+  }
+  return { cov: gl ? cov / gl : 0, out: ink ? out / ink : 1, much: gl ? ink / gl : 9 };
+}
+function checkTrace() {
+  const p = play;
+  if (p.locked) return;
+  if (!p.strokes.length) { fb('먼저 손가락으로 따라 써 봐요! ✍️', 'bad'); shake($('.board')); return; }
+  const r = scoreTrace();
+  if (r.cov >= 0.6 && r.out <= 0.3 && r.much <= 2.2) {
+    let msg = markCorrect();
+    if (r.cov >= 0.8 && r.out <= 0.2) msg = '💯 아주 멋지게 썼어요! ' + msg;
+    fb(msg, 'good'); speak(p.q.say); showNextBtn(); return;
+  }
+  sfx.bad(); p.combo = 0; shake($('.board'));
+  p.tries++;
+  if (p.tries === 1) p.mistakes++;
+  if (p.tries >= 3) { p.locked = true; p.results[p.idx] = false; fb('잘 했어요! 다음 한자도 해 봐요 💪' + timeTag(), 'good'); showNextBtn(); return; }
+  fb(r.cov < 0.6 ? '회색 한자를 끝까지 꽉 채워 써 볼까요? ✍️' : r.much > 2.2 ? '마구 칠하지 말고 획을 따라 써 볼까요? 🧽' : '선 밖으로 조금 나갔어요. 지우고 다시 써 볼까요? 🧽', 'bad');
+}
+function eraseTrace() {
+  const p = play; if (!p || p.locked) return;
+  p.strokes = []; const cv = $('#ink'); cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); fb('', '');
+}
+
+/* ---------- 결과 ---------- */
+function finish() {
+  const p = play, ratio = p.mistakes / p.total;
+  const stars = p.g.stars ? p.g.stars(p.mistakes) : ratio <= 0.1 ? 3 : ratio <= 0.3 ? 2 : 1;
+  const key = p.G.id + ':' + p.g.id, prev = S.stars[key] || 0;
+  S.stars[key] = Math.max(prev, stars);
+  const stickers = [award()];
+  if (stars === 3 && prev < 3) stickers.push(award());
+  save(); sfx.win(); confetti(50);
+  const t = p.times;
+  const r = { gid: p.G.id, game: p.g.id, stars, firstOk: p.firstOk, total: p.total, maxCombo: p.maxCombo, mistakes: p.mistakes, stickers: stickers.filter(Boolean),
+    avg: t.length ? t.reduce((a, b) => a + b, 0) / t.length : 0, fastest: t.length ? Math.min(...t) : 0 };
+  play = null; view = { name: 'result', g: r.gid, r }; render();
+}
+function renderResult() {
+  const r = view.r, g = GAMES.find((x) => x.id === r.game);
+  const msgs = { 3: '완벽해요! 한자 박사예요 👑', 2: '아주 잘했어요! 조금만 더 하면 별 3개! 💪', 1: '끝까지 해냈어요! 다시 하면 더 잘할 거예요 😊' };
+  const gi = GRADES.findIndex((G) => G.id === r.gid), nextG = GRADES[gi + 1];
+  app.innerHTML = `<div class="screen result">
+    <div class="re">${r.stars === 3 ? '🏆' : '🎉'}</div>
+    <h2>${r.gid}급 · ${g.title} 완료!</h2>
+    <div class="stars">${[1, 2, 3].map((k) => `<span class="${k <= r.stars ? '' : 'off'}" style="animation-delay:${k * 0.25}s">★</span>`).join('')}</div>
+    <p>${msgs[r.stars]}</p>
+    <p>${g.type === 'match' ? `틀린 짝 ${r.mistakes}번` : `한 번에 맞힌 문제 ${r.firstOk} / ${r.total}`} · 최고 연속 🔥 ${r.maxCombo}</p>
+    ${r.avg ? `<p>⏱️ 평균 ${r.avg.toFixed(1)}초 · ⚡ 가장 빨리 ${r.fastest.toFixed(1)}초</p>` : ''}
+    ${r.stickers.length ? `<div class="newsticker">새 스티커를 받았어요!<br>${r.stickers.map((s) => `<span>${s}</span>`).join('')}</div>` : ''}
+    <div class="acts">
+      <button class="btn" data-act="start" data-game="${r.game}">🔁 다시 하기</button>
+      <button class="btn ghost" data-act="back">📋 ${r.gid}급 놀이 고르기</button>
+      ${nextG && r.stars === 3 ? `<button class="btn ghost" data-act="grade" data-g="${nextG.id}">⬆️ ${nextG.id}급 도전하기</button>` : ''}
+    </div>
+  </div>`;
+}
+
+/* ---------- 입력 ---------- */
+app.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const act = el.dataset.act;
+  switch (act) {
+    case 'rename': { const n = prompt('이름을 알려 주세요', S.name); if (n !== null) { S.name = n.trim().slice(0, 8); save(); render(); } return; }
+    case 'sound': S.sound = !S.sound; save(); el.textContent = S.sound ? '🔔' : '🔕'; sfx.tap(); return;
+    case 'voice': S.voice = !S.voice; save(); el.textContent = S.voice ? '🗣️' : '🤐'; if (S.voice) speak('읽어 줄게요'); return;
+    case 'home': go({ name: 'home' }); return;
+    case 'stickers': go({ name: 'stickers' }); return;
+    case 'grade': sfx.tap(); go({ name: 'grade', g: +el.dataset.g }); return;
+    case 'back': go({ name: 'grade', g: view.g }); return;
+    case 'study': go({ name: 'study', g: view.g }); return;
+    case 'say': document.querySelectorAll('.hcard.on').forEach((b) => b.classList.remove('on')); el.classList.add('on'); speak(el.dataset.t, true); return;
+    case 'start': sfx.tap(); startGame(view.g, el.dataset.game); return;
+    case 'quit':
+      if (play && play.idx > 0 && !confirm('그만하고 나갈까요?')) return;
+      go({ name: 'grade', g: view.g }); return;
+    case 'speak': if (play && play.q.say) speak(play.q.say, true); return;
+    case 'choose': if (play) choose(+el.dataset.i, el); return;
+    case 'mcard': if (play) tapCard(+el.dataset.i, el); return;
+    case 'next': if (play) nextQ(); return;
+    case 'pen': pen = el.dataset.c; document.querySelectorAll('.colors button').forEach((b) => b.classList.toggle('on', b === el)); return;
+    case 'erase': eraseTrace(); return;
+    case 'check': checkTrace(); return;
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (!play) return;
+  if (play.locked && e.key === 'Enter' && $('[data-act="next"]')) { nextQ(); return; }
+  if (play.q && play.q.choices && !play.locked) { const i = '1234'.indexOf(e.key); if (i >= 0) { const b = document.querySelectorAll('.choice')[i]; if (b && !b.disabled) b.click(); } }
+});
+if ('speechSynthesis' in window) speechSynthesis.getVoices();
+render();
+</script>
+</body>
+</html>
