@@ -13,6 +13,15 @@ window.GAMES_CONFIG = [
     accent: '#ffb703',
   },
   {
+    id: 'hangulplay',
+    emoji: '✏️',
+    title: '재미있는 한글놀이',
+    subtitle: '7살 한글 · 따라쓰기 · 낱말 · 문장',
+    desc: '✏️손가락으로 한글 따라쓰기(자음·모음·글자·낱말), 🖼️그림 단어 퀴즈, 🧩빠진 글자 찾기, 🔤글자 만들기(ㄱ+ㅏ=가), 🔍첫소리·끝말잇기, 👂듣고 고르기, 📝문장 완성하기, 🧱문장 만들기까지! 단계별 별 모으기와 🎁스티커북으로 재미있게 한글을 익혀요.',
+    url: '/hangul-play/',
+    accent: '#ff6b9a',
+  },
+  {
     id: 'metaworld',
     emoji: '🪐',
     title: '모두의 세계여행',
