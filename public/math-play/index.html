@@ -125,6 +125,8 @@ b { font-weight: normal; color: var(--main); }
 .feedback { min-height: 30px; font-size: 22px; }
 .feedback.good { color: var(--good); animation: pop .35s ease; }
 .feedback.bad { color: var(--bad); }
+.sec { display: inline-block; background: #e7f5ff; color: #1c7ed6; border-radius: 999px; padding: 0 10px; margin-left: 4px; }
+.sec.fast { background: #fff3bf; color: #e67700; }
 .combo { display: inline-block; background: #fff0e0; color: #ff6b00; border-radius: 999px; padding: 0 10px; margin-left: 4px; }
 
 .answer { margin-top: 14px; }
@@ -252,7 +254,7 @@ const gwa = (n) => n + (jb(n) ? '과' : '와');
 const FOODS = ['🍎', '🍓', '🍊', '🍌', '🍇', '🍒', '🍑', '🥕', '🍪', '🧁', '🍩', '⭐', '🐟', '🎈', '🌸', '🍬'];
 const KIDS = ['🧒', '👧', '👦', '🐻', '🐰'];
 const PRAISE = ['딩동댕! 🎉', '최고야! 👍', '우와, 천재다! 🌟', '정답! 잘했어 😄', '짝짝짝! 👏', '대단해! 💯', '멋져요! ✨'];
-const RETRY = ['아깝다! 다시 생각해 볼까? 💪', '괜찮아, 한 번 더! 🙂', '거의 다 왔어! 힌트를 봐요 💡'];
+const RETRY = ['아깝다! 다시 생각해 볼까? 💪', '괜찮아, 한 번 더! 🙂', '거의 다 왔어! 천천히 생각해 봐요 🤔'];
 
 /* ---------- 그림 도우미 ---------- */
 function items(n, e) {
@@ -610,7 +612,7 @@ function renderBoard() {
 function startLevel(tid, lid) {
   const T = TRACKS[tid], time = lid === 'time';
   const level = time ? null : lid === 'weak' ? WEAK : T.levels.find((l) => l.id === lid);
-  play = { tid, lid, level, time, idx: 0, total: time ? Infinity : 10, results: [], mistakes: 0, combo: 0, maxCombo: 0, score: 0, firstOk: 0, recent: [], solved: 0 };
+  play = { tid, lid, level, time, idx: 0, total: time ? Infinity : 10, results: [], mistakes: 0, combo: 0, maxCombo: 0, score: 0, firstOk: 0, recent: [], solved: 0, times: [] };
   view = { name: 'play', t: tid };
   document.body.className = 't-' + tid;
   renderPlayShell();
@@ -692,12 +694,11 @@ function renderEq(q) {
 }
 function newQ() {
   const p = play, q = genQ();
-  Object.assign(p, { q, tries: 0, input: ['', ''], slot: 0, locked: false });
+  Object.assign(p, { q, tries: 0, input: ['', ''], slot: 0, locked: false, qStart: Date.now() });
   const mode = S.tracks[p.tid].input;
   p.choices = mode === 'choice' ? makeChoices(q) : null;
   renderPath();
   $('#qcard').innerHTML = `
-    ${!p.time && q.hint ? '<button class="hintbtn" data-act="hint">💡 힌트</button>' : ''}
     <div class="qtext">${q.text || ''}</div>
     <div class="visual">${q.visual || ''}</div>
     <div class="eq ${q.small ? 'small' : ''} ${q.labels ? 'has-label' : ''}" id="eq">${renderEq(q)}</div>
@@ -769,7 +770,9 @@ function onCorrect(btn) {
   p.results[p.idx] = first;
   if (first) { p.firstOk++; p.combo++; p.maxCombo = Math.max(p.maxCombo, p.combo); }
   fillAnswer('good');
-  let msg = pick(PRAISE);
+  const sec = (Date.now() - p.qStart) / 1000;
+  p.times.push(sec);
+  let msg = pick(PRAISE) + ` <span class="sec ${sec < 3 ? 'fast' : ''}">${sec < 3 ? '⚡' : '⏱️'} ${sec.toFixed(1)}초</span>`;
   if (first && p.combo >= 3) msg += ` <span class="combo">🔥 ${p.combo}연속!</span>`;
   confetti(first && p.combo >= 3 ? 14 : 6);
   if (p.time) { p.score += 1 + (p.combo >= 5 ? 1 : 0); const s = $('#score'); if (s) s.textContent = p.score; fb(msg, 'good'); later(nextQ, 450); return; }
@@ -788,7 +791,7 @@ function onWrong(arr, btn) {
     let m = pick(RETRY);
     if (q.ans.length === 2 && arr[0] === q.ans[0]) m = (q.labels[0] === '몫' ? '몫은 맞았어요! 👍' : '앞의 답은 맞았어요! 👍') + ' 나머지를 다시 봐요';
     if (q.d && arr.length === 2 && arr[1] >= q.d) m = `나머지는 ${q.d}보다 작아야 해요! 🤔`;
-    fb(m, 'bad'); showHint();
+    fb(m, 'bad');
     p.input = ['', '']; p.slot = 0; updateBlanks();
     return;
   }
@@ -806,7 +809,7 @@ function nextQ() {
 function finish() {
   const p = play, T = S.tracks[p.tid];
   if (p.timer) clearInterval(p.timer);
-  const r = { tid: p.tid, lid: p.lid, time: p.time, score: p.score, firstOk: p.firstOk, total: p.total, maxCombo: p.maxCombo, stickers: [], stars: 0, newBest: false };
+  const r = { tid: p.tid, lid: p.lid, time: p.time, score: p.score, firstOk: p.firstOk, total: p.total, maxCombo: p.maxCombo, avg: p.times.length ? p.times.reduce((a, b) => a + b, 0) / p.times.length : 0, fastest: p.times.length ? Math.min(...p.times) : 0, stickers: [], stars: 0, newBest: false };
   if (p.time) {
     if (p.score > T.best) { r.newBest = true; T.best = p.score; if (p.score >= 8) r.stickers.push(award(p.tid)); }
   } else {
@@ -838,6 +841,7 @@ function renderResult() {
       : `<div class="stars">${[1, 2, 3].map((k) => `<span class="${k <= r.stars ? '' : 'off'}" style="animation-delay:${k * 0.25}s">★</span>`).join('')}</div>
          <p>${msgs[r.stars]}</p><p>한 번에 맞힌 문제 ${r.firstOk} / ${r.total} · 최고 연속 🔥 ${r.maxCombo}</p>
          ${r.unlockedNew ? '<p>🔓 다음 단계가 열렸어요!</p>' : ''}`}
+    ${r.avg ? `<p>⏱️ 평균 ${r.avg.toFixed(1)}초 · ⚡ 가장 빨리 ${r.fastest.toFixed(1)}초</p>` : ''}
     ${r.stickers.length ? `<div class="newsticker">새 스티커를 받았어요!<br>${r.stickers.map((s) => `<span>${s}</span>`).join('')}</div>` : ''}
     <div class="acts">
       ${r.next ? `<button class="btn" data-act="start" data-l="${r.next}">다음 단계로 ▶</button>` : ''}
