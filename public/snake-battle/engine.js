@@ -21,7 +21,7 @@
   };
 
   // 뱀 굵기 (길이도 굵기에 비례)
-  const widthOf = (L) => 0.8 * (16 + 5.5 * Math.cbrt(Math.max(1, L)));
+  const widthOf = (L) => 0.72 * (16 + 5.5 * Math.cbrt(Math.max(1, L)));
   const lengthOf = (L) => widthOf(L) * Math.min(42, 4 + 1.5 * Math.sqrt(Math.max(1, L)));
   const turnOf = (L) => Math.max(3.2, 7.4 - 0.4 * Math.log2(Math.max(1, L)));
   // 캐릭터 등급 (1 일반, 2 레어, 3 에픽, 4 전설) - 브라우저와 서버가 함께 사용
@@ -113,8 +113,8 @@
     this.skinEvery = opt.skinEvery || 0;
     this.skinT = Math.min(6, this.skinEvery * 0.3);
     this.giftMax = opt.giftMax || 1;
-    this.itemTarget = opt.itemTarget || 0;
-    this.itemEvery = opt.itemEvery || 10;
+    this.itemTarget = (opt.itemTarget || 0) * 1.2; // 아이템 확률 20% 증가
+    this.itemEvery = (opt.itemEvery || 10) / 1.2;
     this.itemT = this.itemEvery * 0.4;
     this.items = 0;
     this.snakes = [];
