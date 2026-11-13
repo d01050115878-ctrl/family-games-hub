@@ -107,6 +107,20 @@ button,input,select{font-family:inherit}
 @keyframes glow{from{box-shadow:0 0 0 0 #ffcc4d88}to{box-shadow:0 0 0 1.2cqw #ffcc4d00}}
 #msg{font-size:1.9cqw;color:#dfe4ff;min-height:2.4cqw;text-align:center;padding:0 2cqw}
 #roundInfo{font-size:1.5cqw;color:var(--muted)}
+#orderRow{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.4cqw;background:#121942;border-radius:1.5cqw;z-index:3}
+#orderRow[hidden]{display:none}
+#orderRow h3{margin:0;font-size:2.6cqw}
+#orderRow .oc-row{display:flex;gap:1.2cqw}
+.oc{width:8.4cqw;height:11.5cqw;border-radius:1cqw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3cqw;
+  background:repeating-linear-gradient(45deg,#3b4aa8 0 .8cqw,#2a3585 .8cqw 1.6cqw);border:.3cqw solid #5566d0;font-size:1.3cqw;position:relative}
+.oc .q{font-size:4cqw;opacity:.6}
+.oc.up{background:linear-gradient(160deg,#fff,#dfe4ff);color:#0b1026;border-color:var(--pc);box-shadow:0 0 1.2cqw var(--pc);animation:ocflip .35s}
+.oc.up .n{font-size:4.4cqw;font-weight:900;line-height:1}
+.oc.up .w{font-weight:800;max-width:7.6cqw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.oc .rk{position:absolute;top:-1.2cqw;right:-1cqw;background:linear-gradient(#ffe066,#f59f00);color:#3a2500;border-radius:99px;padding:.15cqw .7cqw;font-weight:900;font-size:1.4cqw}
+.oc.me{outline:.35cqw dashed var(--accent);outline-offset:.3cqw}
+#orderRow .ol{font-size:1.6cqw;color:var(--muted)}
+@keyframes ocflip{from{transform:rotateY(90deg)}to{transform:none}}
 #pickBar{position:absolute;bottom:2cqw;left:50%;transform:translateX(-50%);background:#000c;border:.3cqw solid var(--accent);
   padding:1cqw 2cqw;border-radius:1.2cqw;font-size:1.8cqw;display:flex;gap:1.5cqw;align-items:center;white-space:nowrap;z-index:5}
 #pickBar[hidden]{display:none}
@@ -221,6 +235,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
         <button id="rollBtn" class="btn gold" disabled>🎲 주사위 굴리기</button>
         <div id="msg"></div>
         <div id="roundInfo"></div>
+        <div id="orderRow" hidden></div>
         <div id="pickBar" hidden><span id="pickText"></span><button id="pickCancel" class="btn sm ghost">취소</button></div>
         <div id="announce"></div>
       </div>
@@ -817,6 +832,19 @@ function floatText(pid, text, good) {
 }
 
 /* ================== 엔진 이벤트 처리 (로컬·온라인 공용) ================== */
+// 순서 정하기: 뽑은 카드 숫자를 모두에게 보여준다
+function renderOrder(ev) {
+  const box = $('#orderRow');
+  if (ev.hide || !S) { box.hidden = true; return; }
+  const rank = ev.final ? Object.fromEntries(ev.final.map((id, i) => [id, i + 1])) : {};
+  box.innerHTML = `<h3>🃏 순서 정하기</h3><div class="oc-row">${ev.cards.map(c => {
+    if (!c) return '<div class="oc"><span class="q">?</span></div>';
+    const p = S.players[c.pid];
+    return `<div class="oc up ${c.pid === mySeat ? 'me' : ''}" style="--pc:${p.color}">${rank[c.pid] ? `<span class="rk">${rank[c.pid]}등</span>` : ''}
+      <span class="n">${c.num}</span><span>${p.emoji}</span><span class="w">${esc(p.name)}${c.pid === mySeat ? ' (나)' : ''}</span></div>`;
+  }).join('')}</div><div class="ol">${ev.final ? '높은 숫자부터 차례가 돌아가요!' : '높은 숫자를 뽑은 사람이 먼저 시작해요'}</div>`;
+  box.hidden = false;
+}
 function applySync(st) {
   const prev = S;
   S = MW.expand(st);
@@ -837,6 +865,7 @@ function handleEvent(ev) {
     case 'focus': showInfo(ev.tile); break;
     case 'end': showEnd(ev); break;
     case 'fx': playFx(ev); break;
+    case 'order': renderOrder(ev); break;
   }
 }
 

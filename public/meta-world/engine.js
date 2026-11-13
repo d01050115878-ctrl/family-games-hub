@@ -376,7 +376,9 @@
       const deck = shuffle([1, 2, 3, 4, 5, 6]);
       const taken = deck.map(() => -1);
       const got = {};
+      const board = (final) => this.emit({ type: 'order', cards: taken.map((o, j) => (o >= 0 ? { pid: o, num: deck[j] } : null)), final: final || null });
       this.announce('🃏 순서 정하기');
+      board();
       this.log('🃏 숫자 카드 6장 중 하나씩 골라요. <b>높은 숫자</b>부터 먼저 시작합니다!');
       for (const p of s.players) {
         if (this.aborted) return;
@@ -385,6 +387,7 @@
         let k = await this.ask(p, { kind: 'orderPick', taken: taken.slice(), revealed: taken.map((o, j) => (o >= 0 ? deck[j] : 0)), ai: free[rnd(free.length)] });
         if (!free.includes(k)) k = free[rnd(free.length)];
         taken[k] = p.id; got[p.id] = deck[k];
+        board();
         this.sfx('turn');
         this.log(`${this.nm(p)} ${k + 1}번째 카드 → <b>${deck[k]}</b>`);
         this.float(p, `🃏 ${deck[k]}`, true);
@@ -392,9 +395,11 @@
       }
       s.order = s.players.map((p) => p.id).sort((a, b) => got[b] - got[a]);
       s.cur = s.order[0];
+      board(s.order);
       this.log(`📋 순서: ${s.order.map((id, i) => `${i + 1}. ${this.nm(s.players[id])}(${got[id]})`).join(' → ')}`);
       this.announce(`${s.players[s.order[0]].emoji} ${s.players[s.order[0]].name} 먼저 시작!`);
-      await this.sleep(900);
+      await this.sleep(2500);
+      this.emit({ type: 'order', hide: true });
     }
     advance() {
       const s = this.s;
