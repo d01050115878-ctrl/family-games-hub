@@ -50,7 +50,7 @@
     { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '페루', cc: 'pe', g: 1 },
-    { type: 'station', name: '동탄', icon: '🗼', price: 100, toll: 200, pair: '관광지' },
+    { type: 'station', name: '한국', icon: '🇰🇷', cc: 'kr', price: 100, toll: 200, pair: '관광지' },
     { type: 'city', name: '아르헨티나', cc: 'ar', g: 1 },
     { type: 'city', name: '브라질', cc: 'br', g: 1 },
     { type: 'blackhole', name: '버뮤다 삼각지대', icon: '🌊', sub: '최대 3턴 표류' },
@@ -140,7 +140,7 @@
   const sellValue = (t) => Math.floor(invested(t) / 2);
   const takeoverPrice = (t) => invested(t) * 2;
   const stationCount = (s, pid) => s.tiles.filter((x) => x.type === 'station' && x.owner === pid).length;
-  // 관광지 짝(제주도+부산 = 휴양지, 동탄+경주 = 관광지)을 한 사람이 모두 가지면 통행료 ×2
+  // 관광지 짝(제주도+부산 = 휴양지, 한국+경주 = 관광지)을 한 사람이 모두 가지면 통행료 ×2
   const pairOwned = (s, t, pid = t.owner) => pid >= 0 && s.tiles.filter((x) => x.type === 'station' && x.pair === t.pair).every((x) => x.owner === pid);
   // 건물별 통행료: 땅·하우스·빌딩을 정하고, 호텔은 '호텔까지 합계 = 정한 호텔 통행료'가 딱 맞도록, 랜드마크는 그만큼 더
   function elemToll(t, k) {

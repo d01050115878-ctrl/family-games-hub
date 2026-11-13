@@ -44,6 +44,7 @@ button,input,select{font-family:inherit}
 .tile .bd{font-size:1.35cqw;min-height:1.6cqw;margin-top:.1cqw;letter-spacing:-.3cqw}
 .tile .tp{font-size:1.1cqw;color:#e9ecff;text-shadow:0 0 .3cqw #000;margin-top:auto;margin-bottom:.35cqw}
 .tile .ic{font-size:2.6cqw;margin-top:.5cqw}
+img.sflag{width:1.5em;height:1em;object-fit:cover;border-radius:.15em;vertical-align:-.12em;box-shadow:0 0 0 1px #0007;background:#fff}
 .tile.corner{justify-content:center;background:linear-gradient(145deg,#28337a,#161d4a)}
 .tile.corner .ic{font-size:4.6cqw;margin:0}
 .tile.corner .tn{font-size:1.6cqw}
@@ -129,15 +130,24 @@ button,input,select{font-family:inherit}
   transition:opacity .25s,transform .25s;white-space:nowrap;z-index:6;text-shadow:0 0 1cqw #000}
 #announce.show{opacity:1;transform:translate(-50%,0) scale(1)}
 
-.token{position:absolute;width:5.4cqw;height:3.8cqw;border-radius:1cqw;display:grid;place-items:center;
-  background:#0b1026e0;border:.3cqw solid var(--pc);box-shadow:0 .4cqw .8cqw #000a;transform:translate(-50%,-50%);z-index:4;
-  transition:left .16s ease-out,top .16s ease-out;pointer-events:none;padding:.15cqw}
-.token svg{width:100%;height:100%}
-#board.many .token{width:4.5cqw;height:3.1cqw;border-width:.25cqw}
+.token{position:absolute;width:5.6cqw;height:5cqw;transform:translate(-50%,-62%);z-index:4;
+  transition:left .16s ease-out,top .16s ease-out;pointer-events:none;perspective:20cqw}
+#board.many .token{width:4.6cqw;height:4.1cqw}
+/* 3D 말: 색깔 받침대(원반) 위에 입체 음영을 준 차량이 서 있음 */
+.token .base{position:absolute;left:8%;right:8%;bottom:4%;height:30%;border-radius:50%;
+  background:radial-gradient(ellipse at 40% 35%,color-mix(in srgb,var(--pc) 40%,#fff) 0%,var(--pc) 45%,color-mix(in srgb,var(--pc) 55%,#000) 100%);
+  box-shadow:0 .32cqw 0 color-mix(in srgb,var(--pc) 45%,#000),0 .7cqw 1cqw #000c}
+.token .piece{position:absolute;left:4%;right:4%;top:0;bottom:22%;transform-style:preserve-3d;transform-origin:50% 90%;
+  animation:tkidle 3.2s ease-in-out infinite}
+.token .piece svg{width:100%;height:100%;overflow:visible;filter:url(#bevel3d) drop-shadow(.12cqw .3cqw .12cqw #000b)}
+.token.hop .piece{animation:tkhop .3s ease-out,tkidle 3.2s ease-in-out .3s infinite}
+@keyframes tkidle{0%,100%{transform:rotateX(14deg) rotateY(-16deg)}50%{transform:rotateX(14deg) rotateY(16deg)}}
+@keyframes tkhop{0%{transform:rotateX(14deg) translateY(0)}45%{transform:rotateX(14deg) translateY(-1.6cqw) scale(1.06)}100%{transform:rotateX(14deg) translateY(0)}}
 .veh{display:inline-grid;place-items:center;flex:none;background:#0b1026;border:2px solid var(--pc);border-radius:9px;padding:2px}
 .veh svg{width:100%;height:100%}
-.token.cur{animation:tokpulse .7s infinite alternate;z-index:5}
-@keyframes tokpulse{from{box-shadow:0 0 0 0 #fff8}to{box-shadow:0 0 0 .9cqw #fff0}}
+.token.cur{z-index:5}
+.token.cur .base{animation:tokpulse .7s infinite alternate}
+@keyframes tokpulse{from{box-shadow:0 .32cqw 0 color-mix(in srgb,var(--pc) 45%,#000),0 0 0 0 #fff9}to{box-shadow:0 .32cqw 0 color-mix(in srgb,var(--pc) 45%,#000),0 0 0 .9cqw #fff0}}
 .float{position:absolute;transform:translate(-50%,-50%);font-weight:900;font-size:2.4cqw;pointer-events:none;z-index:7;
   text-shadow:0 0 .6cqw #000,0 0 .6cqw #000;animation:floatup 1.3s forwards}
 @keyframes floatup{to{transform:translate(-50%,-260%);opacity:0}}
@@ -330,7 +340,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   💰 건설비는 한 번에 짓는 땅·건물 값을 더해서 내고, <b>통행료와 인수비도 지어진 건물 것을 모두 더해서</b> 계산합니다.
   <h4>통행료 &amp; 인수</h4>
   다른 플레이어의 나라에 도착하면 통행료를 냅니다. 통행료를 낸 뒤 <b>투자금의 2배</b>를 내고 그 나라를 인수할 수 있습니다.<br>
-  🏝️ <b>관광지</b>는 건물을 지을 수 없고 정해진 통행료를 받습니다. 제주도(매입 20·통행 30)·부산(50·60)은 <b>휴양지</b> 짝, 경주(20·30)·동탄(100·200)은 <b>관광지</b> 짝이에요.
+  🏝️ <b>관광지</b>는 건물을 지을 수 없고 정해진 통행료를 받습니다. 제주도(매입 20·통행 30)·부산(50·60)은 <b>휴양지</b> 짝, 경주(20·30)·한국(100·200)은 <b>관광지</b> 짝이에요.
   <b>짝을 둘 다 가지면 통행료 ×2!</b> 🔒 관광지·휴양지는 랜드마크처럼 <b>인수할 수 없어요</b>.
   <h4>🎨 같은 색 세트 ×2</h4>
   나라 칸 위쪽 띠의 <b>색깔(대륙)</b>이 같은 나라 3곳이 한 세트입니다. 세트를 모두 가지면 그 나라들의 통행료가 <b>2배</b>가 되고 칸에 <b style="color:#ffd43b">×2</b> 표시가 붙습니다.
@@ -367,6 +377,21 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   <button class="btn ghost" id="endView">보드 보기</button></div>
 </div></div>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="bevel3d" x="-15%" y="-15%" width="130%" height="140%" color-interpolation-filters="sRGB">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="1.3" result="blur"/>
+    <feSpecularLighting in="blur" surfaceScale="3.5" specularConstant="1" specularExponent="16" lighting-color="#ffffff" result="spec">
+      <feDistantLight azimuth="235" elevation="42"/>
+    </feSpecularLighting>
+    <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn"/>
+    <feDiffuseLighting in="blur" surfaceScale="3.5" diffuseConstant="1.15" lighting-color="#ffffff" result="diff">
+      <feDistantLight azimuth="235" elevation="55"/>
+    </feDiffuseLighting>
+    <feComposite in="SourceGraphic" in2="diff" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="lit"/>
+    <feComposite in="lit" in2="specIn" operator="arithmetic" k1="0" k2="1" k3=".75" k4="0" result="out"/>
+    <feComposite in="out" in2="SourceAlpha" operator="in"/>
+  </filter>
+</defs></svg>
 <script src="engine.js?v=20261107200227"></script>
 <script>
 'use strict';
@@ -406,6 +431,8 @@ const $ = s => document.querySelector(s);
 const rnd = n => Math.floor(Math.random() * n);
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
 const flagImg = (cc, cls = 'flag') => `<img class="${cls}" src="https://flagcdn.com/w80/${cc}.png" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
+// 관광지 아이콘: 국기(cc)가 있으면 국기 이미지, 없으면 이모지
+const ticon = t => (t.type === 'station' && t.cc ? flagImg(t.cc, 'sflag') : t.icon || '');
 
 let S = null;            // 현재 게임 상태 (엔진 스냅샷을 펼친 것)
 let mode = null;         // 'local' | 'online'
@@ -682,7 +709,7 @@ function buildBoard() {
       el.style.setProperty('--gc', GROUPS[t.g].color);
       el.innerHTML = `<div class="band" style="background:${GROUPS[t.g].color};--line:${LINES[t.line].color}">${GROUPS[t.g].name}</div>${flagImg(t.cc)}<div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
     } else if (t.type === 'station') {
-      el.innerHTML = `<div class="band" style="background:${t.pair === '휴양지' ? '#99e9f2' : '#ffd8a8'};--line:${LINES[t.line].color}">${t.pair}</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${t.icon}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
+      el.innerHTML = `<div class="band" style="background:${t.pair === '휴양지' ? '#99e9f2' : '#ffd8a8'};--line:${LINES[t.line].color}">${t.pair}</div><div class="ic" style="font-size:2.2cqw;margin-top:.3cqw">${ticon(t)}</div><div class="tn">${t.name}</div><div class="bd"></div><div class="tp"></div><div class="fest"></div><div class="own"></div>`;
     } else {
       el.innerHTML = `<div class="ic">${t.icon}</div><div class="tn">${t.name}</div>${t.sub ? `<div class="sub">${t.sub}</div>` : ''}`;
     }
@@ -696,7 +723,7 @@ function createTokens() {
   tokenEls.forEach(e => e.remove());
   tokenEls = S.players.map(p => {
     const d = document.createElement('div');
-    d.className = 'token'; d.innerHTML = vehicleSVG(chOf(p)); d.style.setProperty('--pc', p.color);
+    d.className = 'token'; d.innerHTML = `<div class="base"></div><div class="piece">${vehicleSVG(chOf(p))}</div>`; d.style.setProperty('--pc', p.color);
     $('#board').appendChild(d);
     return d;
   });
@@ -715,8 +742,10 @@ function positionTokens() {
   if (!S) return;
   S.players.forEach((p, i) => {
     const e = tokenEls[i]; if (!e) return;
-    e.style.display = p.alive ? 'grid' : 'none';
+    e.style.display = p.alive ? 'block' : 'none';
     const { x, y } = tokenXY(i);
+    if (e.dataset.pos != null && +e.dataset.pos !== p.pos) { e.classList.remove('hop'); void e.offsetWidth; e.classList.add('hop'); }
+    e.dataset.pos = p.pos;
     e.style.left = x + 'px'; e.style.top = y + 'px';
     e.classList.toggle('cur', i === S.cur && !S.over);
   });
@@ -893,7 +922,7 @@ function pickLabel(t, me) {
   if (MW.isProp(t)) {
     if (t.owner < 0) return ['free', `빈 땅 ${fmt(MW.cityPrice(t))}`];
     const o = S.players[t.owner];
-    if (me && t.owner === me.id) return ['mine', `내 땅 ${t.type === 'city' ? LEVEL_ICONS[t.level] : t.icon}`];
+    if (me && t.owner === me.id) return ['mine', `내 땅 ${t.type === 'city' ? LEVEL_ICONS[t.level] : ticon(t)}`];
     return ['foe', `${o.emoji} 통행 ${fmt(MW.toll(S, t))}`];
   }
   return ['warn', { start: '🚀 월급+건설', blackhole: '⚠ 표류 3턴', festival: '🎉 페스티벌', warp: '✈️ 세계여행', chance: '🎴 카드', tax: `💸 관세` }[t.type] || t.name];
@@ -937,7 +966,7 @@ function askModal(p, req) {
       })).concat([{ label: '패스', value: null, cls: 'ghost' }]),
     };
     case 'station': return {
-      title: `${t.icon} ${t.name} (관광지)`,
+      title: `${ticon(t)} ${t.name} (관광지)`,
       html: `매입가 <b>${fmt(req.price)}</b> · 통행료 <b>${fmt(req.nextToll)}</b>${req.nextToll > t.toll ? ` <b style="color:var(--accent)">(${req.pair} 짝 완성 ×2!)</b>` : ''}<br>구매하면 관광지 ${req.count}곳 보유${req.count === 4 ? ' → <b style="color:var(--accent)">관광지 독점 승리!</b>' : ' (4곳 모두 가지면 독점 승리)'}<br>보유 현금: ${fmt(req.money)}`,
       buttons: [{ label: `구매하기 <small>-${fmt(req.price)}</small>`, value: true, cls: 'gold' }, { label: '패스', value: false, cls: 'ghost' }],
     };
@@ -957,7 +986,7 @@ function askModal(p, req) {
         html: `내야 할 금액: <b>${fmt(req.need)}</b><br>보유 현금: <b>${fmt(req.money)}</b> (부족 <b class="neg">${fmt(req.need - req.money)}</b>)<br>
           매각할 부동산을 고르세요. 투자금의 50%를 돌려받습니다.<br>
           ${req.money + total < req.need ? '<b class="neg">⚠ 전부 팔아도 부족합니다.</b>' : `전부 팔면 ${fmt(req.money + total)}`}`,
-        buttons: req.props.map(x => ({ label: `${S.tiles[x.idx].type === 'city' ? LEVEL_ICONS[x.level] : S.tiles[x.idx].icon} ${S.tiles[x.idx].name} <small>+${fmt(x.value)}</small>`, value: x.idx, cls: 'sm' }))
+        buttons: req.props.map(x => ({ label: `${S.tiles[x.idx].type === 'city' ? LEVEL_ICONS[x.level] : ticon(S.tiles[x.idx])} ${S.tiles[x.idx].name} <small>+${fmt(x.value)}</small>`, value: x.idx, cls: 'sm' }))
           .concat([{ label: '💀 파산 선언', value: 'bk', cls: 'danger' }]),
       };
     }
