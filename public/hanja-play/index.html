@@ -554,36 +554,125 @@ function setupInk(cv) {
   const end = () => { cur = null; };
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
 }
-function scoreTrace() {
-  const q = play.q, W = CELL, H = CELL;
-  const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c.getContext('2d', { willReadFrequently: true }); };
-  const g = mk(); drawGlyph(g, q.target, '#000');
-  const gx = mk(); drawGlyph(gx, q.target, '#000', CELL * 0.07);
-  const thick = mk(); drawStrokes(thick, play.strokes, CELL * 0.14);
-  const thin = mk(); drawStrokes(thin, play.strokes, CELL * 0.06);
-  const gd = g.getImageData(0, 0, W, H).data, gxd = gx.getImageData(0, 0, W, H).data, td = thick.getImageData(0, 0, W, H).data, nd = thin.getImageData(0, 0, W, H).data;
-  let gl = 0, cov = 0, ink = 0, out = 0;
-  for (let i = 3; i < gd.length; i += 8) {
-    if (gd[i] > 128) { gl++; if (td[i] > 0) cov++; }
-    if (nd[i] > 128) { ink++; if (gxd[i] === 0) out++; }
+/* 글자 모양의 뼈대(중심선) — Zhang-Suen 세선화 */
+function skeleton(m, W, H) {
+  const k = Uint8Array.from(m);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let pass = 0; pass < 2; pass++) {
+      const del = [];
+      for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+        const i = y * W + x; if (!k[i]) continue;
+        const p2 = k[i - W], p3 = k[i - W + 1], p4 = k[i + 1], p5 = k[i + W + 1], p6 = k[i + W], p7 = k[i + W - 1], p8 = k[i - 1], p9 = k[i - W - 1];
+        const b = p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9; if (b < 2 || b > 6) continue;
+        const a = (!p2 && p3) + (!p3 && p4) + (!p4 && p5) + (!p5 && p6) + (!p6 && p7) + (!p7 && p8) + (!p8 && p9) + (!p9 && p2);
+        if (a !== 1) continue;
+        if (pass === 0 ? (p2 * p4 * p6 || p4 * p6 * p8) : (p2 * p4 * p8 || p2 * p6 * p8)) continue;
+        del.push(i);
+      }
+      if (del.length) { changed = true; for (const i of del) k[i] = 0; }
+    }
   }
-  return { cov: gl ? cov / gl : 0, out: ink ? out / ink : 1, much: gl ? ink / gl : 9 };
+  return k;
 }
+const skelCache = {};
+function glyphInfo(t) {
+  if (skelCache[t]) return skelCache[t];
+  const W = CELL, H = CELL;
+  const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c.getContext('2d', { willReadFrequently: true }); };
+  const g = mk(); drawGlyph(g, t, '#000');
+  const gx = mk(); drawGlyph(gx, t, '#000', CELL * 0.06); // 글자 + 약 9px 여유
+  const gd = g.getImageData(0, 0, W, H).data, gxd = gx.getImageData(0, 0, W, H).data;
+  const m = new Uint8Array(W * H), near = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) { m[i] = gd[i * 4 + 3] > 128 ? 1 : 0; near[i] = gxd[i * 4 + 3] > 64 ? 1 : 0; }
+  const k = skeleton(m, W, H), pts = [];
+  for (let i = 0; i < W * H; i++) if (k[i]) pts.push(i);
+  // 뼈대 각 점의 획 방향(주변 뼈대 점들의 주축)
+  const ux = new Float32Array(W * H), uy = new Float32Array(W * H);
+  for (const i of pts) {
+    const x = i % W, y = (i - x) / W; let n = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+    for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) {
+      const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= H || !k[yy * W + xx]) continue;
+      n++; sx += dx; sy += dy; sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+    }
+    sx /= n; sy /= n; const a = 0.5 * Math.atan2(2 * (sxy / n - sx * sy), sxx / n - sx * sx - (syy / n - sy * sy));
+    ux[i] = Math.cos(a); uy[i] = Math.sin(a);
+  }
+  // 각 픽셀에서 가장 가까운 뼈대 점 (16px 이내)
+  const nearest = new Int32Array(W * H).fill(-1), dist = new Uint8Array(W * H);
+  let q = pts.slice(); for (const i of q) nearest[i] = i;
+  for (let d = 1; d <= 16 && q.length; d++) {
+    const nq = [];
+    for (const i of q) {
+      const x = i % W;
+      for (const o of [1, -1, W, -W, W + 1, W - 1, -W + 1, -W - 1]) {
+        const j = i + o; if (j < 0 || j >= W * H || nearest[j] >= 0) continue;
+        if (Math.abs((j % W) - x) > 1) continue;
+        nearest[j] = nearest[i]; dist[j] = d; nq.push(j);
+      }
+    }
+    q = nq;
+  }
+  return (skelCache[t] = { near, pts, ux, uy, nearest });
+}
+function scoreTrace() {
+  const W = CELL, H = CELL, info = glyphInfo(play.q.target);
+  // 1) 중심선 커버: 글자 뼈대가 내가 그은 선 근처(약 16px)에 있는가
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const cx = c.getContext('2d', { willReadFrequently: true });
+  drawStrokes(cx, play.strokes, CELL * 0.11);
+  const cd = cx.getImageData(0, 0, W, H).data;
+  let hit = 0;
+  for (const i of info.pts) if (cd[i * 4 + 3] > 0) hit++;
+  // 2) 선 밖으로 나간 정도 / 3) 그은 길이(마구 칠하기·덧칠 방지)
+  let len = 0, samples = 0, out = 0;
+  const test = (x, y) => {
+    samples++;
+    const xi = Math.round(x), yi = Math.round(y);
+    if (xi < 0 || yi < 0 || xi >= W || yi >= H || !info.near[yi * W + xi]) out++;
+  };
+  for (const s of play.strokes) {
+    test(s.pts[0][0], s.pts[0][1]);
+    for (let j = 1; j < s.pts.length; j++) {
+      const a = s.pts[j - 1], b = s.pts[j], d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      len += d;
+      const n = Math.ceil(d / 2);
+      for (let t = 1; t <= n; t++) test(a[0] + (b[0] - a[0]) * t / n, a[1] + (b[1] - a[1]) * t / n);
+    }
+  }
+  // 4) 방향: 그은 선이 글자 획과 같은 방향으로 가는가 (동그라미·지그재그 방지)
+  let aTot = 0, aOk = 0;
+  for (const s of play.strokes) {
+    let last = s.pts[0];
+    for (const pt of s.pts) {
+      const dx = pt[0] - last[0], dy = pt[1] - last[1], d = Math.hypot(dx, dy);
+      if (d < 7) continue;
+      const mx = Math.round((pt[0] + last[0]) / 2), my = Math.round((pt[1] + last[1]) / 2); last = pt;
+      if (mx < 0 || my < 0 || mx >= W || my >= H) continue;
+      const k = info.nearest[my * W + mx]; if (k < 0) continue;
+      aTot += d; if (Math.abs(dx * info.ux[k] + dy * info.uy[k]) / d >= 0.7) aOk += d;
+    }
+  }
+  const S = info.pts.length || 1;
+  return { cov: hit / S, out: samples ? out / samples : 1, much: len / S, align: aTot ? aOk / aTot : 1 };
+}
+const TR = { cov: 0.88, out: 0.2, much: 1.9, align: 0.62 };
 function checkTrace() {
   const p = play;
   if (p.locked) return;
   if (!p.strokes.length) { fb('먼저 손가락으로 따라 써 봐요! ✍️', 'bad'); shake($('.board')); return; }
   const r = scoreTrace();
-  if (r.cov >= 0.6 && r.out <= 0.3 && r.much <= 2.2) {
+  if (r.cov >= TR.cov && r.out <= TR.out && r.much <= TR.much && r.align >= TR.align) {
     let msg = markCorrect();
-    if (r.cov >= 0.8 && r.out <= 0.2) msg = '💯 아주 멋지게 썼어요! ' + msg;
+    if (r.cov >= 0.9 && r.out <= 0.08) msg = '💯 아주 멋지게 썼어요! ' + msg;
     fb(msg, 'good'); speak(p.q.say); showNextBtn(); return;
   }
   sfx.bad(); p.combo = 0; shake($('.board'));
   p.tries++;
   if (p.tries === 1) p.mistakes++;
   if (p.tries >= 3) { p.locked = true; p.results[p.idx] = false; fb('잘 했어요! 다음 한자도 해 봐요 💪' + timeTag(), 'good'); showNextBtn(); return; }
-  fb(r.cov < 0.6 ? '회색 한자를 끝까지 꽉 채워 써 볼까요? ✍️' : r.much > 2.2 ? '마구 칠하지 말고 획을 따라 써 볼까요? 🧽' : '선 밖으로 조금 나갔어요. 지우고 다시 써 볼까요? 🧽', 'bad');
+  fb(r.out > TR.out ? '선 밖으로 나갔어요. 회색 글자 위로만 따라 써 볼까요? 🧽' : r.much > TR.much || r.align < TR.align ? '마구 칠하지 말고 획을 따라 써 볼까요? 🧽' : '빠진 획이 있어요. 회색 한자를 끝까지 따라 써 볼까요? ✍️', 'bad');
 }
 function eraseTrace() {
   const p = play; if (!p || p.locked) return;
