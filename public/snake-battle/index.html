@@ -2717,9 +2717,9 @@
     }
     if (c.state === 'run') {
       if (c.spdT > 0) c.spdT -= dt;
-      const sp = 330 * c.sc * (c.hold ? 1.75 : 1) * (c.spdT > 0 ? 1.5 : 1);
+      const sp = 297 * c.sc * (c.hold ? 1.75 : 1) * (c.spdT > 0 ? 1.5 : 1);
       c.p.x += sp * dt;
-      c.b.x -= 310 * c.sc * dt;
+      c.b.x -= 279 * c.sc * dt;
       eatTrack(c);
       g.player.level = c.p.level;
       g.player.best = Math.max(g.player.best, c.p.level);

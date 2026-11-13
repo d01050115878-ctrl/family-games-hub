@@ -79,6 +79,7 @@
   const BITE_LOSS = 0.4, REGROW = 3;
   // 머리만 남은 뱀은 한동안 느려서 머리를 잡아먹히기 쉽다
   const LIMP_TIME = 2.5, LIMP_SPEED = 0.75;
+  const MOVE_MUL = 0.9; // 전체 이동 속도 90%
   // 실제 몸 길이: 레벨 길이 × 다시 자란 비율
   const bodyLen = (s) => lengthOf(s.level) * (s.trim === undefined ? 1 : s.trim);
 
@@ -192,7 +193,7 @@
     const s = {
       id, name: o.name || '뱀', skin: o.skin || 'basic', level, best: level,
       x: o.x || 0, y: o.y || 0, dir, want: dir,
-      speed: o.speed || 252, foodMul: o.foodMul || 1, growMul: o.growMul || 0.7, // 모든 뱀 성장량 70%
+      speed: o.speed || 252, foodMul: o.foodMul || 1, growMul: o.growMul || 0.6, // 모든 뱀 성장량 60%
       isBot: !!o.isBot, isBoss: !!o.isBoss, isHuman: !!o.isHuman,
       aggro: o.aggro !== undefined ? o.aggro : 0.6, chase: o.chase || 480, humanBias: o.humanBias || 0,
       think: rand(0, 0.3), bounceT: 0, latch: 0, dying: null, alive: true,
@@ -284,7 +285,7 @@
       const d = angDiff(s.want, s.dir), m = turnOf(s.level) * dt * (s.isHuman ? 1.3 : 1);
       s.dir += clamp(d, -m, m);
     }
-    const sp = s.speed * (s.latch ? 0.8 : 1) * (s.bounceT > 0 ? 0.75 : 1) *
+    const sp = s.speed * MOVE_MUL * (s.latch ? 0.8 : 1) * (s.bounceT > 0 ? 0.75 : 1) *
       (s.fx[3] > 0 ? 1.6 : 1) * (s.fx.slow > 0 ? 0.45 : 1) * (s.limpT > 0 ? LIMP_SPEED : 1);
     s.x += Math.cos(s.dir) * sp * dt;
     s.y += Math.sin(s.dir) * sp * dt;
