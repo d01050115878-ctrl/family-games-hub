@@ -192,7 +192,7 @@
     const s = {
       id, name: o.name || '뱀', skin: o.skin || 'basic', level, best: level,
       x: o.x || 0, y: o.y || 0, dir, want: dir,
-      speed: o.speed || 252, foodMul: o.foodMul || 1,
+      speed: o.speed || 252, foodMul: o.foodMul || 1, growMul: o.growMul || 0.7, // 모든 뱀 성장량 70%
       isBot: !!o.isBot, isBoss: !!o.isBoss, isHuman: !!o.isHuman,
       aggro: o.aggro !== undefined ? o.aggro : 0.6, chase: o.chase || 480, humanBias: o.humanBias || 0,
       think: rand(0, 0.3), bounceT: 0, latch: 0, dying: null, alive: true,
@@ -355,6 +355,7 @@
   };
 
   W.grow = function (s, v) {
+    v *= s.growMul || 1;
     // 머리만 남았던 뱀은 먹은 만큼 꼬리가 다시 자란다
     if (s.trim < 1) s.trim = Math.min(1, s.trim + v / Math.max(1, s.level) * REGROW);
     s.level = Math.min(MAX_LEVEL, s.level + v);

@@ -1134,7 +1134,7 @@
     const evo = o.evo === undefined ? 2 : o.evo;
     const form = o.form || 0, acc = form ? accentOf(skin) : null;
     // 문 뱀은 잠깐 부풀고, 물린 뱀은 움찔 줄어든다
-    w *= 1.65 + (o.pulse || 0) * 0.35 - (o.hurt || 0) * 0.2;
+    w *= 1.485 + (o.pulse || 0) * 0.35 - (o.hurt || 0) * 0.2;
     const r = w / 2;
     const dr = skin.dragon;
     if (o.wave) {
@@ -1658,6 +1658,31 @@
         c.beginPath(); c.arc(px, py, pr, 0, TAU); c.fill(); c.stroke();
       }
     }
+    if (d) {
+      // 뒤로 쭉 뻗은 멋진 뿔 (끝은 둥글게)
+      const hc = toRgb(d.horn);
+      for (const s of [-1, 1]) {
+        c.fillStyle = d.horn; c.strokeStyle = shadeRgb(hc, -0.55); c.lineWidth = Math.max(1.5, R * 0.06);
+        c.beginPath();
+        c.moveTo(R * 0.12, s * R * 0.42);
+        c.quadraticCurveTo(-R * 0.55, s * R * 1.3, -R * 1.45, s * R * 1.12);
+        c.quadraticCurveTo(-R * 1.55, s * R * 1.0, -R * 1.4, s * R * 0.98);
+        c.quadraticCurveTo(-R * 0.6, s * R * 0.9, -R * 0.2, s * R * 0.62);
+        c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = shadeRgb(hc, -0.25); c.lineWidth = Math.max(1, R * 0.04);
+        for (const t of [0.35, 0.6]) {
+          c.beginPath(); c.moveTo(-R * (0.2 + t), s * R * (0.72 + t * 0.32)); c.lineTo(-R * (0.1 + t), s * R * (0.92 + t * 0.3)); c.stroke();
+        }
+      }
+      // 바람에 휘날리는 수염
+      c.strokeStyle = d.mane; c.lineWidth = Math.max(2, R * 0.08);
+      for (const s of [-1, 1]) {
+        const sw = Math.sin(T * 5 + s) * R * 0.15;
+        c.beginPath(); c.moveTo(cx + rx * 0.7, s * R * 0.4);
+        c.bezierCurveTo(cx + rx * 0.4, s * R * 1.1 + sw, -R * 0.2, s * R * 1.0 - sw, -R * 0.75, s * R * 1.55 + sw);
+        c.stroke();
+      }
+    }
     // 장어: 작은 귀 지느러미
     if (kind === 'eel') {
       c.fillStyle = skin.fin || shadeRgb(rgb, 0.3); c.strokeStyle = line; c.lineWidth = Math.max(1.5, R * 0.05);
@@ -1676,11 +1701,6 @@
       c.beginPath(); c.ellipse(cx + rx * 0.55, 0, rx * 0.4, ry * 0.5, 0, 0, TAU); c.fill();
       c.globalAlpha = 1;
     }
-    // 용: 머리 위 동글뿔
-    if (d) {
-      c.fillStyle = d.horn; c.strokeStyle = shadeRgb(toRgb(d.horn), -0.5); c.lineWidth = Math.max(1.5, R * 0.06);
-      for (const s of [-1, 1]) { c.beginPath(); c.ellipse(-R * 0.3, s * R * 0.78, R * 0.28, R * 0.2, s * 0.5, 0, TAU); c.fill(); c.stroke(); }
-    }
     // 반질반질 광택
     c.fillStyle = 'rgba(255,255,255,0.3)';
     c.beginPath(); c.ellipse(cx + L.x * R * 0.5, L.y * R * 0.5, R * 0.32, R * 0.18, Math.atan2(L.y, L.x) + Math.PI / 2, 0, TAU); c.fill();
@@ -1689,12 +1709,19 @@
     const ink = rgb[0] * 0.3 + rgb[1] * 0.59 + rgb[2] * 0.11 < 70 ? '#fff0f6' : '#2b1d2e';
     const squint = o.latch || (o.hurt || 0) > 0.25;
     const blink = !squint && ((T + (o.seed || 0) * 1.7) % 3.6) < 0.13;
-    const ex = cx + rx * (hammer ? 0.05 : 0.3), ey = ry * (hammer ? 0.78 : 0.42), er = R * (hammer ? 0.36 : 0.34) * baby;
+    // 얼굴 성격: 용=늠름, 상어=쿨한 씩웃음, 가는머리=시크, 독사=장난꾸러기, 코브라=거만, 장어=엉뚱, 나머지=귀염
+    const face = d ? 'dragon' : kind === 'shark' ? 'shark' : kind === 'eel' ? 'derp' : skin.hood ? 'proud'
+      : skin.head === 'viper' ? 'sly' : skin.head === 'slim' ? 'cool' : 'cute';
+    // 눈꺼풀: [바깥쪽, 안쪽] 덮는 정도 (1에 가까울수록 많이 덮음)
+    const LID = { dragon: [0.15, 0.55], shark: [0.38, 0.38], cool: [0.45, 0.45], sly: [0.55, 0.1], proud: [0.3, 0.3] }[face];
+    const ex = cx + rx * (hammer ? 0.05 : 0.3), ey = ry * (hammer ? 0.78 : 0.42), er0 = R * (hammer ? 0.36 : 0.34) * baby;
     for (const s of [-1, 1]) {
-      const y = s * ey;
-      // 볼터치
-      c.fillStyle = 'rgba(255,120,150,0.5)';
-      c.beginPath(); c.ellipse(ex - er * 0.55, s * (ey + er * 1.0), er * 0.48, er * 0.3, 0, 0, TAU); c.fill();
+      const y = s * ey, er = face === 'derp' ? er0 * (s < 0 ? 1.15 : 0.82) : er0;
+      // 볼터치 (귀여운 얼굴만)
+      if (face === 'cute' || face === 'derp' || face === 'proud') {
+        c.fillStyle = 'rgba(255,120,150,0.5)';
+        c.beginPath(); c.ellipse(ex - er * 0.55, s * (ey + er * 1.0), er * 0.48, er * 0.3, 0, 0, TAU); c.fill();
+      }
       c.strokeStyle = ink; c.lineWidth = Math.max(2, er * 0.26);
       if (squint) {
         // 신나서 질끈 감은 눈 > <
@@ -1703,6 +1730,25 @@
         c.beginPath(); c.moveTo(ex + er * 0.1, y - er * 0.75); c.quadraticCurveTo(ex - er * 0.45, y, ex + er * 0.1, y + er * 0.75); c.stroke();
       } else {
         drawCuteEye(c, ex, y, er, skin, L);
+        if (LID) {
+          // 눈꺼풀을 머리색으로 덮어 눈매를 만든다 (앞쪽 = 위 눈꺼풀)
+          const xo = ex + er * (1 - 2 * LID[0]), xi = ex + er * (1 - 2 * LID[1]);
+          c.save();
+          c.beginPath(); c.ellipse(ex, y, er * 1.02, er * 1.05, 0, 0, TAU); c.clip();
+          c.fillStyle = shadeRgb(rgb, 0.08);
+          c.beginPath(); c.moveTo(xo, y + s * er * 1.1); c.lineTo(xi, y - s * er * 1.1); c.lineTo(ex + er * 2, y - s * er * 1.1); c.lineTo(ex + er * 2, y + s * er * 1.1); c.closePath(); c.fill();
+          c.restore();
+          c.strokeStyle = ink; c.lineWidth = Math.max(2, er * 0.2);
+          c.beginPath(); c.moveTo(xo, y + s * er * 0.95); c.lineTo(xi, y - s * er * 0.95); c.stroke();
+        }
+      }
+      if (face === 'dragon' || face === 'proud') {
+        // 굵은 눈썹: 용은 안쪽이 내려간 늠름한 눈썹, 코브라는 치켜 올라간 거만한 눈썹
+        c.strokeStyle = face === 'dragon' ? shadeRgb(toRgb(d.mane), -0.35) : ink; c.lineWidth = Math.max(2.5, er * 0.32);
+        c.beginPath();
+        if (face === 'dragon') { c.moveTo(ex + er * 1.15, s * (ey + er * 0.95)); c.lineTo(ex + er * 0.85, s * (ey - er * 0.9)); }
+        else { c.moveTo(ex + er * 1.05, s * (ey + er * 0.9)); c.quadraticCurveTo(ex + er * 1.5, y, ex + er * 1.25, s * (ey - er * 0.8)); }
+        c.stroke();
       }
       if (boss) {
         // 화났지만 귀여운 뾰로통 눈썹
@@ -1714,8 +1760,26 @@
         c.beginPath(); c.arc(ex - er * 0.2, s * (ey + er * 1.15), er * 0.32, 0, TAU); c.fill(); c.stroke();
       }
     }
-    // 입: 물 때만 동그랗게 "앙!"
+    // 입: 물 때는 동그랗게 "앙!", 평소엔 성격대로
     const mx = cx + rx * 0.84;
+    if (!o.latch && (face === 'shark' || face === 'dragon' || face === 'sly')) {
+      c.strokeStyle = '#3a2233'; c.lineWidth = Math.max(1.5, R * 0.06);
+      if (face === 'shark') {
+        // 이빨 보이는 씩 웃음
+        c.fillStyle = '#fff';
+        c.beginPath(); c.moveTo(mx - R * 0.1, -R * 0.42); c.quadraticCurveTo(mx + R * 0.16, 0, mx - R * 0.1, R * 0.42);
+        c.quadraticCurveTo(mx + R * 0.02, 0, mx - R * 0.1, -R * 0.42); c.fill(); c.stroke();
+        c.lineWidth = Math.max(1, R * 0.03);
+        for (const t of [-0.25, 0, 0.25]) { c.beginPath(); c.moveTo(mx - R * 0.08, t * R); c.lineTo(mx + R * 0.05, t * R); c.stroke(); }
+      } else {
+        // 한쪽 입꼬리를 올린 씩 웃음 (용은 작은 송곳니 하나)
+        c.beginPath(); c.moveTo(mx - R * 0.05, -R * 0.3); c.quadraticCurveTo(mx + R * 0.1, R * 0.05, mx - R * 0.12, R * 0.32); c.stroke();
+        if (face === 'dragon') {
+          c.fillStyle = '#fff'; c.lineWidth = Math.max(1, R * 0.03);
+          c.beginPath(); c.moveTo(mx - R * 0.02, R * 0.12); c.lineTo(mx - R * 0.2, R * 0.2); c.lineTo(mx - R * 0.04, R * 0.24); c.closePath(); c.fill(); c.stroke();
+        }
+      }
+    }
     if (o.latch) {
       const op = 0.75 + 0.25 * Math.sin(T * 22);
       c.fillStyle = '#7a1f3d';
@@ -2396,7 +2460,7 @@
       if (s.dying) continue;
       const [x, y] = toScreen(s.x, s.y);
       if (x < -80 || x > VW + 80 || y < -80 || y > VH + 80) continue;
-      const off = E.widthOf(s.level) * 1.55 * z + (s.boss ? 34 : 16);
+      const off = E.widthOf(s.level) * 1.4 * z + (s.boss ? 34 : 16);
       const lv = 'Lv.' + fmtN(Math.floor(s.level));
       ctx.font = '17px Jua, sans-serif';
       const tw = ctx.measureText(lv).width + 14;
