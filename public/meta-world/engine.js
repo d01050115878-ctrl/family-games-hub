@@ -50,7 +50,7 @@
     { type: 'city', name: '멕시코', cc: 'mx', g: 0 },
     { type: 'chance', name: '행운 카드', icon: '🎴' },
     { type: 'city', name: '페루', cc: 'pe', g: 1 },
-    { type: 'station', name: '제주도', icon: '🏝️', price: 20, toll: 30, pair: '휴양지' },
+    { type: 'station', name: '동탄', icon: '🗼', price: 100, toll: 200, pair: '관광지' },
     { type: 'city', name: '아르헨티나', cc: 'ar', g: 1 },
     { type: 'city', name: '브라질', cc: 'br', g: 1 },
     { type: 'blackhole', name: '버뮤다 삼각지대', icon: '🌊', sub: '최대 3턴 표류' },
@@ -76,7 +76,7 @@
     { type: 'city', name: '이탈리아', cc: 'it', g: 7 },
     { type: 'tax', name: '관세', icon: '💸' },
     { type: 'city', name: '프랑스', cc: 'fr', g: 7 },
-    { type: 'station', name: '서울', icon: '🗼', price: 100, toll: 200, pair: '관광지' },
+    { type: 'station', name: '제주도', icon: '🏝️', price: 20, toll: 30, pair: '휴양지' },
   ];
 
   // 나라별 '호텔까지 지었을 때 통행료' (만). 다른 금액은 모두 이 값에서 비율로 정해진다
@@ -140,7 +140,7 @@
   const sellValue = (t) => Math.floor(invested(t) / 2);
   const takeoverPrice = (t) => invested(t) * 2;
   const stationCount = (s, pid) => s.tiles.filter((x) => x.type === 'station' && x.owner === pid).length;
-  // 관광지 짝(제주도+부산 = 휴양지, 서울+경주 = 관광지)을 한 사람이 모두 가지면 통행료 ×2
+  // 관광지 짝(제주도+부산 = 휴양지, 동탄+경주 = 관광지)을 한 사람이 모두 가지면 통행료 ×2
   const pairOwned = (s, t, pid = t.owner) => pid >= 0 && s.tiles.filter((x) => x.type === 'station' && x.pair === t.pair).every((x) => x.owner === pid);
   // 건물별 통행료: 땅·하우스·빌딩을 정하고, 호텔은 '호텔까지 합계 = 정한 호텔 통행료'가 딱 맞도록, 랜드마크는 그만큼 더
   function elemToll(t, k) {
@@ -203,7 +203,7 @@
           id: i, name: String(p.name), isAI: !!p.isAI, color: PCOLORS[i], emoji: PEMOJI[i],
           money: START_MONEY, pos: 0, alive: true, stuck: 0, shield: 0, coupon: 0, salBoost: 0, rescue: 0, guard: 0, hand: [], laps: 0, warpReady: false,
         })),
-        tiles: makeTiles(), cur: 0, round: 1, maxRounds: opts.maxRounds || 0, festivals: [], effects: {}, over: false, deck: [], dbl: 0,
+        tiles: makeTiles(), cur: 0, order: seats.map((_, i) => i), round: 1, maxRounds: opts.maxRounds || 0, festivals: [], effects: {}, over: false, deck: [], dbl: 0,
       };
 
     }
@@ -212,7 +212,7 @@
       const s = this.s;
       return {
         players: s.players.map((p) => Object.assign({}, p, { hand: p.hand.slice() })), tiles: s.tiles.map((t) => [t.owner, t.level]),
-        cur: s.cur, round: s.round, maxRounds: s.maxRounds, festivals: s.festivals.slice(), effects: JSON.parse(JSON.stringify(s.effects)), over: s.over,
+        cur: s.cur, order: s.order.slice(), round: s.round, maxRounds: s.maxRounds, festivals: s.festivals.slice(), effects: JSON.parse(JSON.stringify(s.effects)), over: s.over,
       };
     }
     sleep(ms) { return this.io.sleep(ms); }
@@ -288,7 +288,7 @@
           return 'none';
         }
         case 'guard': case 'rescue': return true;
-        case 'choice': return req.ai;
+        case 'choice': case 'orderPick': return req.ai;
         default: return true; // card
       }
     }
@@ -350,6 +350,7 @@
     /* ----- 진행 ----- */
     async run() {
       this.log(`🚀 게임 시작! 모두 ${fmt(START_MONEY)}을 가지고 세계 일주를 떠납니다.`);
+      await this.decideOrder();
 
       while (!this.s.over) {
         const p = this.s.players[this.s.cur];
@@ -361,17 +362,43 @@
         if (this.s.maxRounds && this.s.round > this.s.maxRounds) { this.endByAssets(); break; }
       }
     }
+    // 순서 정하기: 1~6 숫자 카드 6장을 뒤집어 놓고, 한 명씩 골라 높은 숫자부터 차례를 갖는다
+    async decideOrder() {
+      const s = this.s;
+      const deck = shuffle([1, 2, 3, 4, 5, 6]);
+      const taken = deck.map(() => -1);
+      const got = {};
+      this.announce('🃏 순서 정하기');
+      this.log('🃏 숫자 카드 6장 중 하나씩 골라요. <b>높은 숫자</b>부터 먼저 시작합니다!');
+      for (const p of s.players) {
+        if (this.aborted) return;
+        s.cur = p.id; this.sync();
+        const free = taken.map((o, k) => (o < 0 ? k : -1)).filter((k) => k >= 0);
+        let k = await this.ask(p, { kind: 'orderPick', taken: taken.slice(), revealed: taken.map((o, j) => (o >= 0 ? deck[j] : 0)), ai: free[rnd(free.length)] });
+        if (!free.includes(k)) k = free[rnd(free.length)];
+        taken[k] = p.id; got[p.id] = deck[k];
+        this.sfx('turn');
+        this.log(`${this.nm(p)} ${k + 1}번째 카드 → <b>${deck[k]}</b>`);
+        this.float(p, `🃏 ${deck[k]}`, true);
+        await this.sleep(500);
+      }
+      s.order = s.players.map((p) => p.id).sort((a, b) => got[b] - got[a]);
+      s.cur = s.order[0];
+      this.log(`📋 순서: ${s.order.map((id, i) => `${i + 1}. ${this.nm(s.players[id])}(${got[id]})`).join(' → ')}`);
+      this.announce(`${s.players[s.order[0]].emoji} ${s.players[s.order[0]].name} 먼저 시작!`);
+      await this.sleep(900);
+    }
     advance() {
       const s = this.s;
-      let n = s.cur;
+      let n = s.order.indexOf(s.cur);
       do {
-        n = (n + 1) % s.players.length;
+        n = (n + 1) % s.order.length;
         if (n === 0) {
           s.round++;
           for (const k of Object.keys(s.effects)) if (--s.effects[k].left <= 0) { delete s.effects[k]; this.log(`✅ ${s.tiles[k].name}의 통행료가 원래대로 돌아왔어요.`); }
         }
-      } while (!s.players[n].alive);
-      s.cur = n;
+      } while (!s.players[s.order[n]].alive);
+      s.cur = s.order[n];
     }
 
     async playTurn(p) {

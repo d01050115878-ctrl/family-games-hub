@@ -312,7 +312,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
   💰 건설비는 한 번에 짓는 땅·건물 값을 더해서 내고, <b>통행료와 인수비도 지어진 건물 것을 모두 더해서</b> 계산합니다.
   <h4>통행료 &amp; 인수</h4>
   다른 플레이어의 나라에 도착하면 통행료를 냅니다. 통행료를 낸 뒤 <b>투자금의 2배</b>를 내고 그 나라를 인수할 수 있습니다.<br>
-  🏝️ <b>관광지</b>는 건물을 지을 수 없고 정해진 통행료를 받습니다. 제주도(매입 20·통행 30)·부산(50·60)은 <b>휴양지</b> 짝, 경주(20·30)·서울(100·200)은 <b>관광지</b> 짝이에요.
+  🏝️ <b>관광지</b>는 건물을 지을 수 없고 정해진 통행료를 받습니다. 제주도(매입 20·통행 30)·부산(50·60)은 <b>휴양지</b> 짝, 경주(20·30)·동탄(100·200)은 <b>관광지</b> 짝이에요.
   <b>짝을 둘 다 가지면 통행료 ×2!</b> 🔒 관광지·휴양지는 랜드마크처럼 <b>인수할 수 없어요</b>.
   <h4>🎨 같은 색 세트 ×2</h4>
   나라 칸 위쪽 띠의 <b>색깔(대륙)</b>이 같은 나라 3곳이 한 세트입니다. 세트를 모두 가지면 그 나라들의 통행료가 <b>2배</b>가 되고 칸에 <b style="color:#ffd43b">×2</b> 표시가 붙습니다.
@@ -944,6 +944,13 @@ function askModal(p, req) {
         buttons: req.options.map((o, k) => ({ label: o.label, value: o.value, cls: k === 0 ? 'gold' : '' })),
       };
     }
+    case 'orderPick': return {
+      title: '🃏 순서 정하기',
+      html: '숫자 카드 6장(1~6)이 뒤집혀 있어요. 하나를 고르세요!<br><b>높은 숫자</b>를 뽑은 사람부터 먼저 시작합니다.',
+      buttons: req.taken.map((o, k) => o < 0
+        ? { label: `🂠 ${k + 1}번째 카드`, value: k, cls: 'gold' }
+        : { label: `${S.players[o].emoji} ${esc(S.players[o].name)} <small>${req.revealed[k]}</small>`, value: k, disabled: true, cls: 'ghost' }),
+    };
     case 'hand': return {
       title: '👜 보관한 카드',
       html: '주사위를 굴리기 전에 보관한 카드를 쓸 수 있어요.',
