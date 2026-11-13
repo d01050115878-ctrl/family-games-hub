@@ -40,6 +40,15 @@ class Room {
     rooms.set(this.code, this);
   }
 
+  freeChar() { const used = new Set(this.seats.map((s) => s.ch)); let k = 0; while (used.has(k)) k++; return k; }
+  // 내 말을 다음으로 비어 있는 말로 바꾼다
+  nextChar(i) {
+    const used = new Set(this.seats.filter((_, j) => j !== i).map((s) => s.ch));
+    let k = this.seats[i].ch;
+    for (let n = 0; n < MAX_SEATS; n++) { k = (k + 1) % MAX_SEATS; if (!used.has(k)) break; }
+    this.seats[i].ch = k;
+  }
+
   seatOf(token) { return this.seats.findIndex((s) => !s.ai && s.token === token); }
   onlineHumans() { return this.seats.filter((s) => !s.ai && s.ws && s.ws.readyState === 1).length; }
 
@@ -49,7 +58,7 @@ class Room {
       host: this.seatOf(this.hostToken), you: this.seatOf(forToken),
       seats: this.seats.map((s, i) => ({
         name: s.name, ai: s.ai || s.left, online: s.ai ? true : !!(s.ws && s.ws.readyState === 1),
-        color: MW.PCOLORS[i], emoji: MW.PEMOJI[i],
+        ch: s.ch, color: MW.PCOLORS[s.ch], emoji: MW.PEMOJI[s.ch],
       })),
     };
   }
@@ -57,7 +66,7 @@ class Room {
   broadcast(o) { const raw = JSON.stringify(o); for (const s of this.seats) if (!s.ai && s.ws && s.ws.readyState === 1) s.ws.send(raw); }
 
   addHuman(c) {
-    this.seats.push({ ai: false, name: c.name, token: c.token, ws: c.ws, left: false });
+    this.seats.push({ ai: false, name: c.name, token: c.token, ws: c.ws, left: false, ch: this.freeChar() });
     tokenRoom.set(c.token, this);
     c.room = this;
     if (!this.hostToken || this.seatOf(this.hostToken) < 0) this.hostToken = c.token;
@@ -152,7 +161,7 @@ class Room {
         send(seat.ws, { t: 'ask', id, req });
       }),
     };
-    this.game = new MW.Game(this.seats.map((s) => ({ name: s.name, isAI: s.ai })), { maxRounds: this.maxRounds, aiLevel: this.aiLevel }, io);
+    this.game = new MW.Game(this.seats.map((s) => ({ name: s.name, isAI: s.ai, ch: s.ch })), { maxRounds: this.maxRounds, aiLevel: this.aiLevel }, io);
     this.broadcastInfo();
     const g = this.game;
     g.run().catch((err) => console.error('[metaworld] game error', err)).then(() => {
@@ -202,7 +211,7 @@ function handle(c, m) {
       if (isHost && r.state === 'wait' && r.seats.length < MAX_SEATS) {
         const used = new Set(r.seats.map((s) => s.name));
         const name = BOT_NAMES.find((n) => !used.has(n)) || `봇${r.seats.length + 1}`;
-        r.seats.push({ ai: true, name });
+        r.seats.push({ ai: true, name, ch: r.freeChar() });
         r.broadcastInfo();
       }
       break;
@@ -213,6 +222,11 @@ function handle(c, m) {
         if (!s.ai) send(s.ws, { t: 'kicked' });
         r.removeSeat(i);
       }
+      break;
+    }
+    case 'char': {
+      const i = r ? r.seatOf(c.token) : -1;
+      if (i >= 0 && r.state === 'wait') { r.nextChar(i); r.broadcastInfo(); }
       break;
     }
     case 'aiLevel':

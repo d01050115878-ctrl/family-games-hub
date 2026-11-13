@@ -192,15 +192,23 @@
     return Object.assign({}, snap, { tiles });
   }
 
+  // 각자 고른 말(0~5)을 정리: 잘못됐거나 겹치면 남는 말 중 앞 번호를 준다
+  function pickChars(want) {
+    const used = new Set();
+    const out = want.map((c) => (Number.isInteger(c) && c >= 0 && c < MAX_PLAYERS && !used.has(c) ? (used.add(c), c) : -1));
+    return out.map((c) => { if (c >= 0) return c; let k = 0; while (used.has(k)) k++; used.add(k); return k; });
+  }
+
   /* ---------- 게임 ---------- */
   class Game {
     constructor(seats, opts, io) {
       this.io = io;
       this.aborted = false;
       this.aiLevel = [0, 1, 2].includes(opts.aiLevel) ? opts.aiLevel : 1; // 컴퓨터 난이도: 0 쉬움, 1 보통, 2 어려움
+      const chs = pickChars(seats.map((p) => p.ch));
       this.s = {
         players: seats.map((p, i) => ({
-          id: i, name: String(p.name), isAI: !!p.isAI, color: PCOLORS[i], emoji: PEMOJI[i],
+          id: i, name: String(p.name), isAI: !!p.isAI, ch: chs[i], color: PCOLORS[chs[i]], emoji: PEMOJI[chs[i]],
           money: START_MONEY, pos: 0, alive: true, stuck: 0, shield: 0, coupon: 0, salBoost: 0, rescue: 0, guard: 0, hand: [], laps: 0, warpReady: false,
         })),
         tiles: makeTiles(), cur: 0, order: seats.map((_, i) => i), round: 1, maxRounds: opts.maxRounds || 0, festivals: [], effects: {}, over: false, deck: [], dbl: 0,
@@ -943,6 +951,6 @@
   return {
     START_MONEY, SALARY, ESCAPE_FEE, WARP_FEE, FEST_COUNT, LAP_CAP, TOUR_MULT, TOUR_ICONS, PCHARS, LEVEL_NAMES, LEVEL_ICONS, PCOLORS, PEMOJI, MAX_PLAYERS,
     N, GROUPS, LINES, TILE_DEFS, CARDS, esc, fmt, isProp, cityPrice, levelCost, cumCost, invested, sellValue, takeoverPrice,
-    stationCount, tollAt, toll, pairOwned, elemToll, isFestival, setOwned, setBonus, propValue, assets, fullSets, gridPos, makeTiles, expand, Game,
+    stationCount, tollAt, toll, pairOwned, elemToll, isFestival, setOwned, setBonus, propValue, assets, fullSets, gridPos, makeTiles, expand, pickChars, Game,
   };
 });
