@@ -223,6 +223,9 @@ function mutate(syl) {
 }
 function nearSyls(syl, n) {
   const out = new Set();
+  const real = new Set(realSyls());
+  for (let k = 0; k < 200 && out.size < n; k++) { const m = mutate(syl); if (m !== syl && real.has(m)) out.add(m); }
+  for (const m of realLike(syl)) { if (out.size >= n) break; out.add(m); }
   for (let k = 0; k < 60 && out.size < n; k++) { const m = mutate(syl); if (m !== syl) out.add(m); }
   return [...out];
 }
@@ -466,14 +469,32 @@ function similarWords(w, pool) {
 }
 const JONG_POOL = [1, 2, 4, 7, 8, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27];
 function jongVariants(syl, n) {
-  const [c, j, t] = decompose(syl), out = new Set();
-  for (const k of shuffle(JONG_POOL.slice())) { if (k !== t) out.add(compose(c, j, k)); if (out.size >= n) break; }
+  const [c, j, t] = decompose(syl), out = new Set(), real = new Set(realSyls());
+  const ks = shuffle(JONG_POOL.slice()).filter((k) => k !== t);
+  const cands = [...ks.filter((k) => real.has(compose(c, j, k))).map((k) => compose(c, j, k)),
+    ...realLike(syl, (d) => d[2] !== 0), ...ks.map((k) => compose(c, j, k))];
+  for (const s of cands) { if (s !== syl) out.add(s); if (out.size >= n) break; }
   return [...out];
 }
 const initials = (w) => [...w].map((s) => CHO[decompose(s)[0]]).join('');
 const TRACE_JONG = '각간갈감강곰공굴국눈달담돌동목문물밤밥방별봄북빵산삼선손솜숲신실쌀알약양옷일입잎장점종집짐창책춤칼콩탑털통팔풀학한함향';
 const TRACE_HARD = '꽃꿈꿀깨떡뜰뼈쌀쑥짝찜왜웬위의귀뒤쥐과괴원월화회휘희닭흙삶앉많읽넓값없';
 const CV1 = [9, 14, 11, 16, 19, 1, 5];   // ㅘ ㅝ ㅚ ㅟ ㅢ ㅐ ㅔ
+// 실제 낱말·문장에 나오는 글자 모음 (글자 만들기 문제와 보기에 사용)
+let REAL_SYL = null;
+function realSyls() {
+  if (REAL_SYL) return REAL_SYL;
+  let text = WORDS.map((x) => x.w).join('') + CHAIN_WORDS.join('') + CHAIN_MORE.join('') + TRACE_JONG + TRACE_HARD;
+  for (const a of [SENT, ORDER, PROVERBS]) { try { text += JSON.stringify(a); } catch (e) { /* 무시 */ } }
+  REAL_SYL = [...new Set([...text].filter(isSyl))];
+  return REAL_SYL;
+}
+// 비슷한 진짜 글자들: 첫소리+모음이 같은 것 → 첫소리가 같은 것 → 모음이 같은 것 순서 (섞어서)
+function realLike(syl, ok = () => true) {
+  const [c, j] = decompose(syl), pool = realSyls().filter((s) => s !== syl).map((s) => [s, decompose(s)]).filter(([, d]) => ok(d));
+  return [...shuffle(pool.filter(([, d]) => d[0] === c && d[1] === j)), ...shuffle(pool.filter(([, d]) => d[0] === c && d[1] !== j)),
+    ...shuffle(pool.filter(([, d]) => d[0] !== c && d[1] === j))].map(([s]) => s);
+}
 const ALL_T = [1, 4, 7, 8, 16, 17, 19, 21, 22, 23, 26];
 
 const GAMES = [
@@ -514,18 +535,30 @@ const GAMES = [
   { id: 'combine', emoji: '🔤', color: '#b197fc', title: '글자 만들기', desc: 'ㄱ + ㅏ + ㅁ = 감!',
     levels: [{ n: '받침 넣기', d: 'ㄱ + ㅏ + ㅁ = 감', b: '감' }, { n: '어려운 모음', d: 'ㅘ ㅝ ㅚ ㅟ ㅢ · 쌍자음', b: '꽃' }, { n: '글자 나누기', d: '글자를 자음·모음으로', b: '✂️' }],
     gen(lv) {
-      let c = pick(BASIC_C), j = pick([...BASIC_V, ...MORE_V]), t = pick(ALL_T), vpool = [...BASIC_V, ...MORE_V];
-      if (lv >= 1) { j = pick(CV1); vpool = CV1; t = Math.random() < 0.6 ? pick(ALL_T) : 0; if (Math.random() < 0.35) c = pick(DOUBLE_C); }
-      if (lv === 2 && Math.random() < 0.5) { j = pick([...BASIC_V, ...MORE_V]); vpool = [...BASIC_V, ...MORE_V]; t = pick(ALL_T); }
-      const syl = compose(c, j, t);
+      // 실제 낱말에 쓰이는 글자만 문제로 내요 (싀·눂·녗 같은 글자는 안 나와요)
+      const V12 = [...BASIC_V, ...MORE_V];
+      const hard = lv === 1 || (lv === 2 && Math.random() < 0.5);
+      const vpool = hard ? CV1 : V12;
+      const fits = (s) => { const [c, j, t] = decompose(s); return hard ? [...BASIC_C, ...DOUBLE_C].includes(c) && CV1.includes(j) && (t === 0 || ALL_T.includes(t)) : BASIC_C.includes(c) && V12.includes(j) && ALL_T.includes(t); };
+      const pool = realSyls().filter(fits);
+      const dbl = pool.filter((s) => DOUBLE_C.includes(decompose(s)[0]));
+      const syl = hard && dbl.length && Math.random() < 0.3 ? pick(dbl) : pick(pool);
+      const [c, j, t] = decompose(syl);
+      // 헷갈리는 보기도 진짜 쓰는 글자로: 자음·모음·받침 중 하나만 다른 글자
+      const real = new Set(realSyls()), vars = [];
+      for (const x of BASIC_C) if (x !== c) vars.push([x, j, t]);
+      for (const x of vpool) if (x !== j) vars.push([c, x, t]);
+      for (const x of [0, ...ALL_T]) if (x !== t) vars.push([c, j, x]);
+      const realVars = [...shuffle(vars.filter((v) => real.has(compose(...v)))),
+        ...realLike(syl, (d) => (hard ? CV1.includes(d[1]) : V12.includes(d[1]) && d[2] !== 0)).slice(0, 6).map(decompose)];
       const otherC = () => pick(BASIC_C.filter((x) => x !== c)), otherV = () => pick(vpool.filter((x) => x !== j)), otherT = () => pick(ALL_T.filter((x) => x !== t));
       if (lv === 2) {
         const lab = (cc, jj, tt) => `${CHO[cc]}+${JUNG[jj]}${tt ? '+' + JONG[tt] : ''}`;
-        const wrongs = [lab(otherC(), j, t), lab(c, otherV(), t), lab(c, j, t ? otherT() : pick(ALL_T)), lab(otherC(), otherV(), t)];
+        const wrongs = [...realVars.map((v) => lab(...v)), lab(otherC(), j, t), lab(c, otherV(), t), lab(c, j, t ? otherT() : pick(ALL_T)), lab(otherC(), otherV(), t)];
         return choiceQ({ key: 'r' + syl, html: `<div class="qtext">이 글자를 나누면?</div><div class="big" style="font-size:clamp(70px,20vw,110px)">${syl}</div>`, say: `${syl}. 이 글자를 나누면?`, after: syl }, lab(c, j, t), wrongs);
       }
       const parts = `<span class="jm c">${CHO[c]}</span><span class="plus">+</span><span class="jm v">${JUNG[j]}</span>${t ? `<span class="plus">+</span><span class="jm t">${JONG[t]}</span>` : ''}`;
-      const wrongs = [compose(otherC(), j, t), compose(c, otherV(), t), compose(c, j, t ? otherT() : pick(ALL_T)), compose(c, j, t ? 0 : pick(ALL_T)), compose(otherC(), otherV(), t)];
+      const wrongs = [...realVars.map((v) => compose(...v)), compose(otherC(), j, t), compose(c, otherV(), t), compose(c, j, t ? otherT() : pick(ALL_T)), compose(c, j, t ? 0 : pick(ALL_T)), compose(otherC(), otherV(), t)];
       return choiceQ({ key: syl, html: `<div class="qtext">합치면 어떤 글자가 될까요?</div><div class="big">${parts}<span class="plus">=</span><span class="hole" id="hole">?</span></div>`, say: '합치면 어떤 글자가 될까요?', after: syl, fill: true }, syl, wrongs);
     } },
   { id: 'first', emoji: '🔍', color: '#ffa94d', title: '받침 · 초성 · 끝말잇기', desc: '소리와 글자를 살펴봐요',
@@ -869,30 +902,129 @@ function setupInk(cv) {
   const end = () => { cur = null; };
   cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
 }
+// 글자마다 따로 채점: ① 회색 글자를 얼마나 덮었나(cov) ② 펜 중심선이 글자 밖으로 얼마나 나갔나(out)
+// ③ 글자 양에 비해 너무 많이 칠했나(over, 마구 칠하기 방지)
 function scoreTrace() {
-  const q = play.q, W = CELL * [...q.target].length, H = CELL;
+  const q = play.q, chars = [...q.target], n = chars.length, W = CELL * n, H = CELL;
   const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c.getContext('2d', { willReadFrequently: true }); };
   const g = mk(); drawGlyph(g, q.target, '#000');
-  const gx = mk(); drawGlyph(gx, q.target, '#000', CELL * 0.12);
-  const thick = mk(); drawStrokes(thick, play.strokes, CELL * 0.17, '#000');
-  const thin = mk(); drawStrokes(thin, play.strokes, CELL * 0.075, '#000');
-  const gd = g.getImageData(0, 0, W, H).data, gxd = gx.getImageData(0, 0, W, H).data, td = thick.getImageData(0, 0, W, H).data, nd = thin.getImageData(0, 0, W, H).data;
-  let gl = 0, cov = 0, ink = 0, out = 0;
-  for (let i = 3; i < gd.length; i += 8) {
-    if (gd[i] > 128) { gl++; if (td[i] > 0) cov++; }
-    if (nd[i] > 128) { ink++; if (gxd[i] === 0) out++; }
+  const gx = mk(); drawGlyph(gx, q.target, '#000', CELL * 0.07);           // 글자 + 약간의 여유(양쪽 약 10px)
+  const cv = mk(); drawStrokes(cv, play.strokes, CELL * 0.12, '#000');     // 덮음 판정용 붓
+  const gd = g.getImageData(0, 0, W, H).data, gxd = gx.getImageData(0, 0, W, H).data, cd = cv.getImageData(0, 0, W, H).data;
+  const cells = chars.map(() => ({ gl: 0, cov: 0, pts: 0, out: 0, len: 0 }));
+  for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
+    const i = (y * W + x) * 4 + 3;
+    if (gd[i] > 128) { const c = cells[Math.min(n - 1, Math.floor(x / CELL))]; c.gl++; if (cd[i] > 0) c.cov++; }
   }
-  return { cov: gl ? cov / gl : 0, out: ink ? out / ink : 1, ink };
+  const inside = (x, y) => { const xi = Math.round(x), yi = Math.round(y); if (xi < 0 || yi < 0 || xi >= W || yi >= H) return false; return gxd[(yi * W + xi) * 4 + 3] > 0; };
+  const visit = (x, y, d) => { const c = cells[Math.max(0, Math.min(n - 1, Math.floor(x / CELL)))]; c.pts++; c.len += d; if (!inside(x, y)) c.out++; };
+  for (const s of play.strokes) {
+    visit(s.pts[0][0], s.pts[0][1], 0);
+    for (let k = 1; k < s.pts.length; k++) {
+      const [ax, ay] = s.pts[k - 1], [bx, by] = s.pts[k], d = Math.hypot(bx - ax, by - ay), m = Math.max(1, Math.ceil(d / 3));
+      for (let t = 1; t <= m; t++) visit(ax + (bx - ax) * t / m, ay + (by - ay) * t / m, d / m);
+    }
+  }
+  // ④ 방향 검사: 펜이 글자 획과 같은 방향으로 움직였나? (동그라미·지그재그 끄적이기 방지)
+  //    글자의 뼈대(가운데 선)를 구하고, 펜이 지나간 곳마다 가장 가까운 뼈대의 방향과 펜의 방향을 비교해요.
+  const sk = skeletonOf(q.target);
+  const al = chars.map(() => ({ n: 0, ok: 0 })), skc = chars.map(() => ({ n: 0, hit: 0 }));
+  for (const s of play.strokes) {
+    const rs = resample(s.pts, 4);
+    for (let k = 2; k < rs.length - 2; k++) {
+      const [x, y] = rs[k], hx = Math.round(x / 2), hy = Math.round(y / 2);
+      if (hx < 0 || hy < 0 || hx >= sk.W || hy >= sk.H) continue;
+      const ni = sk.near[hy * sk.W + hx]; if (ni < 0) continue;
+      const b = sk.pts[ni]; if (b.an < 0.6) continue;                      // 갈림길·점은 방향을 따지지 않아요
+      const dx = rs[k + 2][0] - rs[k - 2][0], dy = rs[k + 2][1] - rs[k - 2][1], dl = Math.hypot(dx, dy); if (dl < 6) continue;
+      const a = al[Math.min(n - 1, Math.floor(x / CELL))]; a.n++;
+      if (Math.abs((dx * b.dx + dy * b.dy) / dl) >= 0.8) a.ok++;            // 약 37° 이내면 같은 방향
+    }
+  }
+  for (const b of sk.pts) {   // ⑤ 뼈대를 처음부터 끝까지 지나갔나
+    const c = skc[Math.min(n - 1, Math.floor(b.x * 2 / CELL))]; c.n++;
+    const xi = b.x * 2, yi = b.y * 2; if (cd[(yi * W + xi) * 4 + 3] > 0) c.hit++;
+  }
+  // 픽셀 수는 2px 간격 표본이라 ×4 하면 실제 면적. 글자 면적 ÷ 펜 굵기 ≈ 글자 획의 길이
+  const res = cells.map((c, i) => ({ cov: Math.min(c.gl ? c.cov / c.gl : 0, skc[i].n ? skc[i].hit / skc[i].n : 0), out: c.pts ? c.out / c.pts : 1,
+    over: c.gl ? c.len / (c.gl * 4 / (CELL * 0.11)) : 0, align: al[i].n >= 8 ? al[i].ok / al[i].n : 0 }));
+  const worst = (k, f) => res.reduce((a, r) => f(a, r[k]), k === 'cov' || k === 'align' ? 1 : 0);
+  return { cov: worst('cov', Math.min), out: worst('out', Math.max), over: worst('over', Math.max), align: worst('align', Math.min), cells: res };
 }
+function resample(pts, step) {
+  const out = [pts[0]]; let [px, py] = pts[0], acc = 0;
+  for (let k = 1; k < pts.length; k++) {
+    let [ax, ay] = [px, py]; const [bx, by] = pts[k]; let d = Math.hypot(bx - ax, by - ay);
+    while (acc + d >= step) { const t = (step - acc) / d; ax += (bx - ax) * t; ay += (by - ay) * t; out.push([ax, ay]); d = Math.hypot(bx - ax, by - ay); acc = 0; }
+    acc += d; px = bx; py = by;
+  }
+  return out;
+}
+// 글자의 뼈대(가운데 선)와 각 점의 방향 — 반 해상도로 계산하고 글자별로 저장해 둬요
+const SKEL = new Map();
+function skeletonOf(t) {
+  if (SKEL.has(t)) return SKEL.get(t);
+  const W = CELL * [...t].length / 2, H = CELL / 2;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d', { willReadFrequently: true }); ctx.scale(0.5, 0.5); drawGlyph(ctx, t, '#000');
+  const d = ctx.getImageData(0, 0, W, H).data, m = new Uint8Array(W * H);
+  for (let i = 0; i < W * H; i++) m[i] = d[i * 4 + 3] > 128 ? 1 : 0;
+  const g = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : m[y * W + x]);
+  for (let changed = true; changed;) {   // Zhang-Suen 세선화
+    changed = false;
+    for (const st of [0, 1]) {
+      const del = [];
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        if (!m[y * W + x]) continue;
+        const p = [g(x, y - 1), g(x + 1, y - 1), g(x + 1, y), g(x + 1, y + 1), g(x, y + 1), g(x - 1, y + 1), g(x - 1, y), g(x - 1, y - 1)];
+        const B = p.reduce((a, b) => a + b, 0); if (B < 2 || B > 6) continue;
+        let A = 0; for (let k = 0; k < 8; k++) if (!p[k] && p[(k + 1) % 8]) A++;
+        if (A !== 1) continue;
+        if (st === 0 ? (p[0] && p[2] && p[4]) || (p[2] && p[4] && p[6]) : (p[0] && p[2] && p[6]) || (p[0] && p[4] && p[6])) continue;
+        del.push(y * W + x);
+      }
+      for (const i of del) m[i] = 0;
+      if (del.length) changed = true;
+    }
+  }
+  const pts = [];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (m[y * W + x]) pts.push({ x, y });
+  const R = 5;
+  for (const p of pts) {   // 주변 뼈대 점으로 방향(주성분)과 뚜렷함(an) 구하기
+    let sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0, c = 0;
+    for (const q of pts) { const ex = q.x - p.x, ey = q.y - p.y; if (ex * ex + ey * ey > R * R) continue; sx += ex; sy += ey; sxx += ex * ex; syy += ey * ey; sxy += ex * ey; c++; }
+    const mx = sx / c, my = sy / c, a = sxx / c - mx * mx, b = syy / c - my * my, h = sxy / c - mx * my;
+    const tr = a + b, df = Math.sqrt((a - b) * (a - b) + 4 * h * h), th = 0.5 * Math.atan2(2 * h, a - b);
+    p.dx = Math.cos(th); p.dy = Math.sin(th); p.an = tr > 0 ? df / tr : 0;
+  }
+  const near = new Int32Array(W * H).fill(-1), qu = [];   // 가장 가까운 뼈대 점 (최대 반경 안에서만)
+  pts.forEach((p, i) => { near[p.y * W + p.x] = i; qu.push(p.y * W + p.x); });
+  const MAXD = CELL * 0.09 / 2;
+  for (let h = 0; h < qu.length; h++) {
+    const i = qu[h], x = i % W, y = (i - x) / W, b = pts[near[i]];
+    for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+      const nx = x + ox, ny = y + oy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const j = ny * W + nx; if (near[j] >= 0) continue;
+      if (Math.hypot(nx - b.x, ny - b.y) > MAXD) continue;
+      near[j] = near[i]; qu.push(j);
+    }
+  }
+  const r = { W, H, pts, near };
+  SKEL.set(t, r);
+  return r;
+}
+// 통과 기준: 덮음 cov ↑, 밖으로 나감 out ↓, 덧칠 over ↓, 획 방향 일치 align ↑
+const TRACE_RULE = { cov: 0.6, out: 0.22, over: 4.5, align: 0.7 };
+const traceOk = (r) => r.cov >= TRACE_RULE.cov && r.out <= TRACE_RULE.out && r.over <= TRACE_RULE.over && r.align >= TRACE_RULE.align;
 function checkTrace() {
   const p = play;
   if (p.locked) return;
   if (!p.strokes.length) { fb('먼저 손가락으로 따라 써 봐요! ✍️', 'bad'); shake($('.board')); return; }
   const r = scoreTrace();
-  const pass = r.cov >= 0.6 && r.out <= 0.3;
+  const pass = traceOk(r);
   if (pass) {
     let msg = markCorrect();
-    if (r.cov >= 0.8 && r.out <= 0.2) msg = '💯 아주 예쁘게 썼어요! ' + msg;
+    if (r.cov >= 0.8 && r.out <= 0.1) msg = '💯 아주 예쁘게 썼어요! ' + msg;
     fb(msg, 'good'); speak(p.q.say);
     showNextBtn();
     return;
@@ -900,8 +1032,13 @@ function checkTrace() {
   sfx.bad(); p.combo = 0; shake($('.board'));
   p.tries++;
   if (p.tries === 1) p.mistakes++;
-  const why = r.cov < 0.6 ? '회색 글자를 끝까지 꽉 채워 써 볼까요? ✍️' : '선 밖으로 조금 나갔어요. 지우고 다시 써 볼까요? 🧽';
-  if (p.tries >= 3) { p.locked = true; p.results[p.idx] = false; fb('잘 했어요! 다음 글자도 해 봐요 💪' + timeTag(), 'good'); showNextBtn(); return; }
+  const T = TRACE_RULE, messy = r.out > T.out || r.over > T.over || r.align < T.align;
+  const why = r.out > T.out ? '선 밖으로 나갔어요. 회색 글자 위를 따라 써 볼까요? 🧽'
+    : r.align < T.align ? '동그라미나 끄적이기 말고, 획을 따라 한 줄로 쭉 그어요! ✏️'
+    : r.over > T.over ? '마구 칠하지 말고 획을 따라 또박또박 써요! ✏️'
+    : '회색 글자를 끝까지 꽉 채워 써 볼까요? ✍️';
+  if (messy) { p.strokes = []; const ink = $('#ink'); ink.getContext('2d').clearRect(0, 0, ink.width, ink.height); }
+  if (p.tries >= 3) { p.locked = true; p.results[p.idx] = false; fb('아쉬워요! 이 글자는 다음에 다시 연습해요 🙂 (통과 못 함)' + timeTag(), 'bad'); showNextBtn(); return; }
   fb(why, 'bad');
 }
 function eraseTrace() {
@@ -964,17 +1101,26 @@ const CHAIN_WORDS = (`가게 가구 가로등 가루 가면 가방 가수 가스
 `타조 탁자 태권도 태극기 태양 택시 탬버린 터널 텐트 텔레비전 토끼 토마토 토요일 튤립 트럭 트럼펫 티셔츠 ` +
 `파도 파랑새 파리 파인애플 파티 팔찌 팝콘 팽이 펭귄 편지 평화 포도 포크 풍선 피리 피아노 피자 필통 ` +
 `하늘 하마 하트 학교 학생 할머니 할아버지 해바라기 해님 해적 햄버거 햄스터 행복 허리 허수아비 헬리콥터 호랑이 호박 호수 호두 홍학 화분 화산 화장실 환자 황소 회오리 휴지 차례 차고 스케이트 스티커 스파게티 스웨터 관객 관심 면봉 면도기 울타리 위치 추석 추위 실내화 실수 밥상 밥그릇 임금님 석탄 네모 통닭 쥐구멍 투수 채소 탕수육 말벌 쇠고기 족제비 북극곰 찰흙 곡식 절구 향기 용궁 용돈 항아리 멍게 온도 와플 역사 근육 뱀장어 몬스터 욕실 펜싱 집게 낭떠러지 퍼즐 골목 깨소금 형광펜 디저트 심장 붕어빵 육지 녹차 약국 솔방울 널뛰기 입술 입구 이야기책 기러기 리어카 수수께끼 끼니 잠수함 함박눈 눈송이 소원 원피스 스키 키다리 리코더 더하기 구슬치기 기념일 일요일 일기장 장마 마녀 녀석 석류 휘파람 남대문 문방구 구경 경치 치즈 희망`).trim().split(/\s+/);
-const DICT = new Set([...CHAIN_WORDS, ...WORDS.map((x) => x.w)].filter((w) => w.length >= 2));
+const CHAIN_MORE = (`가마 가마솥 가발 가사 가야금 가옥 가정 각도 간판 갈색 감귤 감사 감옥 강변 강산 강철 개교 개구멍 개나리꽃 개똥벌레 개학 거북선 거실 건강 건축 검사 검정 게시판 겨드랑이 결혼 경비 경험 계획 고등어 고모 고무신 고사리 고장 고등학교 곡선 골대 골프 곰인형 공간 공군 공연 공중 공중전화 공짜 과녁 과수원 관광 광고 교사 교통 구급상자 구석 구조 국기 국어 국화 군고구마 굴렁쇠 궁전 귀걸이 귤 그릇 금메달 기관차 기념품 기둥 기사 기술 기억력 기차역 기침약 길가 길이 김 꼭대기 꽃밭 꽃잎 꿈나라 끈 나그네 나들이 나루터 나머지 나물 낙서 날짜 남매 남산 남편 낮 내복 냇물 너비 노란색 노트 녹색 논 놀이공원 농사 높이 누룽지 눈꽃 눈동자 눈사태 뉴스 늦잠 다락방 다슬기 단추 달밤 달빛 닭 닭고기 대답 대통령 대학교 대화 댐 도깨비불 도라지 도로 도서 도움 도착 독서 돈 돋보기 돌다리 동그라미 동아리 동창 동화책 두건 두레박 뒷산 드레스 들판 등불 등잔 딱지 딱따구리 땀 땅 떡 뜨개질 레고 마라톤 마법 마법사 마차 막대기 만세 만화책 말 말굽 말썽 망원경 맨발 머루 먼지 메달 메뚜기 메밀 멜론 명절 모과 모니터 모래성 모양 목공 목소리 목수 몸 무대 무사 무용 문구 문방구 물방울 물수건 물총 미꾸라지 미로 미술관 바가지 바느질 바둑 바람개비 박하 반딧불 반짝이 발레 발목 밤하늘 방귀 방학 배낭 배달 배드민턴 백과사전 뱀 버들 버스정류장 번호 벌집 법 벚꽃 벼 벼락 별님 별빛 병 보름달 보자기 복숭아 볼링 봄비 봉사 부모 부채춤 북 분필 불고기 불빛 블록 비 비옷 비타민 빗방울 빨대 빵 뽀뽀 뿔 사냥 사또 사막 사슴벌레 사인 사전 산 산타 산토끼 살구 상추 새벽 새싹 색칠 생각 생쥐 서커스 선녀 선박 선수 설거지 설날 섬 성 성냥 세계 세탁기 소 소꿉놀이 소라 소방서 속옷 손님 손목 손뼉 솜사탕 송곳 수도 수레바퀴 수박씨 수염 수첩 순대 숲 스웨터 스카프 스펀지 시금치 시냇가 시인 식당 식빵 신호등 실 실험 심부름 싹 썰물 쓰레받기 아궁이 아저씨 아줌마 아파트 안내 안전 앞치마 애벌레 야자수 약속 약수 양 양념 양떼 어부 어항 언니 얼룩 엉겅퀴 여행 역 연 연극 연날리기 연습 열기구 염소 엿 영어 오누이 오두막 오렌지 오빠 오솔길 오후 옥상 온돌 올챙이 옷걸이 완두콩 요구르트 요일 용 우물 우비 운동화 원두막 원반 유모차 율무 은하수 음료수 이모 이삭 인어 인절미 일꾼 잎사귀 자개 자랑 자리 자물쇠 작가 잠 잠옷 장구 장난 장독 장수 재미 저금통 전등 전시 절 젤리 조각 조끼 조랑말 종소리 주걱 주인 죽 줄 중학교 쥐 지렁이 지네 지렛대 지하 진달래 질문 짐 집 짚신 찐빵 차 차표 창고 채널 책 책꽂이 천장 철봉 청개구리 초 초가집 총 추억 춤 치킨 칠면조 침 칼 캠핑 코 코스모스 콩 콩쥐 크레용 큰집 타자 탑 태풍 털모자 털실 텃밭 토끼풀 통 투구 트리 파 파전 팥 팥죽 편의점 포장 표 풀 풀잎 풍차 피부 필기 하루 하모니카 한복 할미꽃 해 해녀 해수욕장 핸드폰 허브 혀 형 호떡 호루라기 호빵 혹 홍시 화가 화살 화요일 활 회사 효자 후추 휘파람새 흙 흰색 힘 ` +
+`가래떡 가랑비 가로수 가마우지 갈치 감꽃 갓 강정 거름 거미줄 겉옷 게 고드름 고래밥 고슴도치 곶감 공기놀이 공깃돌 구렁이 국밥 국물 굼벵이 귀뚜라미 귓속말 그물 기러기 김장 깍지 깨 꼬마 꽃다발 꽃씨 꾀꼬리 꿀 꿩 나룻배 나팔꽃 낙지 낮달 냉이 너울 넝쿨 노른자 누에 눈보라 느티나무 다람쥐 단풍 단풍잎 달맞이 담쟁이 대게 대롱 대야 도라지꽃 동백꽃 동치미 된장 두루미 들깨 들꽃 딱정벌레 떡잎 뜸부기 마루 마름모 매실 맷돌 메기 메추라기 명태 모닥불 모란 모시 목련 무 무당벌레 물레 물레방아 미나리 밀물 바지락 박꽃 반달 밤나무 방아깨비 백합 버드나무 벌 범 베짱이 보리밥 봉숭아 부추 부침개 붓 비빔국수 빈대떡 뻐꾸기 사슴 산딸기 산새 삽 상수리 새알 생강 소쩍새 솔잎 송사리 쇠똥구리 수국 수수 수선화 숭늉 시루떡 쑥 씀바귀 아카시아 앵두 양귀비 어묵 억새 엿기름 오동나무 오소리 옹달샘 우렁이 은행잎 이슬 인삼 잠자리채 장구벌레 장독대 전복 제비꽃 조기 조약돌 종달새 주꾸미 진돗개 찹쌀 참깨 참나무 채송화 청포도 초가지붕 측우기 치자 콩국수 토란 파리채 피라미 하늘소 한과 할미새 해파리 햇볕 햇빛 호박꽃 홍어 화로 황새 흰나비 ` +
+`가격 가능 가로 감정 강의 개인 거래 거짓말 건너편 결과 경제 계약 고객 공부방 과거 과정 관계 교육 구역 국가 국민 기간 기관 기록 기본 기준 기회 내용 노력 능력 단계 대상 대표 도구 동작 마무리 마지막 목적 목표 문화 물건 미래 방법 방향 번역 변화 보통 부분 사실 사업 사회 상황 생활 선택 성격 세상 소식 수업 순서 시간 시작 시험 식사 신호 실력 역할 연구 연락 예정 외국 우정 위험 의견 이유 이해 인기 인생 일정 자연 작품 장소 전체 정답 정보 정치 조건 존재 주변 준비 중심 지역 지식 직업 차이 참가 책임 처음 출발 취미 친척 크기 특징 평가 표현 학년 학원 한국 행동 행사 현실 형태 환경 활동 회의 효과 훈련 희생`).trim().split(/\s+/);
+const DICT = new Set([...CHAIN_WORDS, ...CHAIN_MORE, ...WORDS.map((x) => x.w)].filter((w) => w.length >= 2));
 const chainPool = () => [...DICT, ...(S.custom || [])];
 const dictHas = (w) => DICT.has(w) || (S.custom || []).includes(w);
-const Y_V = [2, 3, 6, 7, 12, 17, 20];   // ㅑㅒㅕㅖㅛㅠㅣ
-function dueum(s) {   // 두음 법칙: 력→역, 라→나, 녀→여
-  const [c, j, t] = decompose(s);
-  if (c === 5) return compose(Y_V.includes(j) ? 11 : 2, j, t);
-  if (c === 2 && Y_V.includes(j)) return compose(11, j, t);
-  return null;
+// 온라인 사전(위키낱말사전)에서 한국어 명사인지 확인 → true / false / null(확인 불가)
+async function lookupWord(w) {
+  try {
+    const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 6000);
+    const url = 'https://ko.wiktionary.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=categories&cllimit=100&titles=' + encodeURIComponent(w);
+    const res = await fetch(url, { signal: ctl.signal }); clearTimeout(tm);
+    if (!res.ok) return null;
+    const pages = Object.values(((await res.json()).query || {}).pages || {});
+    if (!pages.length) return null;
+    return pages.some((pg) => !('missing' in pg) && (pg.categories || []).some((c) => /명사|한국어 낱말|한국어 기본형/.test(c.title)));
+  } catch (e) { return null; }
 }
-const startsOf = (s) => { const d = dueum(s); return d ? [s, d] : [s]; };
+// 두음 법칙은 쓰지 않아요: 끝 글자 그대로 시작해야 해요 (로 → 로, 녀 → 녀)
+const startsOf = (s) => [s];
 const wordsFrom = (s, used) => { const st = startsOf(s); return chainPool().filter((w) => st.includes(w[0]) && !used.has(w)); };
 const lastSyl = (w) => w[w.length - 1];
 const CHAIN_TIME = [30, 20, 15];
@@ -1043,7 +1189,7 @@ function compFail() {
 function kidTurn() {
   const p = play, st = startsOf(p.last);
   p.locked = false; p.qStart = Date.now();
-  $('#need').innerHTML = `<span class="syl">${st[0]}</span>${st[1] ? ` 또는 <span class="syl">${st[1]}</span>` : ''} (으)로 시작하는 말을 써요!`;
+  $('#need').innerHTML = `<span class="syl">${st[0]}</span> (으)로 시작하는 말을 써요!`;
   fb('', '');
   const inp = $('#cw'); inp.value = '';
   try { inp.focus(); } catch (e) { /* 무시 */ }
@@ -1058,14 +1204,25 @@ function kidTurn() {
 function submitWord(force) {
   const p = play;
   if (!p || !p.chain || p.locked) return;
-  const inp = $('#cw'), w = inp.value.replace(/\s/g, '');
+  if (p.checking) return;
+  const inp = $('#cw'), w = inp.value.normalize('NFC').replace(/\s/g, '');
   if (!/^[가-힣]{2,}$/.test(w)) { fb('두 글자 이상 한글로 써 주세요 ✍️', 'bad'); shake(inp); return; }
   const st = startsOf(p.last);
-  if (!st.includes(w[0])) { fb(`‘${st.join('’ 또는 ‘')}’(으)로 시작해야 해요!`, 'bad'); shake(inp); sfx.bad(); return; }
+  if (!st.includes(w[0])) { fb(`‘${st[0]}’(으)로 시작해야 해요! (두음 법칙 없이 끝 글자 그대로)`, 'bad'); shake(inp); sfx.bad(); return; }
   if (p.used.has(w)) { fb('이미 나온 말이에요! 다른 말을 찾아봐요 🔁', 'bad'); shake(inp); sfx.bad(); return; }
   if (!force && !dictHas(w)) {
-    fb(`‘${w}’ 는 컴퓨터 사전에 없어요 🤔<br><button class="btn ghost" style="font-size:15px;padding:8px 12px;margin-top:6px" data-act="caccept">✅ 진짜 있는 말이에요 (어른이 확인)</button>`, 'bad');
-    sfx.bad(); return;
+    p.checking = true; fb(`📖 ‘${w}’ 를 사전에서 찾고 있어요...`, '');
+    lookupWord(w).then((ok) => {
+      p.checking = false;
+      if (ok) { S.custom = [...new Set([...(S.custom || []), w])]; save(); }
+      if (play !== p || p.locked) return;
+      const now = $('#cw').value.normalize('NFC').replace(/\s/g, '');
+      if (now !== w) return;   // 그사이 다른 말로 고쳤으면 무시
+      if (ok) return submitWord(true);
+      fb(`‘${w}’ 는 ${ok === null ? '사전에서 확인하지 못했어요 (인터넷 연결 확인)' : '사전에 없는 말이에요'} 🤔<br><button class="btn ghost" style="font-size:15px;padding:8px 12px;margin-top:6px" data-act="caccept">✅ 진짜 있는 말이에요 (어른이 확인)</button>`, 'bad');
+      sfx.bad();
+    });
+    return;
   }
   if (force && !dictHas(w)) { S.custom = [...(S.custom || []), w]; save(); }
   stopTimer();
