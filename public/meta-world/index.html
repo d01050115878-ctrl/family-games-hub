@@ -261,7 +261,7 @@ input.f,select.f{background:#0b1026;color:#fff;border:1px solid var(--line);bord
       <button class="btn sm ghost" id="fxBtn">✨ 효과 켬</button>
       <button class="btn sm ghost" id="rulesBtn">📖 규칙</button>
       <button class="btn sm ghost" id="newBtn">🔄 새 게임</button>
-      <a class="btn sm ghost" id="homeBtn" href="/" style="display:none">🏠 게임 모음</a>
+      <a class="btn sm ghost" id="homeBtn" href="../" style="display:none">🏠 게임 모음</a>
     </div>
   </div>
 </div>
@@ -1154,9 +1154,11 @@ function netMsg(s) { $('#netMsg').textContent = s || ''; }
 function wsSend(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
 function myName() { return ($('#onName').value.trim() || '플레이어').slice(0, 8); }
 
+// GitHub Pages 등 다른 주소에서 열면 온라인 서버는 Render 서버로 연결
+const WS_HOST = /onrender.com$|^localhost$|^127./.test(location.hostname) ? location.host : 'family-games-hub.onrender.com';
 function connect() {
   if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
-  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/metaworld-ws`);
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${WS_HOST}/metaworld-ws`);
   ws.onopen = () => { wsSend({ t: 'hello', name: myName(), token: myToken }); };
   ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (er) { return; } onNet(m); };
   ws.onclose = () => {

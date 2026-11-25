@@ -610,7 +610,7 @@ function render() {
 function renderHome() {
   document.body.className = '';
   app.innerHTML = `<div class="screen">
-    <div class="topbar"><a class="icon" href="/" title="게임 모음">🏠</a><div class="ttl"></div><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
+    <div class="topbar"><a class="icon" href="../" title="게임 모음">🏠</a><div class="ttl"></div><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
     <div class="home-hero"><div class="logo">🧮</div><h1>재미있는 수학놀이</h1><p>누가 할까요? 골라 주세요!</p></div>
     <div class="tracks">
       ${Object.values(TRACKS).map((T) => `
@@ -625,7 +625,7 @@ function renderHome() {
           </div>
         </button>`).join('')}
     </div>
-    <div class="home-foot"><a class="btn ghost" href="/" style="text-decoration:none">🏠 게임 모음으로</a></div>
+    <div class="home-foot"><a class="btn ghost" href="../" style="text-decoration:none">🏠 게임 모음으로</a></div>
   </div>`;
 }
 

@@ -352,7 +352,7 @@ function render() { ({ home: renderHome, grade: renderGrade, study: renderStudy,
 
 function renderHome() {
   app.innerHTML = `<div class="screen">
-    <div class="topbar"><a class="icon" href="/" title="게임 모음">🏠</a><div class="ttl"></div>
+    <div class="topbar"><a class="icon" href="../" title="게임 모음">🏠</a><div class="ttl"></div>
       <button class="icon" data-act="voice" title="읽어주기">${S.voice ? '🗣️' : '🤐'}</button><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
     <div class="hero"><div class="logo hz">漢字</div><h1>재미있는 한자놀이</h1><p>${nameOf()}, 몇 급에 도전할까요?</p>
       <div class="who"><button class="chip" data-act="rename">✏️ 이름 바꾸기</button><button class="chip" data-act="stickers">🎁 스티커북 ${S.stickers.length}/${STICKERS.length}</button></div></div>
@@ -363,7 +363,7 @@ function renderHome() {
         <div class="gs">⭐ ${gradeStars(G)}<br><small style="color:var(--muted)">/ ${GAMES.length * 3}</small></div></button>`).join('')}
     </div>
     <p style="text-align:center;color:var(--muted);font-size:14px;margin-top:16px">10급이 가장 쉽고, 6급으로 갈수록 어려워요.<br>훈음은 한자능력검정시험 표기를 따랐어요.</p>
-    <div class="foot"><a class="btn ghost" href="/">🏠 게임 모음으로</a></div>
+    <div class="foot"><a class="btn ghost" href="../">🏠 게임 모음으로</a></div>
   </div>`;
 }
 function renderGrade() {

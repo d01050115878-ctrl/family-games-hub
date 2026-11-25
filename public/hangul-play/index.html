@@ -721,7 +721,7 @@ function render() { ({ home: renderHome, game: renderGame, stickers: renderStick
 
 function renderHome() {
   app.innerHTML = `<div class="screen">
-    <div class="topbar"><a class="icon" href="/" title="게임 모음">🏠</a><div class="ttl"></div>
+    <div class="topbar"><a class="icon" href="../" title="게임 모음">🏠</a><div class="ttl"></div>
       <button class="icon" data-act="voice" title="읽어주기">${S.voice ? '🗣️' : '🤐'}</button><button class="icon" data-act="sound">${S.sound ? '🔔' : '🔕'}</button></div>
     <div class="hero"><div class="logo">✏️</div><h1>재미있는 한글놀이</h1><p>${nameOf()}, 오늘은 뭘 해 볼까요?</p>
       <div class="who"><button class="chip" data-act="rename">✏️ 이름 바꾸기</button><span class="chip">⭐ ${allStars()} / ${maxStars()}</span><button class="chip" data-act="stickers">🎁 스티커북 ${S.stickers.length}/${STICKERS.length}</button></div></div>
@@ -729,7 +729,7 @@ function renderHome() {
       ${GAMES.map((g) => `<button class="game" style="--c:${g.color}" data-act="game" data-g="${g.id}">
         <div class="ge">${g.emoji}</div><div><h2>${g.title}</h2><p>${g.desc}</p><div class="gs">⭐ ${gameStars(g)} / ${g.levels.length * 3}</div></div></button>`).join('')}
     </div>
-    <div class="foot"><a class="btn ghost" href="/">🏠 게임 모음으로</a></div>
+    <div class="foot"><a class="btn ghost" href="../">🏠 게임 모음으로</a></div>
   </div>`;
 }
 function renderGame() {
