@@ -285,14 +285,42 @@ const sfx = {
   tap() { tone(520, 0.05, 'sine', 0, 0.06); },
   win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.28, 'triangle', i * 0.13)); },
 };
+// 한국어 원어민 음성을 우선 고름 (다국어/외국어 음성이 한국어를 어색하게 읽는 문제 방지)
+let koVoice = null;
+function pickKoVoice() {
+  if (koVoice) return koVoice;
+  const all = speechSynthesis.getVoices();
+  const ko = all.filter((x) => /^ko([-_]|$)/i.test(x.lang));
+  if (!ko.length) return null;
+  const score = (x) => {
+    const n = x.name;
+    let s = 0;
+    if (/multilingual/i.test(n)) s -= 100;          // 다국어 음성은 억양이 외국인처럼 들림
+    if (/natural|online|neural/i.test(n)) s += 40;  // Edge 고품질 음성 (SunHi, InJoon 등)
+    if (/google/i.test(n)) s += 30;                 // 크롬 Google 한국어
+    if (/yuna|sora|sunhi|injoon|heami|유나|한국/i.test(n)) s += 20;
+    if (/^ko[-_]KR$/i.test(x.lang)) s += 10;
+    if (x.localService) s += 1;
+    return s;
+  };
+  koVoice = ko.sort((a, b) => score(b) - score(a))[0];
+  return koVoice;
+}
+if ('speechSynthesis' in window) {
+  speechSynthesis.getVoices();
+  speechSynthesis.addEventListener?.('voiceschanged', () => { koVoice = null; });
+}
 function speak(text, force) {
   if (!S.voice && !force) return;
   try {
     if (!('speechSynthesis' in window)) return;
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ko-KR'; u.rate = 0.85;
-    const v = speechSynthesis.getVoices().find((x) => /ko/i.test(x.lang));
+    // 문장 끝에 마침표가 없으면 붙여서 자연스러운 억양으로 읽게 함
+    let t = String(text).trim();
+    if (/[가-힣]$/.test(t) && t.includes(' ')) t += '.';
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = 'ko-KR'; u.rate = 0.9; u.pitch = 1;
+    const v = pickKoVoice();
     if (v) u.voice = v;
     speechSynthesis.speak(u);
   } catch (e) { /* 무시 */ }
