@@ -164,6 +164,10 @@ b { font-weight: normal; color: var(--main); }
 .tf .dot.b { background: #4dabf7; }
 .tf .dot.c { background: #51cf66; }
 .tf .dot.ghost { background: #fff; border: 3px dashed #ffb703; }
+.tf .dot.x { background: #ffc9c9; position: relative; }
+.tf .dot.x::after { content: '✕'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #c92a2a; font-weight: 900; font-size: 16px; }
+.items i.out { position: relative; opacity: .35; }
+.items i.out::after { content: '✕'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #e03131; font-weight: 900; opacity: 1; }
 .groups { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .plate { background: radial-gradient(ellipse at center, #fff 40%, #eef1f7 100%); border: 3px solid #dde3ef; border-radius: 50%; min-width: 92px; min-height: 80px; padding: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .plate .items { font-size: 22px; max-width: 80px; }
@@ -238,7 +242,7 @@ b { font-weight: normal; color: var(--main); }
 'use strict';
 /* =========================================================
    재미있는 수학놀이
-   - 7살: 덧셈 탐험대 (합 20까지 + 곱셈 맛보기)
+   - 7살: 덧셈·뺄셈 탐험대 (합 20까지 + 뺄셈 10/20/30/50까지 + 곱셈 맛보기)
    - 10살: 곱셈·나눗셈 챌린지 (구구단 · 나눗셈 · 나머지)
            + 스페셜 60초 도전 (어른도 함께! 두 자리 수 사칙연산)
    ========================================================= */
@@ -295,6 +299,32 @@ function tenHint(a, b) {
   return tenFrame([{ n: a, c: 'a' }, { n: b, c: 'b' }]) + t;
 }
 
+// 뺄셈 그림: a개 중 뒤의 b개에 ✕
+function takeAway(a, b, e) {
+  const cls = a > 15 ? 'xs' : a > 9 ? 'sm' : '';
+  return `<div class="pics"><span class="items ${cls}">${Array.from({ length: a }, (_, i) => `<i class="${i >= a - b ? 'out' : ''}" style="animation-delay:${i * 0.03}s">${e}</i>`).join('')}</span></div>`;
+}
+// 뺄셈 힌트: 10을 이용하거나 십의 자리·일의 자리로 나눠 빼기
+function subHint(a, b) {
+  const d = a - b, at = a - (a % 10), ao = a % 10, bt = b - (b % 10), bo = b % 10;
+  if (a <= 10) return `<p>${a}개에서 ${eul(b)} 지우면 몇 개 남을까?<br>✕ 없는 점을 세어 봐요! 👆</p>`;
+  if (b >= 10) return `<p>${b}${jb(b) ? '은' : '는'} ${gwa(bt)} ${bo}<br>${a} − ${bt} = ${a - bt}${bo ? `<br>${a - bt} − ${bo} = ?` : ''}</p>`;
+  if (b <= ao) return `<p>${eun(a)} ${gwa(at)} ${ao}<br>${ao} − ${b} = ${ao - b}<br>${at} + ${ao - b} = ?</p>`;
+  return `<p>${a}에서 <b>${eul(ao)}</b> 먼저 빼면 딱 ${at}!<br>남은 <b>${b - ao}</b>${jb(b - ao) ? '을' : '를'} 더 빼면? ${at} − ${b - ao} = ?</p>`;
+}
+function subLevel(id, emoji, title, desc, lo, hi, free) {
+  return { id, emoji, title, desc, free,
+    gen() { const a = rnd(lo, hi);
+      let b;
+      if (a <= 10) b = rnd(1, a - 1);
+      else if (a <= 20 || Math.random() < 0.5) { b = rnd(2, 9); if (Math.random() < 0.6 && a % 10 < 9) b = rnd(a % 10 + 1, 9); }
+      else b = rnd(10, a - 1);
+      const d = a - b, e = pick(FOODS);
+      const visual = a <= 10 ? takeAway(a, b, e) : '';
+      const hint = (a <= 20 ? tenFrame([{ n: d, c: 'a' }, { n: b, c: 'x' }]) : '') + subHint(a, b);
+      return { key: `${a}-${b}`, visual, eq: [a, '−', b, '=', '{B0}'], ans: [d], near: [d + 1, d - 1, d + 10, d - 10, a + b].filter((v) => v >= 0 && v <= hi + 10), hint }; } };
+}
+
 const LITTLE = [
   { id: 'l1', emoji: '🍎', title: '그림 보고 더하기', desc: '합이 10까지 · 그림을 세어요',
     gen() { const a = rnd(1, 6), b = rnd(1, 10 - a), e = pick(FOODS);
@@ -339,6 +369,10 @@ const LITTLE = [
       const a = rnd(11, 39), b = rnd(2, 9), t = a - (a % 10), o = a % 10;
       return { key: `${a}+${b}`, eq: [a, '+', b, '=', '{B0}'], ans: [a + b],
         hint: `<p>${eun(a)} ${gwa(t)} ${o}<br>${o} + ${b} = ${o + b}<br>${t} + ${o + b} = ?</p>` }; } },
+  subLevel('m1', '🍦', '빼기 10까지', '답이 10 이하 · 그림 보고 빼요', 2, 10, true),
+  subLevel('m2', '🐳', '빼기 20까지', '답이 20 이하 · 10을 이용해요', 11, 20),
+  subLevel('m3', '🚂', '빼기 30까지', '답이 30 이하 · 두 자리 빼기', 21, 30),
+  subLevel('m4', '🚀', '빼기 50까지', '답이 50 이하 · 도전!', 31, 50),
 ];
 
 /* ---------- 문제 만들기: 10살 ---------- */
@@ -430,7 +464,7 @@ const WEAK = { id: 'weak', emoji: '🩹', title: '약한 구구단 연습',
     return Math.random() < 0.6 ? mulQ(a, b) : divQ(a, b); } };
 
 const TRACKS = {
-  little: { id: 'little', age: '7살', emoji: '🐣', goal: '🏠', title: '덧셈 탐험대', sub: '합이 20까지 · 곱셈 맛보기', levels: LITTLE, defInput: 'choice',
+  little: { id: 'little', age: '7살', emoji: '🐣', goal: '🏠', title: '덧셈·뺄셈 탐험대', sub: '합이 20까지 · 뺄셈 · 곱셈 맛보기', levels: LITTLE, defInput: 'choice',
     stickers: ['🐶', '🐱', '🐰', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🐧', '🐤', '🦊', '🐮', '🐷', '🐹', '🦄', '🐳', '🐬', '🦋', '🐞', '🐢', '🦖', '🦕', '🐙', '🦀', '🐠', '🦒', '🐘', '🦔', '🦩', '🦜', '🐿️', '🦦', '🐝', '🌈'] },
   big: { id: 'big', age: '10살', emoji: '🚀', goal: '🪐', title: '곱셈·나눗셈 챌린지', sub: '구구단 · 나눗셈 · 나머지', levels: BIG, defInput: 'pad',
     stickers: ['🚀', '🛸', '🪐', '🌍', '🌙', '☄️', '🛰️', '👽', '🤖', '🦾', '⚡', '🔥', '💎', '👑', '🏆', '🥇', '🎯', '🧩', '🎮', '🕹️', '🏎️', '🚁', '🚂', '⛵', '🏰', '🗿', '🐉', '🦅', '🦈', '🐺', '🦂', '🕷️', '🦖', '🌋', '🌌', '🌠'] },
@@ -468,7 +502,7 @@ function recordFact(fact, ok) {
 }
 function unlocked(tid, i) {
   const T = S.tracks[tid];
-  return i === 0 || T.open || TRACKS[tid].levels[i].special || (T.stars[TRACKS[tid].levels[i - 1].id] || 0) > 0;
+  return i === 0 || T.open || TRACKS[tid].levels[i].special || TRACKS[tid].levels[i].free || (T.stars[TRACKS[tid].levels[i - 1].id] || 0) > 0;
 }
 function award(tid) {
   const T = S.tracks[tid], left = TRACKS[tid].stickers.filter((s) => !T.stickers.includes(s));
